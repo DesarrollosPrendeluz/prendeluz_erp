@@ -3,14 +3,13 @@ package repositories
 import (
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
-	"prendeluz/erp/test"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFindByOrderCode(t *testing.T) {
-	db, cleanup := test.SetUpTestDB(&models.OrderItem{})
+	db, cleanup := SetUpTestDB(&models.OrderItem{})
 	defer cleanup()
 
 	repo := repositories.NewOrderItemRepository(db)

@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"prendeluz/erp/internal/repositories"
-	"prendeluz/erp/test"
 	"testing"
 	"time"
 
@@ -16,7 +15,7 @@ type TestModel struct {
 }
 
 func TestCreate(t *testing.T) {
-	db, cleanup := test.SetUpTestDB(&TestModel{})
+	db, cleanup := SetUpTestDB(&TestModel{})
 
 	defer cleanup()
 
@@ -28,7 +27,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	db, cleanup := test.SetUpTestDB(&TestModel{})
+	db, cleanup := SetUpTestDB(&TestModel{})
 	defer cleanup()
 
 	repo := repositories.NewGORMRepository(db, TestModel{})
@@ -48,7 +47,7 @@ func TestFind(t *testing.T) {
 }
 
 func TestFindAll(t *testing.T) {
-	db, cleanup := test.SetUpTestDB(&TestModel{})
+	db, cleanup := SetUpTestDB(&TestModel{})
 	defer cleanup()
 
 	repo := repositories.NewGORMRepository(db, TestModel{})
@@ -71,7 +70,7 @@ func TestFindAll(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 
-	db, cleanup := test.SetUpTestDB(&TestModel{})
+	db, cleanup := SetUpTestDB(&TestModel{})
 	defer cleanup()
 
 	repo := repositories.NewGORMRepository(db, TestModel{})
@@ -98,7 +97,7 @@ func TestUpdate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 
-	db, cleanup := test.SetUpTestDB(&TestModel{})
+	db, cleanup := SetUpTestDB(&TestModel{})
 	defer cleanup()
 
 	repo := repositories.NewGORMRepository(db, TestModel{})
