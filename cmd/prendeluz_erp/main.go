@@ -5,7 +5,6 @@ import (
 	"log"
 	"prendeluz/erp/internal/config"
 	"prendeluz/erp/internal/db"
-	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/routes"
 
 	"github.com/gin-gonic/gin"

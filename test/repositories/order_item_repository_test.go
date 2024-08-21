@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"prendeluz/erp/internal/models"
-	"prendeluz/erp/internal/repositories"
+	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +12,7 @@ func TestFindByOrderCode(t *testing.T) {
 	db, cleanup := SetUpTestDB(&models.OrderItem{})
 	defer cleanup()
 
-	repo := repositories.NewOrderItemRepository(db)
+	repo := orderitemrepo.NewOrderItemRepository(db)
 	testModels := []models.OrderItem{
 		{ItemID: 1, OrderID: 1, Amount: 5},
 		{ItemID: 2, OrderID: 1, Amount: 15},

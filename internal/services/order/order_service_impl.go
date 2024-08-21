@@ -6,27 +6,33 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+	"prendeluz/erp/internal/repositories/itemsrepo"
+	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/utils"
 
 	"gorm.io/gorm"
 )
 
 type OrderServiceImpl struct {
-	orderRepo      repositories.OrderRepo
-	orderItemsRepo repositories.OrderItemRepo
-	orderErrorRepo repositories.ErrorOrderRepo
+	orderRepo      repositories.Repository[models.Order]
+	orderItemsRepo orderitemrepo.OrderItemRepo
+	orderErrorRepo repositories.Repository[models.ErrorOrder]
+	itemsRepo      itemsrepo.ItemRepo
+	db             *gorm.DB
 }
 
 func NewOrderService() *OrderServiceImpl {
 
-	orderRepo := repositories.NewOrderRepository(db.DB)
-	errorOrderRepo := repositories.NewErrorOrderRepository(db.DB)
-	orderItemRepo := repositories.NewOrderItemRepository(db.DB)
-	return &OrderServiceImpl{orderRepo: *orderRepo, orderItemsRepo: *orderItemRepo, orderErrorRepo: *errorOrderRepo}
+	orderRepo := repositories.NewGORMRepository(db.DB, models.Order{})
+	errorOrderRepo := repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
+	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
+	itemsRepo := itemsrepo.NewItemRepository(db.DB)
+	return &OrderServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo,
+		orderErrorRepo: errorOrderRepo, itemsRepo: itemsRepo}
 }
 
 func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
-	itemRepo := repositories.NewItemRepository(db.DB)
+	itemsRepo := itemsrepo.NewItemRepository(db.DB)
 
 	var errorOrdersList []models.ErrorOrder
 	var ordersList []models.Order
@@ -34,7 +40,7 @@ func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, 
 
 	for _, orderCode := range rawOrders {
 		for _, orderInfo := range orderCode.Info {
-			item, err := itemRepo.FindByMainSku(orderInfo.MainSku)
+			item, err := itemsRepo.FindByMainSku(orderInfo.MainSku)
 
 			if err != nil {
 				errorOrder := models.ErrorOrder{
@@ -70,19 +76,18 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	}
 	succesOrders, orderItems, errorOrders := itemsExist(excelOrderList, filename)
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
 
-		orderRepo := repositories.NewOrderRepository(tx)
-		errorOrderRepo := repositories.NewErrorOrderRepository(tx)
-		orderItemRepo := repositories.NewOrderItemRepository(tx)
+		txOrderRepo := repositories.NewGORMRepository(tx, models.Order{})
+		// orderItemRepo := s.NewOrderItemRepository(tx)
 
-		_, err = orderRepo.CreateAll(&succesOrders)
+		_, err = txOrderRepo.CreateAll(&succesOrders)
 		if err != nil {
 			return err
 		}
 
 		if len(errorOrders) > 0 {
-			_, err = errorOrderRepo.CreateAll(&errorOrders)
+			_, err = s.orderErrorRepo.CreateAll(&errorOrders)
 			if err != nil {
 				return err
 			}
@@ -94,7 +99,7 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 				orderItemToInsert = append(orderItemToInsert, tmp)
 			}
 		}
-		_, err = orderItemRepo.CreateAll(&orderItemToInsert)
+		_, err = s.orderItemsRepo.CreateAll(&orderItemToInsert)
 		if err != nil {
 			return err
 		}
@@ -107,11 +112,11 @@ func (s *OrderServiceImpl) GetOrders() ([]dtos.ItemsPerOrder, error) {
 
 	var results []dtos.ItemsPerOrder
 
-	orderRepo := repositories.NewOrderRepository(db.DB)
-	orderItemRepo := repositories.NewOrderItemRepository(db.DB)
-	itemRepo := repositories.NewItemRepository(db.DB)
+	// orderRepo := repositories.NewOrderRepository(db.DB)
+	// orderItemRepo := .NewOrderItemRepository(db.DB)
+	// itemRepo := items.NewItemRepository(db.DB)
 
-	orders, err := orderRepo.FindAll()
+	orders, err := s.orderRepo.FindAll()
 	if err != nil {
 		return results, err
 	}
@@ -119,11 +124,11 @@ func (s *OrderServiceImpl) GetOrders() ([]dtos.ItemsPerOrder, error) {
 	for _, order := range orders {
 		var itemOrder dtos.ItemsPerOrder
 		itemOrder.OrderCode = order.Orden_compra
-		orderItemList, _ := orderItemRepo.FindByOrder(order.ID)
+		orderItemList, _ := s.orderItemsRepo.FindByOrder(order.ID)
 
 		for _, orderItem := range orderItemList {
 			var itemInfo dtos.ItemInfo
-			item, _ := itemRepo.FindByID(orderItem.ItemID)
+			item, _ := s.itemsRepo.FindByID(orderItem.ItemID)
 			itemInfo.Amount = orderItem.Amount
 			itemInfo.Sku = item.MainSKU
 			itemOrder.ItemsOrdered = append(itemOrder.ItemsOrdered, itemInfo)

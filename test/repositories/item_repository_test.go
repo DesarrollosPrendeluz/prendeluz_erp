@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"prendeluz/erp/internal/models"
-	"prendeluz/erp/internal/repositories"
+	"prendeluz/erp/internal/repositories/itemsrepo"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,8 @@ func TestFindByMainSku(t *testing.T) {
 
 	defer cleanup()
 	name := "Test item"
-	repo := repositories.NewItemRepository(db)
+
+	repo := itemsrepo.NewItemRepository(db)
 	testItem := &models.Item{
 		MainSKU:        "SKU123",
 		Name:           &name,

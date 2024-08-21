@@ -17,7 +17,7 @@ func NewSkuRepository(db *gorm.DB) *SkuRepo {
 
 func (repo *SkuRepo) FindByCode(code string) ([]models.Sku, error) {
 	var skus []models.Sku
-	results := repo.db.Where("code LIKE ?", "%"+code+"%").Find(&skus)
+	results := repo.DB.Where("code LIKE ?", "%"+code+"%").Find(&skus)
 
 	return skus, results.Error
 }
