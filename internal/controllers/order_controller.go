@@ -9,45 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// func ItemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
-// 	itemRepo := repositories.NewItemRepository(db.DB)
-//
-// 	var errorOrdersList []models.ErrorOrder
-// 	var ordersList []models.Order
-// 	orderItemsOk := make(map[string][]models.OrderItem)
-//
-// 	for _, orderCode := range rawOrders {
-// 		for _, orderInfo := range orderCode.Info {
-// 			item, err := itemRepo.FindByMainSku(orderInfo.MainSku)
-//
-// 			if err != nil {
-// 				errorOrder := models.ErrorOrder{
-// 					Main_Sku: orderInfo.MainSku,
-// 					Error:    "Item with sku not found",
-// 					Order:    orderCode.OrderCode,
-// 				}
-//
-// 				errorOrdersList = append(errorOrdersList, errorOrder)
-// 			} else {
-// 				orderItem := models.OrderItem{
-// 					ItemID: item.ID,
-// 					Amount: orderInfo.Amount,
-// 				}
-// 				orderItemsOk[orderCode.OrderCode] = append(orderItemsOk[orderCode.OrderCode], orderItem)
-// 			}
-// 		}
-//
-// 		order := models.Order{
-// 			Orden_compra: orderCode.OrderCode,
-// 			Filename:     filename,
-// 		}
-// 		ordersList = append(ordersList, order)
-//
-// 	}
-//
-// 	return ordersList, orderItemsOk, errorOrdersList
-// }
-
 func AddOrder(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	serviceOrder := services.NewOrderService()
