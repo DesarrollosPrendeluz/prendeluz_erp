@@ -21,10 +21,11 @@ type OrderServiceImpl struct {
 }
 
 func NewOrderService() *OrderServiceImpl {
-	orderRepo := repositories.NewOrderRepository(db.DB)
+	orderRepo := repositories.NewGORMRepository(db.DB, models.Order{})
 	errorOrderRepo := repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
 	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := itemsrepo.NewItemRepository(db.DB)
+
 	return &OrderServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo,
 		orderErrorRepo: errorOrderRepo, itemsRepo: itemsRepo}
 }
