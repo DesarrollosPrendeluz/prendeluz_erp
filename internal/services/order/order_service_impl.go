@@ -18,12 +18,10 @@ type OrderServiceImpl struct {
 	orderItemsRepo orderitemrepo.OrderItemRepo
 	orderErrorRepo repositories.Repository[models.ErrorOrder]
 	itemsRepo      itemsrepo.ItemRepo
-	db             *gorm.DB
 }
 
 func NewOrderService() *OrderServiceImpl {
-
-	orderRepo := repositories.NewGORMRepository(db.DB, models.Order{})
+	orderRepo := repositories.NewOrderRepository(db.DB)
 	errorOrderRepo := repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
 	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := itemsrepo.NewItemRepository(db.DB)
@@ -76,18 +74,17 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	}
 	succesOrders, orderItems, errorOrders := itemsExist(excelOrderList, filename)
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
-
-		txOrderRepo := repositories.NewGORMRepository(tx, models.Order{})
-		// orderItemRepo := s.NewOrderItemRepository(tx)
-
-		_, err = txOrderRepo.CreateAll(&succesOrders)
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		s.orderRepo.SetDB(tx)
+		s.orderItemsRepo.SetDB(tx)
+		s.orderErrorRepo.SetDB(tx)
+		_, err := s.orderRepo.CreateAll(&succesOrders)
 		if err != nil {
 			return err
 		}
 
 		if len(errorOrders) > 0 {
-			_, err = s.orderErrorRepo.CreateAll(&errorOrders)
+			_, err := s.orderErrorRepo.CreateAll(&errorOrders)
 			if err != nil {
 				return err
 			}
@@ -111,10 +108,6 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 func (s *OrderServiceImpl) GetOrders() ([]dtos.ItemsPerOrder, error) {
 
 	var results []dtos.ItemsPerOrder
-
-	// orderRepo := repositories.NewOrderRepository(db.DB)
-	// orderItemRepo := .NewOrderItemRepository(db.DB)
-	// itemRepo := items.NewItemRepository(db.DB)
 
 	orders, err := s.orderRepo.FindAll()
 	if err != nil {
