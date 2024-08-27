@@ -19,4 +19,9 @@ func RegisterRoutes(router *gin.Engine) {
 		orderRoutes.GET("/", controllers.GetOrders)
 	}
 
+	storeRoutes := router.Group("/store")
+	{
+		storeRoutes.POST("/", controllers.UpdateStore)
+	}
+
 }

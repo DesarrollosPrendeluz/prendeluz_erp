@@ -10,6 +10,7 @@ type Repository[T any] interface {
 	FindByID(id uint64) (*T, error)
 	FindAll() ([]T, error)
 	Update(item *T) error
+	UpdateAll(items *[]T)
 	Delete(id uint64) error
 	SetDB(db *gorm.DB)
 }
@@ -48,6 +49,9 @@ func (r *GORMRepository[T]) FindAll() ([]T, error) {
 
 func (r *GORMRepository[T]) Update(item *T) error {
 	return r.DB.Save(item).Error
+}
+func (r *GORMRepository[T]) UpdateAll(items *[]T) error {
+	return r.DB.Save(items).Error
 }
 
 func (r *GORMRepository[T]) Delete(id uint64) error {

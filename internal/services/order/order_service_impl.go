@@ -14,17 +14,17 @@ import (
 )
 
 type OrderServiceImpl struct {
-	orderRepo      repositories.Repository[models.Order]
-	orderItemsRepo orderitemrepo.OrderItemRepo
-	orderErrorRepo repositories.Repository[models.ErrorOrder]
-	itemsRepo      itemsrepo.ItemRepo
+	orderRepo      repositories.GORMRepository[models.Order]
+	orderItemsRepo orderitemrepo.OrderItemRepoImpl
+	orderErrorRepo repositories.GORMRepository[models.ErrorOrder]
+	itemsRepo      itemsrepo.ItemRepoImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
-	orderRepo := repositories.NewGORMRepository(db.DB, models.Order{})
-	errorOrderRepo := repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
-	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
-	itemsRepo := itemsrepo.NewItemRepository(db.DB)
+	orderRepo := *repositories.NewGORMRepository(db.DB, models.Order{})
+	errorOrderRepo := *repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
+	orderItemRepo := *orderitemrepo.NewOrderItemRepository(db.DB)
+	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
 
 	return &OrderServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo,
 		orderErrorRepo: errorOrderRepo, itemsRepo: itemsRepo}

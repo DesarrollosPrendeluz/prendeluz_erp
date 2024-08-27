@@ -8,4 +8,5 @@ import (
 type OrderService interface {
 	UploadOrderExcel(file io.Reader, filename string) error
 	GetOrders() ([]dtos.ItemsPerOrder, error)
+	//ProcessOrder()
 }
