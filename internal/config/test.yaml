@@ -2,10 +2,9 @@ server:
   port: 8080
 
 database:
-  host: "localhost"
-  port: 30306
+  host: "127.0.0.1"
+  port: 3306
   username: "root"
-  password: "1234"
-  dbname: "prend_items_luz"
-
+  password: "your_root_password"
+  dbname: "prendeluz_items_db"
 
