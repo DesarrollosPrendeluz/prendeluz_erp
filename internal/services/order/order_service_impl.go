@@ -8,20 +8,21 @@ import (
 	"prendeluz/erp/internal/repositories"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
+	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/utils"
 
 	"gorm.io/gorm"
 )
 
 type OrderServiceImpl struct {
-	orderRepo      repositories.GORMRepository[models.Order]
+	orderRepo      orderrepo.OrderRepoImpl
 	orderItemsRepo orderitemrepo.OrderItemRepoImpl
 	orderErrorRepo repositories.GORMRepository[models.ErrorOrder]
 	itemsRepo      itemsrepo.ItemRepoImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
-	orderRepo := *repositories.NewGORMRepository(db.DB, models.Order{})
+	orderRepo := *orderrepo.NewOrderRepository(db.DB)
 	errorOrderRepo := *repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
 	orderItemRepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
@@ -44,7 +45,7 @@ func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, 
 			if err != nil {
 				errorOrder := models.ErrorOrder{
 					Main_Sku: orderInfo.MainSku,
-					Error:    "Item with sku not found",
+					Error:    "Item with sku " + orderInfo.MainSku + " not found",
 					Order:    orderCode.OrderCode,
 				}
 
@@ -106,11 +107,11 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	})
 }
 
-func (s *OrderServiceImpl) GetOrders() ([]dtos.ItemsPerOrder, error) {
+func (s *OrderServiceImpl) GetOrders(page int, pageSize int) ([]dtos.ItemsPerOrder, error) {
 
 	var results []dtos.ItemsPerOrder
-
-	orders, err := s.orderRepo.FindAll()
+	offset := (page - 1) * pageSize
+	orders, err := s.orderRepo.FindAll(pageSize, offset)
 	if err != nil {
 		return results, err
 	}
@@ -133,4 +134,15 @@ func (s *OrderServiceImpl) GetOrders() ([]dtos.ItemsPerOrder, error) {
 
 	return results, nil
 
+}
+
+func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
+	order, err := s.orderRepo.FindByOrderCode(orderCode)
+	if err != nil {
+		return err
+	}
+
+	s.orderRepo.UpdateStatus("COMPLETE", order.ID)
+
+	return nil
 }

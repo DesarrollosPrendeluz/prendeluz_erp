@@ -7,6 +7,6 @@ import (
 
 type OrderService interface {
 	UploadOrderExcel(file io.Reader, filename string) error
-	GetOrders() ([]dtos.ItemsPerOrder, error)
-	//ProcessOrder()
+	GetOrders(page int, pageSize int) ([]dtos.ItemsPerOrder, error)
+	OrderComplete(orderCode string) error
 }

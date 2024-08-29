@@ -22,10 +22,10 @@ func (repo *StoreStockRepoImpl) FindByItem(sku_parent string) (models.StoreStock
 	return storeStocks, results.Error
 }
 
-func (repo *StoreStockRepoImpl) FindByStore(idStore uint64) ([]models.StoreStock, error) {
+func (repo *StoreStockRepoImpl) FindByStore(idStore uint64, pageSize int, offset int) ([]models.StoreStock, error) {
 	var storeStocks []models.StoreStock
 
-	results := repo.DB.Where("id_store = ?", idStore).Find(&storeStocks)
+	results := repo.DB.Limit(pageSize).Offset(offset).Preload("Item").Where("id_store = ?", idStore).Find(&storeStocks)
 
 	return storeStocks, results.Error
 

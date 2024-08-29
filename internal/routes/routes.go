@@ -7,21 +7,17 @@ import (
 )
 
 func RegisterRoutes(router *gin.Engine) {
-	skuRoutes := router.Group("/skus")
-	{
-		skuRoutes.GET("/", controllers.GetSkus)
-		skuRoutes.GET("/order", controllers.GetOrder)
-	}
 
 	orderRoutes := router.Group("/order")
 	{
 		orderRoutes.POST("/add", controllers.AddOrder)
-		orderRoutes.GET("/", controllers.GetOrders)
+		orderRoutes.GET("", controllers.GetOrders)
 	}
 
 	storeRoutes := router.Group("/store")
 	{
-		storeRoutes.POST("/", controllers.UpdateStore)
+		storeRoutes.PATCH("/:order_code", controllers.UpdateStore)
+		storeRoutes.GET("/:store_name", controllers.GetStoreStock)
 	}
 
 }

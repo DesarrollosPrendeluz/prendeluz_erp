@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/services/order"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,9 +28,11 @@ func AddOrder(c *gin.Context) {
 
 func GetOrders(c *gin.Context) {
 	results := make(map[string][]dtos.ItemInfo)
-
 	orderService := services.NewOrderService()
-	orders, err := orderService.GetOrders()
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	orders, err := orderService.GetOrders(page, pageSize)
 	for _, order := range orders {
 		results[order.OrderCode] = order.ItemsOrdered
 	}
@@ -38,7 +41,7 @@ func GetOrders(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": results})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
 	return
 
 }

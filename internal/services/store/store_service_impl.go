@@ -3,41 +3,66 @@ package services
 import (
 	"log"
 	"prendeluz/erp/internal/db"
+	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
-	"prendeluz/erp/internal/repositories"
+	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
+	"prendeluz/erp/internal/repositories/orderrepo"
+	"prendeluz/erp/internal/repositories/storerepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
 
 	"gorm.io/gorm"
 )
 
 type StoreServiceImpl struct {
-	orderRepo      *repositories.GORMRepository[models.Order]
-	orderItemsRepo *orderitemrepo.OrderItemRepoImpl
-	itemsRepo      *itemsrepo.ItemRepoImpl
-	storeStockRepo *storestockrepo.StoreStockRepoImpl
+	orderRepo        *orderrepo.OrderRepoImpl
+	orderItemsRepo   *orderitemrepo.OrderItemRepoImpl
+	itemsRepo        *itemsrepo.ItemRepoImpl
+	storeStockRepo   *storestockrepo.StoreStockRepoImpl
+	itemsParentsRepo *itemsparentsrepo.ItemsParentsRepoImpl
+	storeRepo        *storerepo.StoreRepoImpl
 }
 
 func NewStoreService() *StoreServiceImpl {
-	orderRepo := repositories.NewGORMRepository(db.DB, models.Order{})
+	orderRepo := orderrepo.NewOrderRepository(db.DB)
 	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := itemsrepo.NewItemRepository(db.DB)
 	storeStockRepo := storestockrepo.NewStoreStockRepository(db.DB)
+	itemsParentsRepo := itemsparentsrepo.NewItemParentRepository(db.DB)
+	storeRepo := storerepo.NewStoreRepository(db.DB)
 
-	return &StoreServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo, itemsRepo: itemsRepo, storeStockRepo: storeStockRepo}
+	return &StoreServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo, itemsRepo: itemsRepo, storeStockRepo: storeStockRepo, itemsParentsRepo: itemsParentsRepo, storeRepo: storeRepo}
+}
+func (s *StoreServiceImpl) getParent(child uint64) (models.Item, error) {
+	itemsParent, err := s.itemsParentsRepo.FindByChild(child)
+	parent, err := s.itemsRepo.FindByID(itemsParent.ParentItemID)
+
+	return *parent, err
 }
 
-func (s *StoreServiceImpl) UpdateStoreStock(order_id uint64) error {
+func (s *StoreServiceImpl) UpdateStoreStock(orderCode string) error {
 	itemsOrdered := make(map[string]int64)
-	orders, _ := s.orderItemsRepo.FindByOrder(10)
-	for _, order := range orders {
+	orders, _ := s.orderRepo.FindByOrderCode(orderCode)
+	type StockDeficit struct {
+		MainSku string
+		Amount  int64
+	}
+	orderItems, _ := s.orderItemsRepo.FindByOrder(orders.ID)
+
+	for _, order := range orderItems {
 		item, _ := s.itemsRepo.FindByID(order.ItemID)
+		parentSKU := item.MainSKU
 		if item.ItemType != "father" {
-			log.Println("Skip")
-		} else {
-			itemsOrdered[item.MainSKU] += order.Amount
+			itemParent, err := s.getParent(item.ID)
+			parentSKU = itemParent.MainSKU
+			if err != nil {
+				log.SetPrefix("[ERROR]")
+				log.Println("Parent not found for ", item.MainSKU, " SKU")
+			}
 		}
+
+		itemsOrdered[parentSKU] += order.Amount
 	}
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		s.itemsRepo.SetDB(tx)
@@ -48,13 +73,43 @@ func (s *StoreServiceImpl) UpdateStoreStock(order_id uint64) error {
 		var updateStock []models.StoreStock
 
 		for item, amount := range itemsOrdered {
-			itemToUpdate, _ := s.storeStockRepo.FindByItem(item)
-
+			itemToUpdate, err := s.storeStockRepo.FindByItem(item)
+			if err != nil {
+				continue
+			}
 			itemToUpdate.Amount -= amount
+			if itemToUpdate.Amount < 0 {
+				deficit := -itemToUpdate.Amount
+				sd := StockDeficit{MainSku: itemToUpdate.SKU_Parent, Amount: deficit}
+				log.Println("Stock deficit: ", sd)
+				itemToUpdate.Amount = 0
+			}
 			updateStock = append(updateStock, itemToUpdate)
 		}
-		log.Println(updateStock)
 		s.storeStockRepo.UpdateAll(&updateStock)
+		err := s.orderRepo.UpdateStatus("In Progress", orders.ID)
+		log.Println(err)
+
 		return nil
 	})
+}
+
+func getChilds(items []models.ItemsParents) []models.Item {
+	var results []models.Item
+	for _, child := range items {
+		results = append(results, *child.Child)
+	}
+	return results
+}
+func (s *StoreServiceImpl) GetStoreStock(storeName string, page int, pageSize int) []dtos.ItemStockInfo {
+	store := s.storeRepo.FindByName(storeName)
+	var results []dtos.ItemStockInfo
+	stock, _ := s.storeStockRepo.FindByStore(store.ID, page, pageSize)
+	for _, itemInStock := range stock {
+		childs, _ := s.itemsParentsRepo.FindByParent(itemInStock.ID, 3, 0)
+		results = append(results, dtos.ItemStockInfo{Itemname: *itemInStock.Item.Name, SKU: itemInStock.SKU_Parent, Amount: itemInStock.Amount, Childs: getChilds(childs)})
+	}
+
+	return results
+
 }

@@ -8,7 +8,7 @@ type Repository[T any] interface {
 	Create(item *T) error
 	CreateAll(items *[]T) (int64, error)
 	FindByID(id uint64) (*T, error)
-	FindAll() ([]T, error)
+	FindAll(pagesize int, offset int) ([]T, error)
 	Update(item *T) error
 	UpdateAll(items *[]T)
 	Delete(id uint64) error
@@ -41,9 +41,9 @@ func (r *GORMRepository[T]) FindByID(id uint64) (*T, error) {
 	return &item, result.Error
 }
 
-func (r *GORMRepository[T]) FindAll() ([]T, error) {
+func (r *GORMRepository[T]) FindAll(pageSize int, offset int) ([]T, error) {
 	var items []T
-	result := r.DB.Find(&items)
+	result := r.DB.Limit(pageSize).Offset(offset).Find(&items)
 	return items, result.Error
 }
 

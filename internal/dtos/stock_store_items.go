@@ -1,11 +1,10 @@
 package dtos
 
+import "prendeluz/erp/internal/models"
+
 type ItemStockInfo struct {
-	itemname string
-	sku      string
-	cantidad int64
-}
-type StoreStockItems struct {
-	name  string
-	items []ItemStockInfo
+	Itemname string
+	SKU      string
+	Childs   []models.Item
+	Amount   int64
 }
