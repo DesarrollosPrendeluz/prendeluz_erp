@@ -1,0 +1,13 @@
+services:
+  app:
+    image: do_erp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mi-proyecto-go-app
+    volumes:
+      - ./src:/app
+    working_dir: /app
+
+    ports:
+      - "8080:8080"
