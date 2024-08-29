@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"prendeluz/erp/internal/config"
 	"prendeluz/erp/internal/db"
@@ -26,7 +27,6 @@ func main() {
 	router := gin.Default()
 
 	routes.RegisterRoutes(router)
-
-	router.Run(":8080")
+	router.Run(fmt.Sprintf(":%d", cfg.Server.Port))
 
 }
