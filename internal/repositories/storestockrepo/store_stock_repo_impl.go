@@ -14,6 +14,7 @@ type StoreStockRepoImpl struct {
 func NewStoreStockRepository(db *gorm.DB) *StoreStockRepoImpl {
 	return &StoreStockRepoImpl{repositories.NewGORMRepository(db, models.StoreStock{})}
 }
+
 func (repo *StoreStockRepoImpl) FindByItem(sku_parent string) (models.StoreStock, error) {
 	var storeStocks models.StoreStock
 
