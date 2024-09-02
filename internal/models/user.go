@@ -17,3 +17,7 @@ type User struct {
 	UpdatedAt       time.Time      `gorm:"autoUpdateTime"`           // Marca de tiempo de última actualización
 	DeletedAt       gorm.DeletedAt `gorm:"index"`                    // Soporte para borrado lógico, si se desea
 }
+
+func (User) TableName() string {
+	return "users"
+}
