@@ -47,10 +47,11 @@ func (repo *UserImpl) CheckCredentials(email string, password string) (string, e
 
 func (repo *UserImpl) GenerateUserToken(userId uint64) string {
 	token := utils.GenerateRandomString(240)
+	tokenDB := "Bearer " + token
 	tokenRepo := *tokenrepo.NewTokenRepository(db.DB)
 	newToken := &models.AccesTokens{
 		UserId: userId,
-		Token:  token,
+		Token:  tokenDB,
 		Valid:  true,
 	}
 	tokenRepo.Create(newToken)
