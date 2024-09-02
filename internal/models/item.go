@@ -10,12 +10,11 @@ const (
 )
 
 type Item struct {
-	ID      uint64  `gorm:"primaryKey;autoIncrement"`
-	MainSKU string  `gorm:"size:255;not null;uniqueIndex"`
-	EAN     string  `gorm:"size:255;not null;index"`
-	Name    *string `gorm:"size:255"`
-	//ItemType ItemType `gorm:"type:enum('father','son');not null;default:'father'"`
-	ItemType                 ItemType `gorm:"size:255;not null; default 'father'"`
+	ID                       uint64   `gorm:"primaryKey;autoIncrement"`
+	MainSKU                  string   `gorm:"size:255;not null;uniqueIndex"`
+	EAN                      string   `gorm:"size:255;not null;index"`
+	Name                     *string  `gorm:"size:255"`
+	ItemType                 ItemType `gorm:"type:enum('father','son');not null;default:'father'"`
 	AssignmentCost           float64  `gorm:"not null"`
 	Description              *string  `gorm:"type:text"`
 	Price                    *float64
