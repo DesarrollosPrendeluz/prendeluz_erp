@@ -6,7 +6,7 @@ type AccesTokens struct {
 	ID        uint64 `gorm:"primaryKey;autoIncrement"`
 	UserId    uint64 `gorm:"primaryKey;autoIncrement"`
 	Token     string `gorm:"size:255;not null;uniqueIndex"`
-	Valid     bool   `gorm:"not null;default:false"`
+	Valid     bool   `gorm:"not null;default:true"`
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
 }
