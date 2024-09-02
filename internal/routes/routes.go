@@ -7,6 +7,13 @@ import (
 )
 
 func RegisterRoutes(router *gin.Engine) {
+	router.POST("/login", controllers.Login)
+
+	testRoutes := router.Group("/test").Use()
+	{
+		testRoutes.POST("/", controllers.Login)
+
+	}
 
 	orderRoutes := router.Group("/order").Use()
 	{
