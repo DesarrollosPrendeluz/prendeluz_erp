@@ -6,5 +6,5 @@ type Store struct {
 }
 
 func (Store) TableName() string {
-	return "store"
+	return "stores"
 }
