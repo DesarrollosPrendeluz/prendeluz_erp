@@ -9,4 +9,5 @@ type StoreStockRepo interface {
 	repositories.Repository[models.StoreStock]
 	FindByItem(parent_sku string) (models.StoreStock, error)
 	FindByStore(idStore uint64, pageSize int, offset int) ([]models.StoreStock, error)
+	FindByStoreAndSearchParams(idStore uint64, searchParam string, pageSize int, offset int) ([]models.StoreStock, error)
 }

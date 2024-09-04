@@ -7,5 +7,5 @@ import (
 
 type StoreService interface {
 	UpdateStoreStock(order []models.OrderItem) error
-	GetStoreStock(storeName string, page int, pageSize int) []dtos.ItemStockInfo
+	GetStoreStock(storeName string, page int, pageSize int, searchParam string) []dtos.ItemStockInfo
 }

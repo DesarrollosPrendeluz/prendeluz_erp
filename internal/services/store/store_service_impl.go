@@ -101,10 +101,15 @@ func getChilds(items []models.ItemsParents) []models.Item {
 	}
 	return results
 }
-func (s *StoreServiceImpl) GetStoreStock(storeName string, page int, pageSize int) []dtos.ItemStockInfo {
+func (s *StoreServiceImpl) GetStoreStock(storeName string, page int, pageSize int, searchParam string) []dtos.ItemStockInfo {
 	store := s.storeRepo.FindByName(storeName)
 	var results []dtos.ItemStockInfo
-	stock, _ := s.storeStockRepo.FindByStore(store.ID, page, pageSize)
+	var stock []models.StoreStock
+	if searchParam == "" {
+		stock, _ = s.storeStockRepo.FindByStore(store.ID, page, pageSize)
+	} else {
+		stock, _ = s.storeStockRepo.FindByStoreAndSearchParams(store.ID, searchParam, page, pageSize)
+	}
 	for _, itemInStock := range stock {
 		childs, _ := s.itemsParentsRepo.FindByParent(itemInStock.ID, 3, 0)
 		results = append(results, dtos.ItemStockInfo{Itemname: *itemInStock.Item.Name, SKU: itemInStock.SKU_Parent, Amount: itemInStock.Amount, Childs: getChilds(childs)})

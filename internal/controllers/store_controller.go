@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"net/http"
-	"prendeluz/erp/internal/services/store"
+	services "prendeluz/erp/internal/services/store"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -18,9 +18,10 @@ func UpdateStore(c *gin.Context) {
 func GetStoreStock(c *gin.Context) {
 	services := services.NewStoreService()
 	storeName := c.Param("store_name")
+	search := c.Query("search")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 	offset := (page - 1) * pageSize
-	stock := services.GetStoreStock(storeName, pageSize, offset)
+	stock := services.GetStoreStock(storeName, pageSize, offset, search)
 	c.IndentedJSON(http.StatusOK, gin.H{"results": stock})
 }
