@@ -60,8 +60,10 @@ func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, 
 		}
 
 		order := models.Order{
-			Orden_compra: orderCode.OrderCode,
-			Filename:     filename,
+			OrderStatusID: 1,
+			OrderTypeID:   2,
+			Code:          orderCode.OrderCode,
+			Filename:      filename,
 		}
 		ordersList = append(ordersList, order)
 
@@ -93,7 +95,7 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 		}
 		var orderItemToInsert []models.OrderItem
 		for _, order := range succesOrders {
-			for _, tmp := range orderItems[order.Orden_compra] {
+			for _, tmp := range orderItems[order.Code] {
 				tmp.OrderID = order.ID
 				orderItemToInsert = append(orderItemToInsert, tmp)
 			}
@@ -118,7 +120,7 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int) ([]dtos.ItemsPerOrd
 
 	for _, order := range orders {
 		var itemOrder dtos.ItemsPerOrder
-		itemOrder.OrderCode = order.Orden_compra
+		itemOrder.OrderCode = order.Code
 		orderItemList, _ := s.orderItemsRepo.FindByOrder(order.ID)
 
 		for _, orderItem := range orderItemList {

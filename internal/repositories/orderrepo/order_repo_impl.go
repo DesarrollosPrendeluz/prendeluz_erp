@@ -19,7 +19,7 @@ func NewOrderRepository(db *gorm.DB) *OrderRepoImpl {
 func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, error) {
 	var order models.Order
 
-	results := repo.DB.Where("orden_compra LIKE ?", "%"+orderCode+"%").First(&order)
+	results := repo.DB.Where("code LIKE ?", "%"+orderCode+"%").First(&order)
 
 	return order, results.Error
 }
