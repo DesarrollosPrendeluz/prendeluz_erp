@@ -8,10 +8,15 @@ import (
 )
 
 var Order_Status = map[string]int{
-	"inicada":    1,
+	"iniciada":   1,
 	"finalizada": 2,
 	"en_proceso": 3,
 	"en_espera":  4,
+}
+
+var Order_Types = map[string]int{
+	"compra": 1,
+	"venta":  2,
 }
 
 type OrderRepoImpl struct {

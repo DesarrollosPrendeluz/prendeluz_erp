@@ -31,6 +31,7 @@ func NewOrderService() *OrderServiceImpl {
 		orderErrorRepo: errorOrderRepo, itemsRepo: itemsRepo}
 }
 
+// retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
 func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
 	itemsRepo := itemsrepo.NewItemRepository(db.DB)
 
@@ -60,8 +61,8 @@ func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, 
 		}
 
 		order := models.Order{
-			OrderStatusID: 1,
-			OrderTypeID:   2,
+			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
+			OrderTypeID:   uint64(orderrepo.Order_Types["compra"]),
 			Code:          orderCode.OrderCode,
 			Filename:      filename,
 		}
@@ -70,6 +71,8 @@ func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, 
 	}
 	return ordersList, orderItemsOk, errorOrdersList
 }
+
+// Carga el excel y crea las nuevas ordenes en esta caso solo entradas de material
 func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) error {
 
 	excelOrderList, err := utils.ExceltoJSON(file)
@@ -109,6 +112,8 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	})
 }
 
+// Obtiene las ordenes paginadas en base a los parámetros page y pagesize
+// A su vez si recibe los parámetros start dat y end date se filtran dichas ordenes por fecha de creación
 func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, endDate string) ([]dtos.ItemsPerOrder, error) {
 
 	var results []dtos.ItemsPerOrder
@@ -145,6 +150,7 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 
 }
 
+// Actualiza el estado de una orden a completada
 func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 	order, err := s.orderRepo.FindByOrderCode(orderCode)
 	if err != nil {
