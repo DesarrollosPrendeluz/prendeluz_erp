@@ -15,11 +15,14 @@ func NewItemParentRepository(db *gorm.DB) *ItemsParentsRepoImpl {
 	return &ItemsParentsRepoImpl{repositories.NewGORMRepository(db, models.ItemsParents{})}
 }
 
+// Busca un producto hijo en base a su aparición en la tabla parent_items
 func (repo *ItemsParentsRepoImpl) FindByChild(child_id uint64) (models.ItemsParents, error) {
 	var item models.ItemsParents
 	result := repo.DB.Where("child_item_id = ?", child_id).First(&item)
 	return item, result.Error
 }
+
+// Busca un producto padre en base a su aparición en la tabla parent_items y precarga los hijos
 func (repo *ItemsParentsRepoImpl) FindByParent(parent_id uint64, pageSize int, offset int) ([]models.ItemsParents, error) {
 	var item []models.ItemsParents
 	result := repo.DB.Limit(pageSize).Offset(offset).Preload("Child").Where("parent_item_id = ?", parent_id).Find(&item)

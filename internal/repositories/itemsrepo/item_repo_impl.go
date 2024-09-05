@@ -14,6 +14,8 @@ type ItemRepoImpl struct {
 func NewItemRepository(db *gorm.DB) *ItemRepoImpl {
 	return &ItemRepoImpl{repositories.NewGORMRepository(db, models.Item{})}
 }
+
+// Retorna el producto de coincidir el texto parcial o totalmente con el main_sku de la tabla items
 func (repo *ItemRepoImpl) FindByMainSku(sku string) (models.Item, error) {
 	var item models.Item
 

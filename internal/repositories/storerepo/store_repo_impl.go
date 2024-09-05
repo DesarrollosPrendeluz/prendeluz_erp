@@ -15,6 +15,7 @@ func NewStoreRepository(db *gorm.DB) *StoreRepoImpl {
 	return &StoreRepoImpl{repositories.NewGORMRepository(db, models.Store{})}
 }
 
+// Busca un almacén por su nombre
 func (repo *StoreRepoImpl) FindByName(name string) models.Store {
 	var store models.Store
 

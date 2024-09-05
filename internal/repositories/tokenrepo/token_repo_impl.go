@@ -16,6 +16,7 @@ func NewTokenRepository(db *gorm.DB) *TokenImpl {
 	return &TokenImpl{repositories.NewGORMRepository(db, models.AccesTokens{})}
 }
 
+// Verifica si el token dado están en base de datos y es válido
 func (repo *TokenImpl) CheckCredentials(token string) (bool, error) {
 	var tokenModel models.AccesTokens
 
