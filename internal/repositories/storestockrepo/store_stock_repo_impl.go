@@ -1,7 +1,6 @@
 package storestockrepo
 
 import (
-	"fmt"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
@@ -35,7 +34,6 @@ func (repo *StoreStockRepoImpl) FindByStore(idStore uint64, pageSize int, offset
 
 func (repo *StoreStockRepoImpl) FindByStoreAndSearchParams(idStore uint64, searchParam string, pageSize int, offset int) ([]models.StoreStock, error) {
 	var storeStocks []models.StoreStock
-	//TODO:filtros avanzados de busqueda
 	var itemsParent []interface{}
 	var results []map[string]interface{}
 
@@ -59,8 +57,6 @@ func (repo *StoreStockRepoImpl) FindByStoreAndSearchParams(idStore uint64, searc
 			itemsParent = append(itemsParent, parentItemID)
 		}
 	}
-	fmt.Printf("Resulting items: %+v\n", results)
-	fmt.Printf("Resulting array: %+v\n", itemsParent)
 
 	resultsQuery := repo.DB.Limit(pageSize).Offset(offset).Preload("Item").Where("store_id = ?", idStore).Where("parent_main_sku in ?", itemsParent).Find(&storeStocks)
 	//fmt.Printf(json.Encoder(storeStocks))
