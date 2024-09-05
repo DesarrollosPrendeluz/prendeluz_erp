@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Verifica el token de ser valido da el paso de no serlo bloquea la request
 func Auth(c *gin.Context) {
 	token := c.GetHeader("Authorization")
 	tokenRepo := tokenrepo.NewTokenRepository(db.DB)
