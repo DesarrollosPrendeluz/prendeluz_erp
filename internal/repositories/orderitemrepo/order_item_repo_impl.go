@@ -16,7 +16,7 @@ func NewOrderItemRepository(db *gorm.DB) *OrderItemRepoImpl {
 }
 func (repo *OrderItemRepoImpl) FindByOrder(idOrder uint64) ([]models.OrderItem, error) {
 	var orderItems []models.OrderItem
-	results := repo.DB.Where("id_pedido = ?", idOrder).Find(&orderItems)
+	results := repo.DB.Where("order_id = ?", idOrder).Find(&orderItems)
 
 	return orderItems, results.Error
 }
