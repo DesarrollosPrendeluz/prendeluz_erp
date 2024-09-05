@@ -34,6 +34,8 @@ func NewStoreService() *StoreServiceImpl {
 
 	return &StoreServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo, itemsRepo: itemsRepo, storeStockRepo: storeStockRepo, itemsParentsRepo: itemsParentsRepo, storeRepo: storeRepo}
 }
+
+// Obtiene un registro padre en base a uno de sus hijos
 func (s *StoreServiceImpl) getParent(child uint64) (models.Item, error) {
 	itemsParent, _ := s.itemsParentsRepo.FindByChild(child)
 	parent, err := s.itemsRepo.FindByID(itemsParent.ParentItemID)
@@ -41,6 +43,7 @@ func (s *StoreServiceImpl) getParent(child uint64) (models.Item, error) {
 	return *parent, err
 }
 
+// Actualiza el stock de un alamcen en base a una orden
 func (s *StoreServiceImpl) UpdateStoreStock(orderCode string) error {
 	itemsOrdered := make(map[string]int64)
 	orders, _ := s.orderRepo.FindByOrderCode(orderCode)
@@ -94,6 +97,7 @@ func (s *StoreServiceImpl) UpdateStoreStock(orderCode string) error {
 	})
 }
 
+// Obtiene los articulos hijos de un artículo padre
 func getChilds(items []models.ItemsParents) []models.Item {
 	var results []models.Item
 	for _, child := range items {
@@ -101,6 +105,9 @@ func getChilds(items []models.ItemsParents) []models.Item {
 	}
 	return results
 }
+
+// Obtiene los stock de un alamcén en base a su nombre
+// A su vez el stock puede ser filtrado en base al parametro searchParam
 func (s *StoreServiceImpl) GetStoreStock(storeName string, page int, pageSize int, searchParam string) []dtos.ItemStockInfo {
 	store := s.storeRepo.FindByName(storeName)
 	var results []dtos.ItemStockInfo
