@@ -7,6 +7,13 @@ import (
 	"gorm.io/gorm"
 )
 
+var Order_Status = map[string]int{
+	"inicada":    1,
+	"finalizada": 2,
+	"en_proceso": 3,
+	"en_espera":  4,
+}
+
 type OrderRepoImpl struct {
 	*repositories.GORMRepository[models.Order]
 }
@@ -16,6 +23,7 @@ func NewOrderRepository(db *gorm.DB) *OrderRepoImpl {
 
 }
 
+// Busca una orden por el codigo alfanumerico asociado
 func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, error) {
 	var order models.Order
 
@@ -24,12 +32,13 @@ func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, erro
 	return order, results.Error
 }
 
-// FindOrderByDate retrieves an order based on a date range.
-// It accepts startDate and endDate as strings in the format "YYYY-MM-DD".
-// If both startDate and endDate are provided, it returns orders between these dates.
-// If only startDate is provided, it returns orders for that specific date.
-// If only endDate is provided, it returns orders for that specific date.
-// Returns an Order struct and an error if something goes wrong.
+// FindOrderByDate recupera un pedido basado en un rango de fechas.
+// Acepta startDate y endDate como cadenas de texto con el formato: "YYYY-MM-DD".
+// Si se proporcionan tanto startDate como endDate, devuelve los pedidos entre esas fechas.
+// Si solo se proporciona startDate, devuelve los pedidos para esa fecha específica.
+// Si solo se proporciona endDate, devuelve los pedidos para esa fecha específica.
+// Devuelve una estructura Order y un error si algo sale mal.
+
 func (repo *OrderRepoImpl) FindOrderByDate(startDate string, endDate string) ([]models.Order, error) {
 	var order []models.Order
 	var results *gorm.DB
@@ -46,8 +55,10 @@ func (repo *OrderRepoImpl) FindOrderByDate(startDate string, endDate string) ([]
 	return order, results.Error
 }
 
-func (repo *OrderRepoImpl) UpdateStatus(newStatus string, orderID uint64) error {
-	results := repo.DB.Model(models.Order{}).Where("id = ?", orderID).Update("status", newStatus)
+// Actualiza el estado de una orden
+// Recibe el id del nuevo estado y el id de la orden
+func (repo *OrderRepoImpl) UpdateStatus(newStatus int, orderID uint64) error {
+	results := repo.DB.Model(models.Order{}).Where("id = ?", orderID).Update("status_id", newStatus)
 
 	return results.Error
 

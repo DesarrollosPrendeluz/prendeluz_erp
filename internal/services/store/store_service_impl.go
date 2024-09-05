@@ -35,7 +35,7 @@ func NewStoreService() *StoreServiceImpl {
 	return &StoreServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo, itemsRepo: itemsRepo, storeStockRepo: storeStockRepo, itemsParentsRepo: itemsParentsRepo, storeRepo: storeRepo}
 }
 func (s *StoreServiceImpl) getParent(child uint64) (models.Item, error) {
-	itemsParent, err := s.itemsParentsRepo.FindByChild(child)
+	itemsParent, _ := s.itemsParentsRepo.FindByChild(child)
 	parent, err := s.itemsRepo.FindByID(itemsParent.ParentItemID)
 
 	return *parent, err
@@ -87,7 +87,7 @@ func (s *StoreServiceImpl) UpdateStoreStock(orderCode string) error {
 			updateStock = append(updateStock, itemToUpdate)
 		}
 		s.storeStockRepo.UpdateAll(&updateStock)
-		err := s.orderRepo.UpdateStatus("In Progress", orders.ID)
+		err := s.orderRepo.UpdateStatus(orderrepo.Order_Status["en_proceso"], orders.ID)
 		log.Println(err)
 
 		return nil

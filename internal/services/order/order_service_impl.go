@@ -151,7 +151,7 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 		return err
 	}
 
-	s.orderRepo.UpdateStatus("COMPLETE", order.ID)
+	s.orderRepo.UpdateStatus(orderrepo.Order_Status["finalizada"], order.ID)
 
 	return nil
 }
