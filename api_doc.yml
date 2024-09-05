@@ -1,0 +1,195 @@
+openapi: 3.0.3
+info:
+  title: Prendeluz ERP
+  description: |
+    Prendeluz ERP API documentation.
+  version: 0.1.0
+
+servers:
+  - url: https://127.0.0.1:8080
+
+tags:
+  - name: store
+    description: Everything about your store.
+    externalDocs:
+      description: Find out more about the store API.
+      url: http://swagger.io
+  - name: order
+    description: Access to store orders.
+    externalDocs:
+      description: Find out more about our orders API.
+      url: http://swagger.io
+
+paths:
+  /store:
+    get:
+      tags:
+        - store
+      summary: Returns pet inventories by status
+      description: Returns a map of status codes to quantities.
+      operationId: getStoreInventory
+      parameters:
+        - name: search
+          in: query
+          description: Search in ean, main_sku, asin, supplier_reference, ean_asin
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int32
+      security:
+        - api_key: []
+
+  /store/order/{order_code}:
+    patch:
+      tags:
+        - store
+      summary: Modify an order
+      description: Modify an existing order in the store
+      operationId: modifyStoreOrder
+      parameters:
+        - name: order_code
+          in: path
+          required: true
+          description: Code of the order to modify
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+
+  /orders:
+    get:
+      tags:
+        - order
+      summary: Get orders
+      description: Return a list of orders
+      operationId: getOrders
+      parameters:
+        - name: startDate
+          in: query
+          description: Filter with create date (YYYY-MM-DD format)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter with create date (YYYY-MM-DD format)
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderResponse'
+      security:
+        - api_key: []
+
+    post:
+      tags:
+        - order
+      summary: Receive an Excel file and add orders to the database
+      description: Add new orders from an uploaded Excel file
+      operationId: addOrdersFromFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
+
+  schemas:
+    OrderResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            wewe:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderItem'
+            wiwi:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderItem'
+    OrderItem:
+      type: object
+      properties:
+        Sku:
+          type: string
+        Amount:
+          type: integer
+          format: int32
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        petId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          format: int32
+        shipDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          description: Order Status
+          enum:
+            - placed
+            - approved
+            - delivered
+        complete:
+          type: boolean
+          default: false
