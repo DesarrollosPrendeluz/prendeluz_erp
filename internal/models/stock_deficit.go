@@ -1,11 +1,18 @@
 package models
 
-type StockDeficit struct {
-	ID      uint64 `gorm:"primaryKey;autoIncrement"`
-	OrderID uint64 `gorm:"column:id_order;primaryKey;not null"`
-	ItemId  string `gorm:"column:id_item;primaryKey;not null"`
-	Amount  int64
+import "time"
 
-	Item  Item  `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	Store Store `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+type StockDeficit struct {
+	ID         uint64 `gorm:"primaryKey;autoIncrement"`
+	StoreID    uint64 `gorm:"column:store_id;primaryKey;not null"`
+	SKU_Parent string `gorm:"column:parent_main_sku;primaryKey;not null"`
+	Amount     int64  `gorm:"column:quantity"`
+	Item       Item   `gorm:"foreignKey:SKU_Parent;references:main_sku;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Store      Store  `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	CreatedAt  *time.Time
+	UpdatedAt  *time.Time
+}
+
+func (StockDeficit) TableName() string {
+	return "stock_deficits"
 }
