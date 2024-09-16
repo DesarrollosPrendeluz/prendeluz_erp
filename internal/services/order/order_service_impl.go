@@ -32,7 +32,7 @@ func NewOrderService() *OrderServiceImpl {
 }
 
 // retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
-func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
+func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
 	itemsRepo := itemsrepo.NewItemRepository(db.DB)
 
 	var errorOrdersList []models.ErrorOrder
@@ -72,14 +72,14 @@ func itemsExist(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, 
 	return ordersList, orderItemsOk, errorOrdersList
 }
 
-// Carga el excel y crea las nuevas ordenes en esta caso solo entradas de material
+// Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
 func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) error {
 
 	excelOrderList, err := utils.ExceltoJSON(file)
 	if err != nil {
 		return err
 	}
-	succesOrders, orderItems, errorOrders := itemsExist(excelOrderList, filename)
+	succesOrders, orderItems, errorOrders := generateOrdersAndOrderLines(excelOrderList, filename)
 
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		s.orderRepo.SetDB(tx)
