@@ -1,33 +1,32 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
-	"prendeluz/erp/internal/dtos"
-	services "prendeluz/erp/internal/services/order"
+	"prendeluz/erp/internal/db"
+	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetStockDeficit(c *gin.Context) {
-	results := make(map[string][]dtos.ItemInfo)
-	orderService := services.NewOrderService()
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-	startDate := c.Query("startDate")
-	endDate := c.Query("endDate")
 
-	orders, err := orderService.GetOrders(page, pageSize, startDate, endDate)
+	orderRepo := stockdeficitrepo.NewStockDeficitRepository(db.DB)
 
-	for _, order := range orders {
-		results[order.OrderCode] = order.ItemsOrdered
-	}
+	stockDeficits, err := orderRepo.FindAll(pageSize, page)
+	//stockDeficits, err := orderRepo.FindByID(1)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
+	log.Println(stockDeficits)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": stockDeficits})
 	return
 
 }

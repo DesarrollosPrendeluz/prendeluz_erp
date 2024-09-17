@@ -47,7 +47,7 @@ func (r *GORMRepository[T]) FindByID(id uint64) (*T, error) {
 	return &item, result.Error
 }
 
-// Busca todas las ocurrencias de un modelo en base de dtaos pagiandas
+// Busca todas las ocurrencias de un modelo en base de datos pagiandas
 func (r *GORMRepository[T]) FindAll(pageSize int, offset int) ([]T, error) {
 	var items []T
 	result := r.DB.Limit(pageSize).Offset(offset).Find(&items)

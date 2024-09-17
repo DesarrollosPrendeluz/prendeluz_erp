@@ -3,8 +3,14 @@ package stockdeficitrepo
 import (
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+
+	"gorm.io/gorm"
 )
 
-type ItemRepo interface {
-	repositories.Repository[models.StockDeficit]
+type StockDeficitImpl struct {
+	*repositories.GORMRepository[models.StockDeficit]
+}
+
+func NewStockDeficitRepository(db *gorm.DB) *StockDeficitImpl {
+	return &StockDeficitImpl{repositories.NewGORMRepository(db, models.StockDeficit{})}
 }
