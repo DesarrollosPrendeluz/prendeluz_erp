@@ -3,7 +3,10 @@ package controllers
 import (
 	"log"
 	"net/http"
+	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
+	"prendeluz/erp/internal/repositories/orderstatusrepo"
+	"prendeluz/erp/internal/repositories/ordertyperepo"
 	services "prendeluz/erp/internal/services/order"
 	"strconv"
 
@@ -46,5 +49,45 @@ func GetOrders(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
 	return
+
+}
+
+func GetOrderTypes(c *gin.Context) {
+	repo := orderstatusrepo.NewOrderStatusRepository(db.DB)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
+	results, err := repo.FindAll(pageSize, page)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
+	return
+
+}
+
+func GetOrderStatus(c *gin.Context) {
+	repo := ordertyperepo.NewOrderTypeRepository(db.DB)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
+	results, err := repo.FindAll(pageSize, page)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
+	return
+
+}
+
+func CreateOrder(c *gin.Context) {
+
+}
+
+func createOrderLines() {
 
 }
