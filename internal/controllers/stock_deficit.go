@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
@@ -24,7 +23,6 @@ func GetStockDeficit(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
-	log.Println(stockDeficits)
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": stockDeficits})
 	return
