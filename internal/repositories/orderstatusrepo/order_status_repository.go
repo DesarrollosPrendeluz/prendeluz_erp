@@ -5,6 +5,6 @@ import (
 	"prendeluz/erp/internal/repositories"
 )
 
-type ItemRepo interface {
+type OrderStatus struct {
 	repositories.Repository[models.OrderStatus]
 }

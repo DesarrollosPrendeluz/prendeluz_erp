@@ -36,4 +36,15 @@ func RegisterRoutes(router *gin.Engine) {
 		storeRoutes.GET("/:store_name", controllers.GetStoreStock)
 	}
 
+	stockDeficit := router.Group("/stock_deficit").Use(middlewares.Auth)
+	{
+		stockDeficit.GET("", controllers.GetStoreStock)
+	}
+
+	// orderRoutes := router.Group("/order").Use(middlewares.Auth)
+	// {
+	// 	orderRoutes.PATCH("", controllers.UpdateStore)
+	// 	orderRoutes.GET("", controllers.GetStoreStock)
+	// }
+
 }

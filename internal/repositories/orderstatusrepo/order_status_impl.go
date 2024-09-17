@@ -11,6 +11,6 @@ type OrderStatusImpl struct {
 	*repositories.GORMRepository[models.OrderStatus]
 }
 
-func NewOrderStatussitory(db *gorm.DB) *OrderStatusImpl {
+func NewOrderStatusRepository(db *gorm.DB) *OrderStatusImpl {
 	return &OrderStatusImpl{repositories.NewGORMRepository(db, models.OrderStatus{})}
 }

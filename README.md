@@ -13,7 +13,7 @@ Install and run in develop prendeluz erp with go
 ```
 
 ## Run tests
-Run tests , ejecutar el comando siguiente en el directorio donde esten los test
+Run tests, ejecutar el comando siguiente en el directorio donde esten los test
 
 ```bash
   go test 

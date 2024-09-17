@@ -1,4 +1,4 @@
-package ordertyperepo
+package stockdeficitrepo
 
 import (
 	"prendeluz/erp/internal/models"
@@ -6,5 +6,5 @@ import (
 )
 
 type ItemRepo interface {
-	repositories.Repository[models.OrderType]
+	repositories.Repository[models.StockDeficit]
 }
