@@ -35,7 +35,9 @@ func AddOrder(c *gin.Context) {
 
 func GetOrders(c *gin.Context) {
 	results := make(map[string][]dtos.ItemInfo)
+	orderRepo := orderrepo.NewOrderRepository(db.DB)
 	orderService := services.NewOrderService()
+	recount, _ := orderRepo.CountAll()
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 	startDate := c.Query("startDate")
@@ -51,7 +53,7 @@ func GetOrders(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": results, "recount": recount})
 	return
 
 }

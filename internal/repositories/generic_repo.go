@@ -12,6 +12,7 @@ type Repository[T any] interface {
 	Update(item *T) error
 	UpdateAll(items *[]T)
 	Delete(id uint64) error
+	CountAll() (int64, error)
 	SetDB(db *gorm.DB)
 }
 
@@ -67,4 +68,11 @@ func (r *GORMRepository[T]) UpdateAll(items *[]T) error {
 // Borra la instancia de base de datos del modelo dado
 func (r *GORMRepository[T]) Delete(id uint64) error {
 	return r.DB.Delete(&r.model, id).Error
+}
+
+// Recuento de las instancias en base de datos
+func (r *GORMRepository[T]) CountAll() (int64, error) {
+	var count int64
+	err := r.DB.Model(&r.model).Count(&count).Error
+	return count, err
 }
