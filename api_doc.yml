@@ -113,7 +113,168 @@ paths:
                   $ref: '#/components/schemas/OrderResponse'
       security:
         - api_key: []
+    patch:
+      tags:
+        - order
+      summary: Update orders by id
+      description: Update orders
+      operationId: modifyOrdersFromFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      status:
+                        type: integer
+                        example: 2
+                      type:
+                        type: integer
+                        example: 2
+            example:
+              data:
+                - id: 1
+                  status: 2
+                  type: 2
+                - id: 2
+                  status: 2
+                  type: 1
+      responses:
+        '200':
+          description: Las líneas de la orden han sido actualizadas correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Errors:
+                    type: array
+                    items:
+                      type: string
+                    nullable: true
+                    example: null
+                  Ok:
+                    type: string
+                    example: "Orders lines are updated"
+              example:
+                Errors: null
+                Ok: "Orders lines are updated"
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+  /orders/type:
+    get:
+      tags:
+        - order
+      summary: Get orders types
+      description: Return a list of orders types
+      operationId: getOrderTypes
+      parameters:
 
+      responses:
+        '200':
+          description: Lista de tipos de transacciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ID:
+                          type: integer
+                          example: 1
+                        Name:
+                          type: string
+                          example: "Compra a proveedor"
+                        StockModify:
+                          type: string
+                          enum: ["in", "out"]
+                          example: "in"
+                        CreatedAt:
+                          type: string
+                          format: date-time
+                          example: "2024-09-16T06:20:24+02:00"
+                        UpdatedAt:
+                          type: string
+                          format: date-time
+                          example: "2024-09-16T06:20:24+02:00"
+              example:
+                data:
+                  - ID: 1
+                    Name: "Compra a proveedor"
+                    StockModify: "in"
+                    CreatedAt: "2024-09-16T06:20:24+02:00"
+                    UpdatedAt: "2024-09-16T06:20:24+02:00"
+                  - ID: 2
+                    Name: "Venta"
+                    StockModify: "out"
+                    CreatedAt: "2024-09-16T06:20:24+02:00"
+                    UpdatedAt: "2024-09-16T06:20:24+02:00"
+      security:
+        - api_key: []
+  /orders/status:
+    get:
+      tags:
+        - order
+      summary: Get orders statuses
+      description: Return a list of orders status
+      operationId: getOrderStatus
+      parameters:
+
+      responses:
+        '200':
+          description: Lista de estados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ID:
+                          type: integer
+                          example: 1
+                        Name:
+                          type: string
+                          example: "En proceso"
+                        CreatedAt:
+                          type: string
+                          format: date-time
+                          example: "2024-09-16T06:20:24+02:00"
+                        UpdatedAt:
+                          type: string
+                          format: date-time
+                          example: "2024-09-16T06:20:24+02:00"
+              example:
+                data:
+                  - ID: 1
+                    Name: "En proceso"
+                    CreatedAt: "2024-09-16T06:20:24+02:00"
+                    UpdatedAt: "2024-09-16T06:20:24+02:00"
+                  - ID: 2
+                    Name: "En espera"
+                    CreatedAt: "2024-09-16T06:20:24+02:00"
+                    UpdatedAt: "2024-09-16T06:20:24+02:00"
+      security:
+        - api_key: []
+  /orders/add:
     post:
       tags:
         - order
@@ -130,6 +291,123 @@ paths:
                 file:
                   type: string
                   format: binary
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+
+  /ordersLines:
+    patch:
+      tags:
+        - order
+      summary: Update order lines
+      description: Update order lines
+      operationId: updateOrderLines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      item_id:
+                        type: integer
+                        nullable: true
+                        example: 55615
+                      quantity:
+                        type: integer
+                        nullable: true
+                        example: 1000
+                      recived_quantity:
+                        type: integer
+                        example: 20
+            example:
+              data:
+                - id: 1
+                  recived_quantity: 20
+                - id: 2
+                  item_id: 55615
+                  quantity: 1000
+                  recived_quantity: 500
+      responses:
+        '200':
+          description: Las  ordenes han sido actualizadas correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Errors:
+                    type: array
+                    items:
+                      type: string
+                    nullable: true
+                    example: null
+                  Ok:
+                    type: string
+                    example: "Orders  are updated"
+              example:
+                Errors: null
+                Ok: "Orders  are updated"
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+
+
+  /orders/addByRequest:
+    post:
+      tags:
+        - order
+      summary: Receive a json and add orders and order lines
+      description: Add new orders 
+      operationId: addOrdersFromRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      order:
+                        type: object
+                        properties:
+                          status:
+                            type: integer
+                            example: 1
+                          type:
+                            type: integer
+                            example: 1
+                      lines:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            item_id:
+                              type: integer
+                              example: 41
+                            quantity:
+                              type: integer
+                              example: 10
+                            recived_quantity:
+                              type: integer
+                              example: 5
       responses:
         '200':
           description: Successful operation
