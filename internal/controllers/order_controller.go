@@ -144,3 +144,37 @@ func createOrderLines(order models.Order, lines []dtos.Line) error {
 	return nil
 
 }
+
+func EditOrders(c *gin.Context) {
+	var requestBody dtos.OrdersToUpdatePartially
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Acceder a los valores del cuerpo
+	order := orderrepo.NewOrderRepository(db.DB)
+	for _, dataItem := range requestBody.Data {
+		model, err := order.FindByID(dataItem.Id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if dataItem.Status != nil {
+			model.OrderStatusID = *dataItem.Status
+		}
+		if dataItem.Type != nil {
+			model.OrderTypeID = *dataItem.Type
+		}
+		order.Update(model)
+
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders are updated"})
+
+}
+
+func EditOrdersLines(c *gin.Context) {
+
+}
