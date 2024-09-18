@@ -10,6 +10,12 @@ type OrderToUpdate struct {
 	Status *uint64 `json:"status"`
 	Type   *uint64 `json:"type"`
 }
+type LineToUpdate struct {
+	Id              uint64  `json:"id"`
+	ItemID          *uint64 `json:"item_id"`
+	Quantity        *int64  `json:"quantity"`
+	RecivedQuantity *int64  `json:"recived_quantity"`
+}
 
 type Line struct {
 	ItemID          uint64 `json:"item_id"`
@@ -28,4 +34,7 @@ type OrderWithLinesRequest struct {
 
 type OrdersToUpdatePartially struct {
 	Data []OrderToUpdate `json:"data"`
+}
+type OrdersLinesToUpdatePartially struct {
+	Data []LineToUpdate `json:"data"`
 }

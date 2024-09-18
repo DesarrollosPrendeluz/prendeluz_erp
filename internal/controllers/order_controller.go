@@ -54,7 +54,6 @@ func GetOrders(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": results, "recount": recount})
-	return
 
 }
 
@@ -70,7 +69,6 @@ func GetOrderTypes(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
-	return
 
 }
 
@@ -86,7 +84,6 @@ func GetOrderStatus(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
-	return
 
 }
 
@@ -147,6 +144,7 @@ func createOrderLines(order models.Order, lines []dtos.Line) error {
 
 func EditOrders(c *gin.Context) {
 	var requestBody dtos.OrdersToUpdatePartially
+	var errorList []error
 
 	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
@@ -168,13 +166,49 @@ func EditOrders(c *gin.Context) {
 		if dataItem.Type != nil {
 			model.OrderTypeID = *dataItem.Type
 		}
-		order.Update(model)
+		error := order.Update(model)
+		if error != nil {
+			errorList = append(errorList, error)
+		}
 
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders are updated"})
+	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders are updated", "Errors": errorList})
 
 }
 
 func EditOrdersLines(c *gin.Context) {
+	var requestBody dtos.OrdersLinesToUpdatePartially
+	var errorList []error
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Acceder a los valores del cuerpo
+	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
+	for _, dataItem := range requestBody.Data {
+		model, err := orderLines.FindByID(dataItem.Id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if dataItem.ItemID != nil {
+			model.ItemID = *dataItem.ItemID
+		}
+		if dataItem.RecivedQuantity != nil {
+			model.RecivedAmount = *dataItem.RecivedQuantity
+		}
+		if dataItem.Quantity != nil {
+			model.Amount = *dataItem.Quantity
+		}
+		error := orderLines.Update(model)
+		if error != nil {
+			errorList = append(errorList, error)
+		}
+
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders lines are updated", "Errors": errorList})
 
 }
