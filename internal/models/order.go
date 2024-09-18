@@ -16,9 +16,10 @@ type Order struct {
 	OrderStatusID uint64
 	OrderTypeID   uint64
 	Code          string `gorm:"primaryKey;size:255;not null"`
-	Filename      string `gorm:"size:255; not null"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	Filename      string `gorm:"column:file_name;size:255;notnull"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 	OrderStatus OrderStatus `gorm:"foreignKey:OrderStatusID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	OrderType   OrderType   `gorm:"foreignKey:OrderTypeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`

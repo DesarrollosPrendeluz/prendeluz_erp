@@ -30,6 +30,8 @@ func RegisterRoutes(router *gin.Engine) {
 		orderRoutes.GET("", controllers.GetOrders)
 		orderRoutes.GET("/status", controllers.GetOrderStatus)
 		orderRoutes.GET("/type", controllers.GetOrderTypes)
+		orderRoutes.POST("/addByRequest", controllers.CreateOrder)
+
 	}
 
 	storeRoutes := router.Group("/store").Use(middlewares.Auth)
