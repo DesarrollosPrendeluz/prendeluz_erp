@@ -29,6 +29,7 @@ func RegisterRoutes(router *gin.Engine) {
 		orderRoutes.GET("", controllers.GetOrders)
 		orderRoutes.GET("/status", controllers.GetOrderStatus)
 		orderRoutes.GET("/type", controllers.GetOrderTypes)
+		orderRoutes.GET("/supplierOrders", controllers.GetSupplierOrders)
 		orderRoutes.POST("/add", controllers.AddOrder)
 		orderRoutes.POST("/addByRequest", controllers.CreateOrder)
 		orderRoutes.PATCH("", controllers.EditOrders)
