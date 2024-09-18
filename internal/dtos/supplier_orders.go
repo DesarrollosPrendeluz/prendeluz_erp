@@ -2,7 +2,7 @@ package dtos
 
 type SupplierOrders struct {
 	OrderCode     uint64  `json:"order_code"`
-	StockToBuy    int     `json:"stock_to_buy"`
+	StockToBuy    int64   `json:"stock_to_buy"`
 	ItemSKU       string  `json:"item_sku"`
 	ItemID        string  `json:"item_id"`
 	FatherId      string  `json:"father_id"`
