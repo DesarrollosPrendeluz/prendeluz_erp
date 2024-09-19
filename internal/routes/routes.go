@@ -23,7 +23,6 @@ func RegisterRoutes(router *gin.Engine) {
 		MaxAge: 12 * time.Hour,
 	}))
 	router.POST("/login", controllers.Login)
-	router.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
 
 	orderRoutes := router.Group("/order").Use(middlewares.Auth)
 	{

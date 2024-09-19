@@ -15,12 +15,14 @@ type LineToUpdate struct {
 	ItemID          *uint64 `json:"item_id"`
 	Quantity        *int64  `json:"quantity"`
 	RecivedQuantity *int64  `json:"recived_quantity"`
+	StoreID         *int64  `json:"store_id"`
 }
 
 type Line struct {
 	ItemID          uint64 `json:"item_id"`
 	Quantity        int64  `json:"quantity"`
 	RecivedQuantity int64  `json:"recived_quantity"`
+	StoreID         int64  `json:"store_id"`
 }
 
 type DataItem struct {

@@ -8,6 +8,7 @@ type OrderItem struct {
 	ItemID        uint64 `gorm:"column:item_id;not null"`
 	Amount        int64  `gorm:"column:quantity;not null"`
 	RecivedAmount int64  `gorm:"column:recived_quantity;not null"`
+	StoreID       int64  `gorm:"column:store_id;not null"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 

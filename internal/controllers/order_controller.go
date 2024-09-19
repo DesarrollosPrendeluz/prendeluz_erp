@@ -127,6 +127,7 @@ func createOrderLines(order models.Order, lines []dtos.Line) error {
 			ItemID:        line.ItemID,
 			Amount:        line.Quantity,
 			RecivedAmount: line.RecivedQuantity,
+			StoreID:       line.StoreID,
 			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
 		}
@@ -202,6 +203,9 @@ func EditOrdersLines(c *gin.Context) {
 		}
 		if dataItem.Quantity != nil {
 			model.Amount = *dataItem.Quantity
+		}
+		if dataItem.StoreID != nil {
+			model.Amount = *dataItem.StoreID
 		}
 		error := orderLines.Update(model)
 		if error != nil {
