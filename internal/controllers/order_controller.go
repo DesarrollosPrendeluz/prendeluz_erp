@@ -10,6 +10,7 @@ import (
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
 	"prendeluz/erp/internal/repositories/ordertyperepo"
+	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	services "prendeluz/erp/internal/services/order"
 	"strconv"
 	"time"
@@ -136,6 +137,15 @@ func createOrderLines(order models.Order, lines []dtos.Line) error {
 		if err := repo.Create(&orderLine); err != nil {
 
 			return err
+		}
+		if order.OrderTypeID == uint64(2) && line.ClientID != nil {
+			outRelRepo := outorderrelationrepo.NewOutOrderRelationRepository(db.DB)
+			outRel := models.OutOrderRelation{
+				ClientID:    *line.ClientID,
+				OrderLineID: orderLine.ID,
+			}
+			outRelRepo.Create(&outRel)
+
 		}
 	}
 
