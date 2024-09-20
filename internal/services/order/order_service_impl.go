@@ -53,8 +53,10 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) 
 				errorOrdersList = append(errorOrdersList, errorOrder)
 			} else {
 				orderItem := models.OrderItem{
-					ItemID: item.ID,
-					Amount: orderInfo.Amount,
+					ItemID:        item.ID,
+					Amount:        orderInfo.Amount,
+					RecivedAmount: 0,
+					StoreID:       1,
 				}
 				orderItemsOk[orderCode.OrderCode] = append(orderItemsOk[orderCode.OrderCode], orderItem)
 			}
