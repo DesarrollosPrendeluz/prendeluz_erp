@@ -12,6 +12,8 @@ type OrderInfo struct {
 	MainSku   string
 	Amount    int64
 	ParentSku string
+	Store     uint64
+	Client    uint64
 }
 
 type ExcelOrder struct {
@@ -36,11 +38,16 @@ func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 	for _, row := range rows[3:] {
 		if len(row) > 4 {
 			amount, _ := strconv.ParseInt(row[3], 10, 64)
+			store, _ := strconv.ParseUint(row[6], 10, 64)
+			client, _ := strconv.ParseUint(row[7], 10, 64)
+
 			item := OrderInfo{
 				ASIN:      row[1],
 				MainSku:   row[2],
 				Amount:    amount,
 				ParentSku: row[4],
+				Store:     store,
+				Client:    client,
 			}
 			// if item.MainSku == "#N/D" || item.MainSku == "#N/A" {
 			// 	continue

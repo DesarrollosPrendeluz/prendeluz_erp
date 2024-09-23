@@ -9,8 +9,9 @@ type ErrorOrder struct {
 	Main_Sku  string `gorm:"size:255;not null"`
 	Error     string `gorm:"size:255;not null"`
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (ErrorOrder) TableName() string {
-	return "pedido_error"
+	return "order_errors"
 }

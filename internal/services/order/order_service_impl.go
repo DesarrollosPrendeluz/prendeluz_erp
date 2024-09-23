@@ -1,17 +1,18 @@
 package services
 
 import (
+	"fmt"
 	"io"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 	"prendeluz/erp/internal/repositories/itemsrepo"
+	"prendeluz/erp/internal/repositories/ordererrorrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/utils"
-
-	"gorm.io/gorm"
 )
 
 type OrderServiceImpl struct {
@@ -56,7 +57,8 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) 
 					ItemID:        item.ID,
 					Amount:        orderInfo.Amount,
 					RecivedAmount: 0,
-					StoreID:       1,
+					StoreID:       int64(orderInfo.Store),
+					ClientID:      orderInfo.Client,
 				}
 				orderItemsOk[orderCode.OrderCode] = append(orderItemsOk[orderCode.OrderCode], orderItem)
 			}
@@ -64,7 +66,7 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) 
 
 		order := models.Order{
 			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
-			OrderTypeID:   uint64(orderrepo.Order_Types["compra"]),
+			OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
 			Code:          orderCode.OrderCode,
 			Filename:      filename,
 		}
@@ -76,42 +78,50 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) 
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
 func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) error {
-
+	fmt.Println("entra")
 	excelOrderList, err := utils.ExceltoJSON(file)
+
 	if err != nil {
 		return err
 	}
 	succesOrders, orderItems, errorOrders := generateOrdersAndOrderLines(excelOrderList, filename)
+	orderRepo := orderrepo.NewOrderRepository(db.DB)
+	orderItem := orderitemrepo.NewOrderItemRepository(db.DB)
+	out := outorderrelationrepo.NewOutOrderRelationRepository(db.DB)
+	orderErr := ordererrorrepo.NewOrderErrRepository(db.DB)
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		s.orderRepo.SetDB(tx)
-		s.orderItemsRepo.SetDB(tx)
-		s.orderErrorRepo.SetDB(tx)
-		_, err := s.orderRepo.CreateAll(&succesOrders)
+	_, errs := orderRepo.CreateAll(&succesOrders)
+	if errs != nil {
+		return err
+	}
+
+	if len(errorOrders) > 0 {
+		_, err := orderErr.CreateAll(&errorOrders)
 		if err != nil {
 			return err
 		}
+	}
+	var orderItemToInsert []models.OrderItem
+	for _, order := range succesOrders {
+		for _, tmp := range orderItems[order.Code] {
+			tmp.OrderID = order.ID
+			orderItemToInsert = append(orderItemToInsert, tmp)
+		}
+	}
+	for _, orderLine := range orderItemToInsert {
+		err = orderItem.Create(&orderLine)
+		out.Create(&models.OutOrderRelation{
+			ClientID:    orderLine.ClientID,
+			OrderLineID: orderLine.ID,
+		})
 
-		if len(errorOrders) > 0 {
-			_, err := s.orderErrorRepo.CreateAll(&errorOrders)
-			if err != nil {
-				return err
-			}
-		}
-		var orderItemToInsert []models.OrderItem
-		for _, order := range succesOrders {
-			for _, tmp := range orderItems[order.Code] {
-				tmp.OrderID = order.ID
-				orderItemToInsert = append(orderItemToInsert, tmp)
-			}
-		}
-		_, err = s.orderItemsRepo.CreateAll(&orderItemToInsert)
-		if err != nil {
-			return err
-		}
-		return nil
+	}
 
-	})
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
 
 // Obtiene las ordenes paginadas en base a los parámetros page y pagesize
