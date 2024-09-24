@@ -117,15 +117,19 @@ func CreateOrder(c *gin.Context) {
 			createOrderLines(orderObject, lines)
 
 		}
-		fmt.Println("pasa")
-		if err := db.DB.Raw("CALL UpdateStockDeficitByStore();").Error; err != nil {
+		if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
 			log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+		} else {
+			fmt.Println("en toría se ha ejecutado: CALL UpdateStockDeficitByStore();")
+
 		}
-		fmt.Println("pasa2")
 
 		// Llamada al segundo procedimiento almacenado
-		if err := db.DB.Raw("CALL UpdatePendingStocks();").Error; err != nil {
+		if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
 			log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
+		} else {
+			fmt.Println("en toría se ha ejecutado: CALL UpdatePendingStocks()")
+
 		}
 
 	}
