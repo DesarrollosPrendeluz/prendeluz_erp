@@ -24,17 +24,21 @@ func RegisterRoutes(router *gin.Engine) {
 	}))
 	router.POST("/login", controllers.Login)
 
-	orderRoutes := router.Group("/order").Use(middlewares.Auth)
+	allUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
-		orderRoutes.GET("", controllers.GetOrders)
-		orderRoutes.GET("/status", controllers.GetOrderStatus)
-		orderRoutes.GET("/type", controllers.GetOrderTypes)
-		orderRoutes.GET("/supplierOrders", controllers.GetSupplierOrders)
-		orderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
-		orderRoutes.POST("/add", controllers.AddOrder)
-		orderRoutes.POST("/addByRequest", controllers.CreateOrder)
-		orderRoutes.PATCH("", controllers.EditOrders)
-		orderRoutes.PATCH("/orderLines", controllers.EditOrdersLines)
+		allUsersOrderRoutes.GET("", controllers.GetOrders)
+		allUsersOrderRoutes.GET("/status", controllers.GetOrderStatus)
+		allUsersOrderRoutes.GET("/type", controllers.GetOrderTypes)
+		allUsersOrderRoutes.GET("/supplierOrders", controllers.GetSupplierOrders)
+		allUsersOrderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
+
+	}
+	adminUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AdminStoreUsers)
+	{
+		adminUsersOrderRoutes.POST("/add", controllers.AddOrder)
+		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
+		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
+		adminUsersOrderRoutes.PATCH("/orderLines", controllers.EditOrdersLines)
 
 	}
 
