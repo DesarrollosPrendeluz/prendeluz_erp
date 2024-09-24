@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"prendeluz/erp/internal/db"
@@ -115,6 +116,16 @@ func CreateOrder(c *gin.Context) {
 		if repo.Create(&orderObject) == nil {
 			createOrderLines(orderObject, lines)
 
+		}
+		fmt.Println("pasa")
+		if err := db.DB.Raw("CALL UpdateStockDeficitByStore();").Error; err != nil {
+			log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+		}
+		fmt.Println("pasa2")
+
+		// Llamada al segundo procedimiento almacenado
+		if err := db.DB.Raw("CALL UpdatePendingStocks();").Error; err != nil {
+			log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
 		}
 
 	}
