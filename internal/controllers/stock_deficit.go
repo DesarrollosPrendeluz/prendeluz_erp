@@ -24,6 +24,6 @@ func GetStockDeficit(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": stockDeficits})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stockDeficits}})
 
 }

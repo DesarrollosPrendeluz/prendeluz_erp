@@ -20,7 +20,7 @@ func GetSupplierOrders(c *gin.Context) {
 		statusInt, err := strconv.Atoi(statusStr)
 		if err != nil {
 			// Si hay un error en la conversión, responde con un error de Bad Request
-			c.JSON(http.StatusBadRequest, gin.H{"error": "El parámetro 'status' debe ser un número entero."})
+			c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": "El parámetro 'status' debe ser un número entero."}})
 			return
 		}
 		// Asigna el valor a la variable status como puntero
@@ -28,10 +28,10 @@ func GetSupplierOrders(c *gin.Context) {
 	}
 	data, err := repo.GetSupplierOrders(status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"Results": gin.H{"error": err}})
 		return
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"data": data})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": data}})
 }
 func DownloadSupplierOrderExcel(c *gin.Context) {
 	// Ejemplo de obtención de datos desde el repositorio
@@ -43,7 +43,7 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 	if statusStr != "" {
 		statusInt, err := strconv.Atoi(statusStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "El parámetro 'status' debe ser un número entero."})
+			c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": "El parámetro 'status' debe ser un número entero."}})
 			return
 		}
 		status = &statusInt

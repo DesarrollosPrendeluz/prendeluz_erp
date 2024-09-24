@@ -23,5 +23,5 @@ func GetStoreStock(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 	offset := (page - 1) * pageSize
 	stock := services.GetStoreStock(storeName, pageSize, offset, search)
-	c.IndentedJSON(http.StatusOK, gin.H{"results": stock})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stock}})
 }

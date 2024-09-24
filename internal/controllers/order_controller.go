@@ -36,7 +36,7 @@ func AddOrder(c *gin.Context) {
 
 	serviceOrder.UploadOrderExcel(file, header.Filename)
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Upload succesfully"})
+	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"Ok": "Upload succesfully"}})
 
 }
 
@@ -56,11 +56,11 @@ func GetOrders(c *gin.Context) {
 		results[order.OrderCode] = order.ItemsOrdered
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"Results": gin.H{"error": err}})
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": results, "recount": recount})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results, "recount": recount}})
 
 }
 
@@ -70,12 +70,12 @@ func GetOrderTypes(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
 	results, err := repo.FindAll(pageSize, page)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"Results": gin.H{"error": err}})
 		return
 
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results}})
 
 }
 
@@ -85,12 +85,12 @@ func GetOrderStatus(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
 	results, err := repo.FindAll(pageSize, page)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"Results": gin.H{"error": err}})
 		return
 
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": results})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results}})
 
 }
 
@@ -99,7 +99,7 @@ func CreateOrder(c *gin.Context) {
 
 	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": err.Error()}})
 		return
 	}
 
@@ -137,6 +137,7 @@ func CreateOrder(c *gin.Context) {
 		}
 
 	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
 }
 
 func createOrderLines(order models.Order, lines []dtos.Line) error {
@@ -168,9 +169,7 @@ func createOrderLines(order models.Order, lines []dtos.Line) error {
 
 		}
 	}
-
 	return nil
-
 }
 
 func EditOrders(c *gin.Context) {
@@ -203,7 +202,7 @@ func EditOrders(c *gin.Context) {
 		}
 
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders are updated", "Errors": errorList})
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are updated", "Errors": errorList}})
 
 }
 
@@ -263,6 +262,6 @@ func EditOrdersLines(c *gin.Context) {
 		}
 
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds})
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
 
 }
