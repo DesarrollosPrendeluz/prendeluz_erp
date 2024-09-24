@@ -42,3 +42,6 @@ type OrdersToUpdatePartially struct {
 type OrdersLinesToUpdatePartially struct {
 	Data []LineToUpdate `json:"data"`
 }
+type Assign struct {
+	ID int `json:"id"`
+}

@@ -6,13 +6,17 @@ import (
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
+	"prendeluz/erp/internal/middlewares"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
 	"prendeluz/erp/internal/repositories/ordertyperepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
+	"prendeluz/erp/internal/repositories/tokenrepo"
 	services "prendeluz/erp/internal/services/order"
+	"prendeluz/erp/internal/utils"
+
 	"strconv"
 	"time"
 
@@ -206,6 +210,11 @@ func EditOrders(c *gin.Context) {
 func EditOrdersLines(c *gin.Context) {
 	var requestBody dtos.OrdersLinesToUpdatePartially
 	var errorList []error
+	var failedIds []int
+	token := c.GetHeader("Authorization")
+	role, _ := middlewares.ObtainRole(token)
+	var roles []int
+	roles = append(roles, middlewares.StoreManager, middlewares.StoreSupervisor)
 
 	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
@@ -216,29 +225,44 @@ func EditOrdersLines(c *gin.Context) {
 	// Acceder a los valores del cuerpo
 	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
 	for _, dataItem := range requestBody.Data {
-		model, err := orderLines.FindByID(dataItem.Id)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if dataItem.ItemID != nil {
-			model.ItemID = *dataItem.ItemID
-		}
-		if dataItem.RecivedQuantity != nil {
-			model.RecivedAmount = *dataItem.RecivedQuantity
-		}
-		if dataItem.Quantity != nil {
-			model.Amount = *dataItem.Quantity
-		}
-		if dataItem.StoreID != nil {
-			model.Amount = *dataItem.StoreID
-		}
-		error := orderLines.Update(model)
-		if error != nil {
-			errorList = append(errorList, error)
+		var assign dtos.Assign
+		repo := tokenrepo.NewTokenRepository(db.DB)
+		user, _ := repo.ReturnDataByToken(token)
+		query := `SELECT id FROM assigned_lines WHERE  order_line_id = ? and user_id = ? LIMIT 1`
+
+		err := db.DB.Debug().Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
+		fmt.Println(role.RoleID)
+		fmt.Println(assign.ID)
+		fmt.Println(utils.ContainsInt(roles, role.RoleID))
+		if (err != nil || assign.ID == 0) && !utils.ContainsInt(roles, role.RoleID) {
+			failedIds = append(failedIds, int(dataItem.Id))
+
+		} else {
+			model, err := orderLines.FindByID(dataItem.Id)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+			if dataItem.ItemID != nil {
+				model.ItemID = *dataItem.ItemID
+			}
+			if dataItem.RecivedQuantity != nil {
+				model.RecivedAmount = *dataItem.RecivedQuantity
+			}
+			if dataItem.Quantity != nil {
+				model.Amount = *dataItem.Quantity
+			}
+			if dataItem.StoreID != nil {
+				model.Amount = *dataItem.StoreID
+			}
+			error := orderLines.Update(model)
+			if error != nil {
+				errorList = append(errorList, error)
+			}
+
 		}
 
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders lines are updated", "Errors": errorList})
+	c.JSON(http.StatusAccepted, gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds})
 
 }

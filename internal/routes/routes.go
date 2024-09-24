@@ -31,14 +31,15 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderRoutes.GET("/type", controllers.GetOrderTypes)
 		allUsersOrderRoutes.GET("/supplierOrders", controllers.GetSupplierOrders)
 		allUsersOrderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
+		allUsersOrderRoutes.PATCH("/orderLines", controllers.EditOrdersLines)
 
 	}
+
 	adminUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AdminStoreUsers)
 	{
 		adminUsersOrderRoutes.POST("/add", controllers.AddOrder)
 		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
 		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
-		adminUsersOrderRoutes.PATCH("/orderLines", controllers.EditOrdersLines)
 
 	}
 

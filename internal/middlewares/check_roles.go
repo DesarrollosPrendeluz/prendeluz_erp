@@ -2,6 +2,10 @@ package middlewares
 
 import (
 	"net/http"
+	"prendeluz/erp/internal/db"
+
+	"prendeluz/erp/internal/repositories/tokenrepo"
+	"prendeluz/erp/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +16,13 @@ const (
 	StoreSupervisor = 6
 )
 
+type Role struct {
+	RoleID int `json:"role_id"`
+}
+type Assign struct {
+	ID int `json:"id"`
+}
+
 // Que el token de la request esté asinado al usuario que tenga un rol válido para la acción
 // func SuperAdminStoreUsers(c *gin.Context) {
 // 	token := c.GetHeader("Authorization")
@@ -21,36 +32,47 @@ const (
 
 // }
 func AdminStoreUsers(c *gin.Context) {
-	//token := c.GetHeader("Authorization")
-	// var roles []int
-	// roles = append(roles, StoreManager, StoreSupervisor)
-	//checkRole(c, token, roles)
-	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-	c.Abort()
-	return
+	token := c.GetHeader("Authorization")
+	var roles []int
+	roles = append(roles, StoreManager, StoreSupervisor)
+	checkRole(c, token, roles)
 
 }
 func AllStoreUsers(c *gin.Context) {
-	//token := c.GetHeader("Authorization")
-	// var roles []int
-	// roles = append(roles, StoreManager, StoreSupervisor, StoreWorker)
-	//checkRole(c, token, roles)
+	token := c.GetHeader("Authorization")
+	var roles []int
+	roles = append(roles, StoreManager, StoreSupervisor, StoreWorker)
+	checkRole(c, token, roles)
+
+}
+
+func checkRole(c *gin.Context, userToken string, roles []int) {
+	flag := false
+	result, err := ObtainRole(userToken)
+
+	if err != nil || !utils.ContainsInt(roles, result.RoleID) {
+		flag = true
+	}
+
+	if flag {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "El rol de su suario carece de los permisos necesarios"})
+		c.Abort()
+		return
+	}
 	c.Next()
 
 }
 
-// func checkRole(c *gin.Context, userToken string, roles []int) {
-// 	token := c.GetHeader("Authorization")
-// 	tokenRepo := tokenrepo.NewTokenRepository(db.DB)
-// 	valid, err := tokenRepo.CheckCredentials(token)
-// 	if err != nil || !valid {
-// 		// Si hay un error o el token no es válido, detener la cadena de middleware y responder con 401
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-// 		c.Abort() // Detener la cadena de middlewares y controladores
-// 		return
-// 	}
+func ObtainRole(userToken string) (Role, error) {
+	var result Role
 
-// 	// Si el token es válido, permitir que la solicitud continúe
-// 	c.Next()
+	repo := tokenrepo.NewTokenRepository(db.DB)
+	model, err := repo.ReturnDataByToken(userToken)
+	if err != nil {
+		return result, err
+	}
+	query := `SELECT role_id FROM model_has_roles WHERE  model_type= 'App\\Models\\User' and model_id = ? LIMIT 1`
+	err = db.DB.Raw(query, model.UserId).Scan(&result).Error
+	return result, err
 
-// }
+}
