@@ -126,14 +126,16 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 
 // Obtiene las ordenes paginadas en base a los parámetros page y pagesize
 // A su vez si recibe los parámetros start dat y end date se filtran dichas ordenes por fecha de creación
-func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, endDate string) ([]dtos.ItemsPerOrder, error) {
+func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, endDate string, typeId int, statusId int) ([]dtos.ItemsPerOrder, error) {
 
 	var results []dtos.ItemsPerOrder
 	var orders []models.Order
 	var err error
 	offset := (page - 1) * pageSize
-	if startDate != "" || endDate != "" {
-		orders, err = s.orderRepo.FindOrderByDate(startDate, endDate)
+
+	if startDate != "" || endDate != "" || typeId != 0 || statusId != 0 {
+		orders, err = s.orderRepo.FindOrderFiltered(startDate, endDate, typeId, statusId)
+
 	} else {
 		orders, err = s.orderRepo.FindAll(pageSize, offset)
 	}

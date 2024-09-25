@@ -34,6 +34,13 @@ func RegisterRoutes(router *gin.Engine) {
 
 	}
 
+	adminUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AdminStoreUsers)
+	{
+		adminUsersOrderRoutes.POST("/add", controllers.AddOrder)
+		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
+		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
+	}
+
 	//TODO: por implementar
 	allUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
@@ -46,13 +53,6 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		allUsersOrderLineAssignRoutes.POST("", controllers.CreateOrderLinesAssignation)
 		allUsersOrderLineAssignRoutes.PATCH("", controllers.EditOrderLinesAssignation)
-	}
-
-	adminUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AdminStoreUsers)
-	{
-		adminUsersOrderRoutes.POST("/add", controllers.AddOrder)
-		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
-		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
 	}
 
 	storeRoutes := router.Group("/store").Use(middlewares.Auth)

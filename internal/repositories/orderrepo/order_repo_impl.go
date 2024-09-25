@@ -45,20 +45,34 @@ func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, erro
 // Si solo se proporciona endDate, devuelve los pedidos para esa fecha específica.
 // Devuelve una estructura Order y un error si algo sale mal.
 
-func (repo *OrderRepoImpl) FindOrderByDate(startDate string, endDate string) ([]models.Order, error) {
-	var order []models.Order
+func (repo *OrderRepoImpl) FindOrderFiltered(startDate string, endDate string, typeId int, statusId int) ([]models.Order, error) {
+	var orders []models.Order
 	var results *gorm.DB
 
-	if startDate != "" && endDate != "" {
+	query := repo.DB
 
-		results = repo.DB.Where("date(created_at) BETWEEN ? AND ?", startDate, endDate).First(&order)
+	// Agregar condiciones de fecha y tipo/estado dinámicamente
+	if startDate != "" && endDate != "" {
+		query = query.Where("date(created_at) BETWEEN ? AND ?", startDate, endDate)
 	} else if startDate != "" {
-		results = repo.DB.Where("date(created_at) = ?", startDate).First(&order)
-	} else {
-		results = repo.DB.Where("date(created_at) = ?", endDate).First(&order)
+		query = query.Where("date(created_at) = ?", startDate)
+	} else if endDate != "" {
+		query = query.Where("date(created_at) = ?", endDate)
 	}
 
-	return order, results.Error
+	// Aquí se crean las combinaciones entre fechas y tipos/estados
+	if typeId != 0 && statusId != 0 {
+		query = query.Where("order_type_id = ? AND order_status_id = ?", typeId, statusId)
+	} else if typeId != 0 {
+		query = query.Where("order_type_id = ?", typeId)
+	} else if statusId != 0 {
+		query = query.Where("order_status_id = ?", statusId)
+	}
+
+	// Ejecutar la consulta
+	results = query.Find(&orders)
+
+	return orders, results.Error
 }
 
 // Actualiza el estado de una orden

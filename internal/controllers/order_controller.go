@@ -45,19 +45,14 @@ func GetOrders(c *gin.Context) {
 	orderRepo := orderrepo.NewOrderRepository(db.DB)
 	orderService := services.NewOrderService()
 	recount, _ := orderRepo.CountAll()
-	page, err := strconv.Atoi(c.Query("page"))
-	if err != nil {
-		page = 0
-	}
-
-	pageSize, err := strconv.Atoi(c.Query("page_size"))
-	if err != nil {
-		pageSize = 10
-	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	orderType, _ := strconv.Atoi(c.DefaultQuery("type_id", "0"))
+	statusType, _ := strconv.Atoi(c.DefaultQuery("status_id", "0"))
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
 
-	orders, err := orderService.GetOrders(page, pageSize, startDate, endDate)
+	orders, err := orderService.GetOrders(page, pageSize, startDate, endDate, orderType, statusType)
 
 	for _, order := range orders {
 		results[order.OrderCode] = order.ItemsOrdered
