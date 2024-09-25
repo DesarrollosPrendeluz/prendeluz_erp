@@ -53,13 +53,13 @@ func RegisterRoutes(router *gin.Engine) {
 		adminUsersOrderRoutes.POST("/add", controllers.AddOrder)
 		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
 		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
-
 	}
 
 	storeRoutes := router.Group("/store").Use(middlewares.Auth)
 	{
 		storeRoutes.PATCH("/:order_code", controllers.UpdateStore)
 		storeRoutes.GET("/:store_name", controllers.GetStoreStock)
+
 	}
 
 	stockDeficit := router.Group("/stock_deficit").Use(middlewares.Auth)

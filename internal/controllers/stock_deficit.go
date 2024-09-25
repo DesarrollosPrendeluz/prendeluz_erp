@@ -10,20 +10,14 @@ import (
 )
 
 func GetStockDeficit(c *gin.Context) {
-
+	store, _ := strconv.Atoi(c.DefaultQuery("store_id", "1"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 
-	orderRepo := stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	repo := stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	recount, _ := repo.CountConditional(store)
+	stockDeficits, _ := repo.GetallByStore(store, pageSize, page)
 
-	stockDeficits, err := orderRepo.FindAll(pageSize, page)
-	//stockDeficits, err := orderRepo.FindByID(1)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stockDeficits}})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stockDeficits, "recount": recount}})
 
 }
