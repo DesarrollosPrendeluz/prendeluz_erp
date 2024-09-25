@@ -164,15 +164,7 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 				itemInfo.AssignedUser.UserId = uint64(orderItem.AssignedRel.UserRel.ID)
 				itemInfo.AssignedUser.UserName = orderItem.AssignedRel.UserRel.Name
 			}
-			fmt.Println("------")
 
-			fmt.Println(itemInfo)
-			itemOrder.ItemsOrdered = append(itemOrder.ItemsOrdered, itemInfo)
-
-			fmt.Println("---Relaciones asignadas---")
-			fmt.Println(orderItem.ID)
-			fmt.Println(orderItem.AssignedRel)
-			fmt.Println(orderItem.AssignedRel.UserRel)
 		}
 		results = append(results, itemOrder)
 
