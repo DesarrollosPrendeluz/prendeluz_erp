@@ -45,8 +45,15 @@ func GetOrders(c *gin.Context) {
 	orderRepo := orderrepo.NewOrderRepository(db.DB)
 	orderService := services.NewOrderService()
 	recount, _ := orderRepo.CountAll()
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil {
+		page = 0
+	}
+
+	pageSize, err := strconv.Atoi(c.Query("page_size"))
+	if err != nil {
+		pageSize = 10
+	}
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
 
@@ -60,7 +67,7 @@ func GetOrders(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results, "recount": recount}})
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": orders, "recount": recount}})
 
 }
 

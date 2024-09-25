@@ -144,14 +144,19 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 
 	for _, order := range orders {
 		var itemOrder dtos.ItemsPerOrder
+		itemOrder.Id = order.ID
 		itemOrder.OrderCode = order.Code
+		itemOrder.Type = int64(order.OrderTypeID)
+		itemOrder.Status = int64(order.OrderStatusID)
 		orderItemList, _ := s.orderItemsRepo.FindByOrder(order.ID)
 
 		for _, orderItem := range orderItemList {
 			var itemInfo dtos.ItemInfo
 			item, _ := s.itemsRepo.FindByID(orderItem.ItemID)
-			itemInfo.Amount = orderItem.Amount
+			itemInfo.Id = orderItem.ID
 			itemInfo.Sku = item.MainSKU
+			itemInfo.Amount = orderItem.Amount
+			itemInfo.RecivedAmount = orderItem.RecivedAmount
 			itemOrder.ItemsOrdered = append(itemOrder.ItemsOrdered, itemInfo)
 		}
 		results = append(results, itemOrder)

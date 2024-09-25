@@ -1,11 +1,16 @@
 package dtos
 
 type ItemInfo struct {
-	Sku    string
-	Amount int64
+	Id            uint64
+	Sku           string
+	Amount        int64
+	RecivedAmount int64
 }
 type ItemsPerOrder struct {
+	Id           uint64
 	OrderCode    string
+	Status       int64
+	Type         int64
 	ItemsOrdered []ItemInfo
 }
 type ItemAssigantion struct {
