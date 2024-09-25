@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"net/http"
+	"prendeluz/erp/internal/db"
+	"prendeluz/erp/internal/repositories/storerepo"
 	services "prendeluz/erp/internal/services/store"
 	"strconv"
 
@@ -16,12 +18,16 @@ func UpdateStore(c *gin.Context) {
 }
 
 func GetStoreStock(c *gin.Context) {
-	services := services.NewStoreService()
+
 	storeName := c.Param("store_name")
 	search := c.Query("search")
+	storeId, _ := strconv.Atoi(c.DefaultQuery("store_id", "1"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-	offset := (page - 1) * pageSize
-	stock := services.GetStoreStock(storeName, pageSize, offset, search)
-	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stock}})
+
+	service := services.NewStoreService()
+	repo := storerepo.NewStoreRepository(db.DB)
+	stock := service.GetStoreStock(storeName, pageSize, page, search)
+	recount, _ := repo.CountConditional(storeId)
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stock, "recount": recount}})
 }

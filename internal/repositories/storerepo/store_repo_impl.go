@@ -23,3 +23,9 @@ func (repo *StoreRepoImpl) FindByName(name string) models.Store {
 
 	return store
 }
+
+func (repo *StoreRepoImpl) CountConditional(storeId int) (int64, error) {
+	var count int64
+	err := repo.DB.Table("store_stocks").Count(&count).Where("store_id = ?", storeId).Error
+	return count, err
+}

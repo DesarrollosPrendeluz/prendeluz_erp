@@ -8,4 +8,5 @@ import (
 type StoreRepo interface {
 	repositories.Repository[models.Store]
 	FindByName(name string) models.Store
+	CountConditional(storeId int) (int64, error)
 }
