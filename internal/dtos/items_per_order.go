@@ -5,6 +5,12 @@ type ItemInfo struct {
 	Sku           string
 	Amount        int64
 	RecivedAmount int64
+	AssignedUser  AssignedUserToOrderItem
+}
+type AssignedUserToOrderItem struct {
+	AssignationId uint64 `json:"assignation_id"`
+	UserId        uint64 `json:"user_id"`
+	UserName      string `json:"user_name"`
 }
 type ItemsPerOrder struct {
 	Id           uint64

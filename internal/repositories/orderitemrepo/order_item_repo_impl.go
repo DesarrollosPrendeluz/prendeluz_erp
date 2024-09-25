@@ -18,7 +18,7 @@ func NewOrderItemRepository(db *gorm.DB) *OrderItemRepoImpl {
 // Se retornan las lineas de un pedido por el id del pedido
 func (repo *OrderItemRepoImpl) FindByOrder(idOrder uint64) ([]models.OrderItem, error) {
 	var orderItems []models.OrderItem
-	results := repo.DB.Where("order_id = ?", idOrder).Find(&orderItems)
+	results := repo.DB.Preload("AssignedRel").Preload("AssignedRel.UserRel").Where("order_id = ?", idOrder).Find(&orderItems)
 
 	return orderItems, results.Error
 }

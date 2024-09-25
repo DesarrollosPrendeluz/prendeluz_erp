@@ -8,6 +8,8 @@ type AssignedLine struct {
 	OrderLineID uint64 `gorm:"column:order_line_id;not null"`
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
+
+	UserRel User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (AssignedLine) TableName() string {

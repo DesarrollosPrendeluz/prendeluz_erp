@@ -157,7 +157,20 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 			itemInfo.Sku = item.MainSKU
 			itemInfo.Amount = orderItem.Amount
 			itemInfo.RecivedAmount = orderItem.RecivedAmount
+			if orderItem.AssignedRel.ID != 0 {
+				itemInfo.AssignedUser.AssignationId = orderItem.AssignedRel.ID
+				itemInfo.AssignedUser.UserId = uint64(orderItem.AssignedRel.UserRel.ID)
+				itemInfo.AssignedUser.UserName = orderItem.AssignedRel.UserRel.Name
+			}
+			fmt.Println("------")
+
+			fmt.Println(itemInfo)
 			itemOrder.ItemsOrdered = append(itemOrder.ItemsOrdered, itemInfo)
+
+			fmt.Println("---Relaciones asignadas---")
+			fmt.Println(orderItem.ID)
+			fmt.Println(orderItem.AssignedRel)
+			fmt.Println(orderItem.AssignedRel.UserRel)
 		}
 		results = append(results, itemOrder)
 
