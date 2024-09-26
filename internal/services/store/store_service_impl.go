@@ -119,7 +119,7 @@ func (s *StoreServiceImpl) GetStoreStock(storeName string, page int, pageSize in
 	}
 	for _, itemInStock := range stock {
 		childs, _ := s.itemsParentsRepo.FindByParent(itemInStock.ID, 3, 0)
-		results = append(results, dtos.ItemStockInfo{Itemname: *itemInStock.Item.Name, SKU: itemInStock.SKU_Parent, Amount: itemInStock.Amount, Childs: getChilds(childs)})
+		results = append(results, dtos.ItemStockInfo{Itemname: itemInStock.Item.Name, SKU: itemInStock.SKU_Parent, Amount: itemInStock.Amount, Childs: getChilds(childs)})
 	}
 
 	return results
