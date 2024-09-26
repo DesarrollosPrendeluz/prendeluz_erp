@@ -150,8 +150,8 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 		itemOrder.OrderCode = order.Code
 		itemOrder.TypeID = int64(order.OrderTypeID)
 		itemOrder.StatusID = int64(order.OrderStatusID)
-		itemOrder.Type = order.OrderStatus.Name
-		itemOrder.Status = order.OrderType.Name
+		itemOrder.Type = order.OrderType.Name
+		itemOrder.Status = order.OrderStatus.Name
 		orderItemList, _ := s.orderItemsRepo.FindByOrder(order.ID)
 
 		for _, orderItem := range orderItemList {
