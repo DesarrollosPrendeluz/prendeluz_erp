@@ -49,7 +49,7 @@ func (repo *OrderRepoImpl) FindOrderFiltered(startDate string, endDate string, t
 	var orders []models.Order
 	var results *gorm.DB
 
-	query := repo.DB
+	query := repo.DB.Preload("OrderStatus").Preload("OrderType")
 
 	// Agregar condiciones de fecha y tipo/estado dinámicamente
 	if startDate != "" && endDate != "" {
@@ -73,6 +73,12 @@ func (repo *OrderRepoImpl) FindOrderFiltered(startDate string, endDate string, t
 	results = query.Find(&orders)
 
 	return orders, results.Error
+}
+
+func (r *OrderRepoImpl) FindAll(pageSize int, offset int) ([]models.Order, error) {
+	var items []models.Order
+	result := r.DB.Preload("OrderStatus").Preload("OrderType").Limit(pageSize).Offset(offset).Find(&items)
+	return items, result.Error
 }
 
 // Actualiza el estado de una orden

@@ -42,12 +42,12 @@ func RegisterRoutes(router *gin.Engine) {
 	}
 
 	//TODO: por implementar
-	allUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AllStoreUsers)
-	{
-		allUsersOrderLineRoutes.GET("", controllers.GetOrders)
-		allUsersOrderLineRoutes.POST("", controllers.GetOrderStatus)
-		allUsersOrderLineRoutes.PATCH("", controllers.EditOrdersLines)
-	}
+	// allUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AllStoreUsers)
+	// {
+	// 	allUsersOrderLineRoutes.GET("", controllers.GetOrders)
+	// 	allUsersOrderLineRoutes.POST("", controllers.GetOrderStatus)
+	// 	allUsersOrderLineRoutes.PATCH("", controllers.EditOrdersLines)
+	// }
 
 	allUsersOrderLineAssignRoutes := router.Group("/order/orderLines/asignation").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{

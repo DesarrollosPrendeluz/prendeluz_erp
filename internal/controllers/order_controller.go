@@ -53,7 +53,6 @@ func GetOrders(c *gin.Context) {
 	endDate := c.Query("endDate")
 
 	orders, err := orderService.GetOrders(page, pageSize, startDate, endDate, orderType, statusType)
-
 	for _, order := range orders {
 		results[order.OrderCode] = order.ItemsOrdered
 	}

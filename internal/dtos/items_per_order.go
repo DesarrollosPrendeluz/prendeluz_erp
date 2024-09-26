@@ -15,8 +15,10 @@ type AssignedUserToOrderItem struct {
 type ItemsPerOrder struct {
 	Id           uint64
 	OrderCode    string
-	Status       int64
-	Type         int64
+	StatusID     int64
+	TypeID       int64
+	Status       string
+	Type         string
 	ItemsOrdered []ItemInfo
 }
 type ItemAssigantion struct {
