@@ -45,7 +45,7 @@ func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, erro
 // Si solo se proporciona endDate, devuelve los pedidos para esa fecha específica.
 // Devuelve una estructura Order y un error si algo sale mal.
 
-func (repo *OrderRepoImpl) FindOrderFiltered(startDate string, endDate string, typeId int, statusId int) ([]models.Order, error) {
+func (repo *OrderRepoImpl) FindOrderFiltered(startDate string, endDate string, typeId int, statusId int, orderCode string) ([]models.Order, error) {
 	var orders []models.Order
 	var results *gorm.DB
 
@@ -67,6 +67,9 @@ func (repo *OrderRepoImpl) FindOrderFiltered(startDate string, endDate string, t
 		query = query.Where("order_type_id = ?", typeId)
 	} else if statusId != 0 {
 		query = query.Where("order_status_id = ?", statusId)
+	}
+	if orderCode != "" {
+		query = query.Where("code = ?", orderCode)
 	}
 
 	// Ejecutar la consulta

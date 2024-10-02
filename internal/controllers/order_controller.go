@@ -51,8 +51,9 @@ func GetOrders(c *gin.Context) {
 	statusType, _ := strconv.Atoi(c.DefaultQuery("status_id", "0"))
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
+	code := c.Query("order_code")
 
-	orders, err := orderService.GetOrders(page, pageSize, startDate, endDate, orderType, statusType)
+	orders, err := orderService.GetOrders(page, pageSize, startDate, endDate, orderType, statusType, code)
 	for _, order := range orders {
 		results[order.OrderCode] = order.ItemsOrdered
 	}
