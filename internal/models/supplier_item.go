@@ -7,6 +7,8 @@ type SupplierItem struct {
 	ItemID      uint64
 	Order       int
 	SupplierSku string `gorm:"size:255,not null"`
+
+	Brand *Brand `gorm:"foreignKey:BrandId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (SupplierItem) TableName() string {

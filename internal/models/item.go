@@ -50,6 +50,7 @@ type Item struct {
 	//Category          *Category       `gorm:"foreignKey:CategoryID;constraint:OnDelete:RESTRICT;"`
 	//AmazonCategory    *Category       `gorm:"foreignKey:AmazonCategoryID;constraint:OnDelete:RESTRICT;"`
 	//AmazonSubcategory *Category       `gorm:"foreignKey:AmazonSubcategoryID;constraint:OnDelete:RESTRICT;"`
+	FatherRel     *ItemsParents   `gorm:"foreignKey:child_item_id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	Asin          *Asin           `gorm:"foreignKey:item_id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	SupplierItems *[]SupplierItem `gorm:"foreignKey:item_id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }

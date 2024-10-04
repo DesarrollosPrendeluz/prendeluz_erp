@@ -45,6 +45,7 @@ func RegisterRoutes(router *gin.Engine) {
 	allUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
 		allUsersOrderLineRoutes.GET("", controllers.GetOrders)
+		allUsersOrderLineRoutes.GET("/labels", controllers.OrderLineLabels)
 		allUsersOrderLineRoutes.POST("", controllers.GetOrderStatus)
 		allUsersOrderLineRoutes.PATCH("", controllers.EditOrdersLines)
 	}
