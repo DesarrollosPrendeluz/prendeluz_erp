@@ -1,9 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
-
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 	"prendeluz/erp/internal/repositories/itemsrepo"
@@ -14,7 +14,7 @@ import (
 type OrderLineServiceImpl struct {
 	orderRepo      orderrepo.OrderRepoImpl
 	orderItemsRepo orderitemrepo.OrderItemRepoImpl
-	itemRepo       itemsrepo.ItemRepoImpl
+	//itemRepo       itemsrepo.ItemRepoImpl
 	orderErrorRepo repositories.GORMRepository[models.ErrorOrder]
 	itemsRepo      itemsrepo.ItemRepoImpl
 }
@@ -25,20 +25,39 @@ func NewOrderLineServiceImpl() *OrderLineServiceImpl {
 	orderItemRepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
 
-	return &OrderLineServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo,
-		orderErrorRepo: errorOrderRepo, itemsRepo: itemsRepo}
+	return &OrderLineServiceImpl{
+		orderRepo:      orderRepo,
+		orderItemsRepo: orderItemRepo,
+		orderErrorRepo: errorOrderRepo,
+		itemsRepo:      itemsRepo,
+	}
 }
 
 func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, error) {
 	var orderItem models.OrderItem
 	var item models.Item
 	var label dtos.OrderLineLable
-	s.orderItemsRepo.DB.Preload("Item").Preload("Asin").Preload("Item.FatherRel").Where("id=?", id).Find(&orderItem)
-	s.itemRepo.DB.Preload("SupplierItems", "order = ?", 1).Preload("SupplierItems.Brand").Where("id?", orderItem.Item.FatherRel.ParentItemID).Find(item)
+	//itemsRepo := itemsrepo.NewItemRepository(db.DB)
+	s.orderItemsRepo.DB.Debug().
+		Preload("Item").
+		Preload("Item.AsinRel").
+		Preload("Item.FatherRel").
+		Where("id=?", id).
+		Find(&orderItem)
+	fmt.Println(orderItem.Item.FatherRel.ParentItemID)
+	fmt.Println("Query dos en proceso")
+
+	s.itemsRepo.DB.Debug().
+		Preload("SupplierItems").
+		Preload("SupplierItems.Brand").
+		Where("id=?", orderItem.Item.FatherRel.ParentItemID).
+		Find(&item)
+
 	label.Ean = orderItem.Item.EAN
-	label.Asin = orderItem.Item.Asin.Code
+	label.Asin = orderItem.Item.AsinRel.Code
 
 	for _, supplierItem := range *item.SupplierItems {
+
 		if supplierItem.Order == 1 {
 			label.Brand = supplierItem.Brand.Name
 			label.BrandAddress = supplierItem.Brand.Address

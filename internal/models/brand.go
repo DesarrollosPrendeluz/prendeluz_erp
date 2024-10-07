@@ -12,5 +12,5 @@ type Brand struct {
 }
 
 func (Brand) TableName() string {
-	return "in_order_relations"
+	return "brands"
 }
