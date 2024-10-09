@@ -126,22 +126,23 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 
 // Obtiene las ordenes paginadas en base a los parámetros page y pagesize
 // A su vez si recibe los parámetros start dat y end date se filtran dichas ordenes por fecha de creación
-func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, endDate string, typeId int, statusId int, orderCode string) ([]dtos.ItemsPerOrder, error) {
+func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, endDate string, typeId int, statusId int, orderCode string) ([]dtos.ItemsPerOrder, int64, error) {
 
 	var results []dtos.ItemsPerOrder
 	var orders []models.Order
+	var recount int64
 	var err error
 	offset := (page - 1) * pageSize
 
 	if startDate != "" || endDate != "" || orderCode != "" || typeId != 0 || statusId != 0 {
-		orders, err = s.orderRepo.FindOrderFiltered(startDate, endDate, typeId, statusId, orderCode)
+		orders, recount, err = s.orderRepo.FindOrderFiltered(pageSize, offset, startDate, endDate, typeId, statusId, orderCode)
 
 	} else {
-		orders, err = s.orderRepo.FindAll(pageSize, offset)
+		orders, recount, err = s.orderRepo.FindAll(pageSize, offset)
 	}
 
 	if err != nil {
-		return results, err
+		return results, recount, err
 	}
 
 	for _, order := range orders {
@@ -154,8 +155,6 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 		itemOrder.Type = order.OrderType.Name
 		itemOrder.Status = order.OrderStatus.Name
 		orderItemList, _ := s.orderItemsRepo.FindByOrder(order.ID)
-		fmt.Println("order list")
-		//fmt.Println(orderItemList)
 
 		for _, orderItem := range orderItemList {
 			var itemInfo dtos.ItemInfo
@@ -176,7 +175,7 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 
 	}
 
-	return results, nil
+	return results, recount, nil
 
 }
 

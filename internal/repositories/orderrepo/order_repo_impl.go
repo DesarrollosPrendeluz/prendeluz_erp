@@ -1,6 +1,7 @@
 package orderrepo
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
@@ -45,43 +46,75 @@ func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, erro
 // Si solo se proporciona endDate, devuelve los pedidos para esa fecha específica.
 // Devuelve una estructura Order y un error si algo sale mal.
 
-func (repo *OrderRepoImpl) FindOrderFiltered(startDate string, endDate string, typeId int, statusId int, orderCode string) ([]models.Order, error) {
+func (repo *OrderRepoImpl) FindOrderFiltered(pageSize int, page int, startDate string, endDate string, typeId int, statusId int, orderCode string) ([]models.Order, int64, error) {
 	var orders []models.Order
+	var totalRecords int64
 	var results *gorm.DB
 
-	query := repo.DB.Preload("OrderStatus").Preload("OrderType")
+	applyFilters := func(query *gorm.DB) *gorm.DB {
+		// Filtros de fecha
+		if startDate != "" && endDate != "" {
+			query = query.Where("date(created_at) BETWEEN ? AND ?", startDate, endDate)
+		} else if startDate != "" {
+			query = query.Where("date(created_at) = ?", startDate)
+		} else if endDate != "" {
+			query = query.Where("date(created_at) = ?", endDate)
+		}
 
-	// Agregar condiciones de fecha y tipo/estado dinámicamente
-	if startDate != "" && endDate != "" {
-		query = query.Where("date(created_at) BETWEEN ? AND ?", startDate, endDate)
-	} else if startDate != "" {
-		query = query.Where("date(created_at) = ?", startDate)
-	} else if endDate != "" {
-		query = query.Where("date(created_at) = ?", endDate)
+		// Filtros de tipo y estado
+		if typeId != 0 && statusId != 0 {
+			query = query.Where("order_type_id = ? AND order_status_id = ?", typeId, statusId)
+		} else if typeId != 0 {
+			query = query.Where("order_type_id = ?", typeId)
+		} else if statusId != 0 {
+			query = query.Where("order_status_id = ?", statusId)
+		}
+
+		// Filtro de código de orden
+		if orderCode != "" {
+			query = query.Where("code = ?", orderCode)
+		}
+
+		return query
+	}
+	query := repo.DB.Debug().Preload("OrderStatus").Preload("OrderType")
+	query = applyFilters(query)
+
+	query2 := repo.DB.Model(&models.Order{})
+	query2 = applyFilters(query2)
+
+	// Obtener el total de registros sin paginación
+	query2.Count(&totalRecords)
+	//totalRecords = 1
+	// Agregar paginación
+	if page >= 0 && pageSize > 0 {
+		query = query.Offset(page).Limit(pageSize)
 	}
 
-	// Aquí se crean las combinaciones entre fechas y tipos/estados
-	if typeId != 0 && statusId != 0 {
-		query = query.Where("order_type_id = ? AND order_status_id = ?", typeId, statusId)
-	} else if typeId != 0 {
-		query = query.Where("order_type_id = ?", typeId)
-	} else if statusId != 0 {
-		query = query.Where("order_status_id = ?", statusId)
-	}
-	if orderCode != "" {
-		query = query.Where("code = ?", orderCode)
-	}
-
-	// Ejecutar la consulta
+	// Ejecutar la consulta paginada
+	fmt.Println(page)
+	fmt.Println(pageSize)
 	results = query.Find(&orders)
+	fmt.Printf("%+v\n", orders)
+	fmt.Println(totalRecords)
 
-	return orders, results.Error
+	return orders, totalRecords, results.Error
 }
 
-func (r *OrderRepoImpl) FindAll(pageSize int, offset int) ([]models.Order, error) {
+func (r *OrderRepoImpl) FindAll(pageSize int, offset int) ([]models.Order, int64, error) {
 	var items []models.Order
-	result := r.DB.Preload("OrderStatus").Preload("OrderType").Limit(pageSize).Offset(offset).Find(&items)
-	return items, result.Error
+	var totalRecords int64
+
+	// Primero obtener el recuento total de registros
+	result := r.DB.Model(&models.Order{}).Count(&totalRecords)
+	if result.Error != nil {
+		return nil, 0, result.Error
+	}
+
+	// Luego obtener los registros paginados
+	result = r.DB.Preload("OrderStatus").Preload("OrderType").Limit(pageSize).Offset(offset).Find(&items)
+
+	return items, totalRecords, result.Error
 }
 
 // Actualiza el estado de una orden
