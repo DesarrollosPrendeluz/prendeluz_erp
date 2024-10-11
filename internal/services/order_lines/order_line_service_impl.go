@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
@@ -44,8 +43,6 @@ func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, erro
 		Preload("Item.FatherRel").
 		Where("id=?", id).
 		Find(&orderItem)
-	fmt.Println(orderItem.Item.FatherRel.ParentItemID)
-	fmt.Println("Query dos en proceso")
 
 	s.itemsRepo.DB.Debug().
 		Preload("SupplierItems").
@@ -54,7 +51,9 @@ func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, erro
 		Find(&item)
 
 	label.Ean = orderItem.Item.EAN
-	label.Asin = orderItem.Item.AsinRel.Code
+	if orderItem.Item.AsinRel != nil {
+		label.Asin = &orderItem.Item.AsinRel.Code
+	}
 
 	for _, supplierItem := range *item.SupplierItems {
 
