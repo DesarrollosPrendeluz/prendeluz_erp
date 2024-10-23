@@ -178,6 +178,8 @@ func EditOrders(c *gin.Context) {
 
 	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		fmt.Println(requestBody)
+		fmt.Println("sdsd")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
