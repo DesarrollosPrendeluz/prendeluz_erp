@@ -65,7 +65,7 @@ func GetOrders(c *gin.Context) {
 }
 
 func GetOrderTypes(c *gin.Context) {
-	repo := orderstatusrepo.NewOrderStatusRepository(db.DB)
+	repo := ordertyperepo.NewOrderTypeRepository(db.DB)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
 	results, err := repo.FindAll(pageSize, page)
@@ -80,7 +80,7 @@ func GetOrderTypes(c *gin.Context) {
 }
 
 func GetOrderStatus(c *gin.Context) {
-	repo := ordertyperepo.NewOrderTypeRepository(db.DB)
+	repo := orderstatusrepo.NewOrderStatusRepository(db.DB)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
 	results, err := repo.FindAll(pageSize, page)
