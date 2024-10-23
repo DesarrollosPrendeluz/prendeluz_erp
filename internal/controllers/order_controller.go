@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -212,9 +213,9 @@ func EditOrdersLines(c *gin.Context) {
 
 	token := c.GetHeader("Authorization")
 
-	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error) {
+	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error, errorList *[]error) {
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			*errorList = append(*errorList, err)
 			return
 		}
 		if dataItem.ItemID != nil {
@@ -233,8 +234,6 @@ func EditOrdersLines(c *gin.Context) {
 	}
 	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
-	// Intentar bindear los datos del cuerpo de la request al struct
-
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
 
 }
@@ -243,10 +242,11 @@ func AddQuantityToOrdersLines(c *gin.Context) {
 	var requestBody dtos.OrdersLinesToUpdatePartially
 	var errorList []error
 	var failedIds []int
+	var list string
 
 	token := c.GetHeader("Authorization")
 
-	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error) {
+	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error, errorList *[]error) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -254,10 +254,11 @@ func AddQuantityToOrdersLines(c *gin.Context) {
 
 		if dataItem.RecivedQuantity != nil {
 			newQuantity := *dataItem.RecivedQuantity + model.RecivedAmount
-			if model.Amount > newQuantity {
+			if model.Amount >= newQuantity {
 				model.RecivedAmount = newQuantity
 			} else {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Se ha intendo actualizar la cantidad por encima del límite máximo"})
+				customError := errors.New("se ha intentado actualizar la cantidad por encima del límite máximo")
+				*errorList = append(*errorList, customError)
 				return
 			}
 
@@ -266,29 +267,35 @@ func AddQuantityToOrdersLines(c *gin.Context) {
 	}
 	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
 
-	// Intentar bindear los datos del cuerpo de la request al struct
-
-	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
+	if len(errorList) != 0 {
+		list = "Se ha intenado aumentar la cantidad mas allá del máximo"
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": list, "Not_permited_lines_ids": failedIds}})
 }
 
 func RemoveQuantityToOrdersLines(c *gin.Context) {
 	var requestBody dtos.OrdersLinesToUpdatePartially
 	var errorList []error
 	var failedIds []int
+	var list string
 
 	token := c.GetHeader("Authorization")
 
-	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error) {
+	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error, errorList *[]error) {
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			*errorList = append(*errorList, err)
 			return
 		}
 		if dataItem.RecivedQuantity != nil {
-			newQuantity := *dataItem.RecivedQuantity - model.RecivedAmount
-			if 0 <= newQuantity {
+
+			newQuantity := model.RecivedAmount - *dataItem.RecivedQuantity
+
+			if newQuantity >= 0 {
 				model.RecivedAmount = newQuantity
 			} else {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Se ha intendo actualizar la cantidad por debajo del límite máximo"})
+
+				customError := errors.New("se ha intendo actualizar la cantidad por debajo del límite máximo")
+				*errorList = append(*errorList, customError)
 				return
 			}
 
@@ -297,9 +304,10 @@ func RemoveQuantityToOrdersLines(c *gin.Context) {
 	}
 	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
 
-	// Intentar bindear los datos del cuerpo de la request al struct
-
-	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
+	if len(errorList) != 0 {
+		list = "Se ha intenado reducir la cantidad por debajo de 0"
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": list, "Not_permited_lines_ids": failedIds}})
 }
 
 func updateOrderLineHandler(
@@ -309,11 +317,11 @@ func updateOrderLineHandler(
 	token string,
 	failedIds *[]int,
 	errorList *[]error,
-	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error),
+	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error),
 	admin bool) {
 
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		*errorList = append(*errorList, err)
 		return
 	}
 
@@ -342,12 +350,12 @@ func updateOrderLine(
 	c *gin.Context,
 	dataItem dtos.LineToUpdate,
 	errorList *[]error,
-	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error)) {
+	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
 
 	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
 	model, err := orderLines.FindByID(dataItem.Id)
 
-	callback(c, dataItem, model, err)
+	callback(c, dataItem, model, err, errorList)
 
 	error := orderLines.Update(model)
 	if error != nil {
