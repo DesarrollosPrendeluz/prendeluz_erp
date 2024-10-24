@@ -124,7 +124,7 @@ func CreateOrder(c *gin.Context) {
 		if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
 			log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
 		} else {
-			fmt.Println("en toría se ha ejecutado: CALL UpdateStockDeficitByStore();")
+			fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
 
 		}
 
@@ -132,7 +132,7 @@ func CreateOrder(c *gin.Context) {
 		if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
 			log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
 		} else {
-			fmt.Println("en toría se ha ejecutado: CALL UpdatePendingStocks()")
+			fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
 
 		}
 
@@ -178,8 +178,7 @@ func EditOrders(c *gin.Context) {
 
 	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		fmt.Println(requestBody)
-		fmt.Println("sdsd")
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -334,7 +333,7 @@ func updateOrderLineHandler(
 		user, _ := repo.ReturnDataByToken(token)
 		query := `SELECT id FROM assigned_lines WHERE  order_line_id = ? and user_id = ? LIMIT 1`
 
-		err := db.DB.Debug().Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
+		err := db.DB.Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
 
 		if (err != nil || assign.ID == 0) && !admin {
 			*failedIds = append(*failedIds, int(dataItem.Id))
