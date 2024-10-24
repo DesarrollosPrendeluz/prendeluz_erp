@@ -21,14 +21,14 @@ func NewUsersRepository(db *gorm.DB) *UserImpl {
 	return &UserImpl{repositories.NewGORMRepository(db, models.User{})}
 }
 
-func (repo *UserImpl) CheckCredentials(email string, password string) (string, error) {
+func (repo *UserImpl) CheckCredentials(email string, password string) (string, int, error) {
 	var user models.User
 
 	// Buscar el usuario por correo electrónico
 	results := repo.DB.Where("email = ?", email).First(&user)
 	if results.Error != nil {
 		// Si ocurre un error al buscar el usuario, retornamos el error
-		return "", fmt.Errorf("usuario no encontrado o error en la consulta")
+		return "", 0, fmt.Errorf("usuario no encontrado o error en la consulta")
 	}
 
 	// Comparar la contraseña ingresada con la
@@ -37,12 +37,12 @@ func (repo *UserImpl) CheckCredentials(email string, password string) (string, e
 
 	if err != nil {
 		// Si las contraseñas no coinciden, retornamos un error
-		return "", fmt.Errorf("credenciales incorrectas")
+		return "", 0, fmt.Errorf("credenciales incorrectas")
 	}
 
 	// Si las credenciales son correctas, generar y retornar el token de usuario
 	token := repo.GenerateUserToken(uint64(user.ID))
-	return token, nil
+	return token, int(user.ID), nil
 }
 
 func (repo *UserImpl) GenerateUserToken(userId uint64) string {

@@ -31,7 +31,7 @@ func Login(c *gin.Context) {
 	repo := *userrepo.NewUsersRepository(db.DB)
 
 	// Verificar las credenciales del usuario
-	token, err := repo.CheckCredentials(loginReq.Email, loginReq.Password)
+	token, id, err := repo.CheckCredentials(loginReq.Email, loginReq.Password)
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -39,5 +39,5 @@ func Login(c *gin.Context) {
 	}
 
 	// Responder con el token si las credenciales son correctas
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "id": id})
 }
