@@ -75,4 +75,9 @@ func RegisterRoutes(router *gin.Engine) {
 		stockDeficit.GET("", controllers.GetStockDeficit)
 	}
 
+	suppliers := router.Group("/supplier").Use(middlewares.Auth, middlewares.AllStoreUsers)
+	{
+		suppliers.GET("", controllers.GetSuppliers)
+	}
+
 }

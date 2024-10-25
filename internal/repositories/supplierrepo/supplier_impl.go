@@ -1,4 +1,4 @@
-package outorderrelationrepo
+package supplierrepo
 
 import (
 	"prendeluz/erp/internal/models"
@@ -8,9 +8,9 @@ import (
 )
 
 type SupplierImpl struct {
-	*repositories.GORMRepository[models.]
+	*repositories.GORMRepository[models.Supplier]
 }
 
-func NewOutOrderRelationRepository(db *gorm.DB) *OutOrderRelImpl {
-	return &OutOrderRelImpl{repositories.NewGORMRepository(db, models.OutOrderRelation{})}
+func NewSupplierRepository(db *gorm.DB) *SupplierImpl {
+	return &SupplierImpl{repositories.NewGORMRepository(db, models.Supplier{})}
 }

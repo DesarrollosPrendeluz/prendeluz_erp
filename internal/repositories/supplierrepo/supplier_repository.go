@@ -1,10 +1,10 @@
-package outorderrelationrepo
+package supplierrepo
 
 import (
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 )
 
-type InOrderRelationRepo interface {
-	repositories.Repository[models.OutOrderRelation]
+type SupplierRepo interface {
+	repositories.Repository[models.Supplier]
 }
