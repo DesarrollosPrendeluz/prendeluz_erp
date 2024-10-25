@@ -37,14 +37,14 @@ func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, erro
 	var item models.Item
 	var label dtos.OrderLineLable
 	//itemsRepo := itemsrepo.NewItemRepository(db.DB)
-	s.orderItemsRepo.DB.Debug().
+	s.orderItemsRepo.DB.
 		Preload("Item").
 		Preload("Item.AsinRel").
 		Preload("Item.FatherRel").
 		Where("id=?", id).
 		Find(&orderItem)
 
-	s.itemsRepo.DB.Debug().
+	s.itemsRepo.DB.
 		Preload("SupplierItems").
 		Preload("SupplierItems.Brand").
 		Where("id=?", orderItem.Item.FatherRel.ParentItemID).

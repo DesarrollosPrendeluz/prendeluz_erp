@@ -26,7 +26,7 @@ func (repo *StoreStockRepoImpl) FindByItem(sku_parent string) (models.StoreStock
 func (repo *StoreStockRepoImpl) FindByStore(idStore uint64, pageSize int, offset int) ([]models.StoreStock, error) {
 	var storeStocks []models.StoreStock
 
-	results := repo.DB.Limit(pageSize).Offset(offset).Preload("Item").Where("store_id = ?", idStore).Find(&storeStocks)
+	results := repo.DB.Limit(pageSize).Offset(offset).Preload("Item.AsinRel").Where("store_id = ?", idStore).Find(&storeStocks)
 
 	return storeStocks, results.Error
 

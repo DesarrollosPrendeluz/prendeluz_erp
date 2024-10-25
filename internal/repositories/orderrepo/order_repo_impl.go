@@ -77,7 +77,7 @@ func (repo *OrderRepoImpl) FindOrderFiltered(pageSize int, page int, startDate s
 
 		return query
 	}
-	query := repo.DB.Debug().Preload("OrderStatus").Preload("OrderType")
+	query := repo.DB.Preload("OrderStatus").Preload("OrderType")
 	query = applyFilters(query)
 
 	query2 := repo.DB.Model(&models.Order{})

@@ -1,12 +1,12 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
-	"prendeluz/erp/internal/middlewares"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
@@ -15,7 +15,6 @@ import (
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/repositories/tokenrepo"
 	services "prendeluz/erp/internal/services/order"
-	"prendeluz/erp/internal/utils"
 
 	"strconv"
 	"time"
@@ -66,7 +65,7 @@ func GetOrders(c *gin.Context) {
 }
 
 func GetOrderTypes(c *gin.Context) {
-	repo := orderstatusrepo.NewOrderStatusRepository(db.DB)
+	repo := ordertyperepo.NewOrderTypeRepository(db.DB)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
 	results, err := repo.FindAll(pageSize, page)
@@ -81,7 +80,7 @@ func GetOrderTypes(c *gin.Context) {
 }
 
 func GetOrderStatus(c *gin.Context) {
-	repo := ordertyperepo.NewOrderTypeRepository(db.DB)
+	repo := orderstatusrepo.NewOrderStatusRepository(db.DB)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "15"))
 	results, err := repo.FindAll(pageSize, page)
@@ -125,7 +124,7 @@ func CreateOrder(c *gin.Context) {
 		if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
 			log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
 		} else {
-			fmt.Println("en toría se ha ejecutado: CALL UpdateStockDeficitByStore();")
+			fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
 
 		}
 
@@ -133,7 +132,7 @@ func CreateOrder(c *gin.Context) {
 		if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
 			log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
 		} else {
-			fmt.Println("en toría se ha ejecutado: CALL UpdatePendingStocks()")
+			fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
 
 		}
 
@@ -179,6 +178,7 @@ func EditOrders(c *gin.Context) {
 
 	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -211,58 +211,156 @@ func EditOrdersLines(c *gin.Context) {
 	var requestBody dtos.OrdersLinesToUpdatePartially
 	var errorList []error
 	var failedIds []int
-	token := c.GetHeader("Authorization")
-	role, _ := middlewares.ObtainRole(token)
-	var roles []int
-	roles = append(roles, middlewares.StoreManager, middlewares.StoreSupervisor)
 
-	// Intentar bindear los datos del cuerpo de la request al struct
+	token := c.GetHeader("Authorization")
+
+	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error, errorList *[]error) {
+		if err != nil {
+			*errorList = append(*errorList, err)
+			return
+		}
+		if dataItem.ItemID != nil {
+			model.ItemID = *dataItem.ItemID
+		}
+		if dataItem.RecivedQuantity != nil {
+			model.RecivedAmount = *dataItem.RecivedQuantity
+		}
+		if dataItem.Quantity != nil {
+			model.Amount = *dataItem.Quantity
+		}
+		if dataItem.StoreID != nil {
+			model.Amount = *dataItem.StoreID
+		}
+
+	}
+	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
+
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
+
+}
+
+func AddQuantityToOrdersLines(c *gin.Context) {
+	var requestBody dtos.OrdersLinesToUpdatePartially
+	var errorList []error
+	var failedIds []int
+	var list string
+
+	token := c.GetHeader("Authorization")
+
+	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error, errorList *[]error) {
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if dataItem.RecivedQuantity != nil {
+			newQuantity := *dataItem.RecivedQuantity + model.RecivedAmount
+			if model.Amount >= newQuantity {
+				model.RecivedAmount = newQuantity
+			} else {
+				customError := errors.New("se ha intentado actualizar la cantidad por encima del límite máximo")
+				*errorList = append(*errorList, customError)
+				return
+			}
+
+		}
+
+	}
+	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
+
+	if len(errorList) != 0 {
+		list = "Se ha intenado aumentar la cantidad mas allá del máximo"
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": list, "Not_permited_lines_ids": failedIds}})
+}
+
+func RemoveQuantityToOrdersLines(c *gin.Context) {
+	var requestBody dtos.OrdersLinesToUpdatePartially
+	var errorList []error
+	var failedIds []int
+	var list string
+
+	token := c.GetHeader("Authorization")
+
+	updateCallback := func(c *gin.Context, dataItem dtos.LineToUpdate, model *models.OrderItem, err error, errorList *[]error) {
+		if err != nil {
+			*errorList = append(*errorList, err)
+			return
+		}
+		if dataItem.RecivedQuantity != nil {
+
+			newQuantity := model.RecivedAmount - *dataItem.RecivedQuantity
+
+			if newQuantity >= 0 {
+				model.RecivedAmount = newQuantity
+			} else {
+
+				customError := errors.New("se ha intendo actualizar la cantidad por debajo del límite máximo")
+				*errorList = append(*errorList, customError)
+				return
+			}
+
+		}
+
+	}
+	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
+
+	if len(errorList) != 0 {
+		list = "Se ha intenado reducir la cantidad por debajo de 0"
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": list, "Not_permited_lines_ids": failedIds}})
+}
+
+func updateOrderLineHandler(
+
+	c *gin.Context,
+	requestBody dtos.OrdersLinesToUpdatePartially,
+	token string,
+	failedIds *[]int,
+	errorList *[]error,
+	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error),
+	admin bool) {
+
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		*errorList = append(*errorList, err)
 		return
 	}
 
 	// Acceder a los valores del cuerpo
-	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
 	for _, dataItem := range requestBody.Data {
 		var assign dtos.Assign
 		repo := tokenrepo.NewTokenRepository(db.DB)
 		user, _ := repo.ReturnDataByToken(token)
 		query := `SELECT id FROM assigned_lines WHERE  order_line_id = ? and user_id = ? LIMIT 1`
 
-		err := db.DB.Debug().Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
-		fmt.Println(role.RoleID)
-		fmt.Println(assign.ID)
-		fmt.Println(utils.ContainsInt(roles, role.RoleID))
-		if (err != nil || assign.ID == 0) && !utils.ContainsInt(roles, role.RoleID) {
-			failedIds = append(failedIds, int(dataItem.Id))
+		err := db.DB.Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
+
+		if (err != nil || assign.ID == 0) && !admin {
+			*failedIds = append(*failedIds, int(dataItem.Id))
 
 		} else {
-			model, err := orderLines.FindByID(dataItem.Id)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
-			if dataItem.ItemID != nil {
-				model.ItemID = *dataItem.ItemID
-			}
-			if dataItem.RecivedQuantity != nil {
-				model.RecivedAmount = *dataItem.RecivedQuantity
-			}
-			if dataItem.Quantity != nil {
-				model.Amount = *dataItem.Quantity
-			}
-			if dataItem.StoreID != nil {
-				model.Amount = *dataItem.StoreID
-			}
-			error := orderLines.Update(model)
-			if error != nil {
-				errorList = append(errorList, error)
-			}
 
+			updateOrderLine(c, dataItem, errorList, callback)
 		}
 
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
+
+}
+
+func updateOrderLine(
+	c *gin.Context,
+	dataItem dtos.LineToUpdate,
+	errorList *[]error,
+	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
+
+	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
+	model, err := orderLines.FindByID(dataItem.Id)
+
+	callback(c, dataItem, model, err, errorList)
+
+	error := orderLines.Update(model)
+	if error != nil {
+		*errorList = append(*errorList, error)
+	}
 
 }

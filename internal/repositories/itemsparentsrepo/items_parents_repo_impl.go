@@ -25,6 +25,6 @@ func (repo *ItemsParentsRepoImpl) FindByChild(child_id uint64) (models.ItemsPare
 // Busca un producto padre en base a su aparición en la tabla parent_items y precarga los hijos
 func (repo *ItemsParentsRepoImpl) FindByParent(parent_id uint64, pageSize int, offset int) ([]models.ItemsParents, error) {
 	var item []models.ItemsParents
-	result := repo.DB.Limit(pageSize).Offset(offset).Preload("Child").Where("parent_item_id = ?", parent_id).Find(&item)
+	result := repo.DB.Limit(pageSize).Offset(offset).Preload("Child.AsinRel").Where("parent_item_id = ?", parent_id).Find(&item)
 	return item, result.Error
 }

@@ -17,7 +17,7 @@ func NewStockDeficitRepository(db *gorm.DB) *StockDeficitImpl {
 
 func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset int) ([]models.StockDeficit, error) {
 	var models []models.StockDeficit
-	repo.DB.Preload("Item").Where("store_id = ?", storeId).Limit(pageSize).Offset(offset).Find(&models)
+	repo.DB.Preload("Item.SupplierItems.Supplier").Where("store_id = ?", storeId).Limit(pageSize).Offset(offset).Find(&models)
 	return models, nil
 }
 
