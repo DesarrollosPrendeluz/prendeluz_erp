@@ -8,8 +8,9 @@ type SupplierItem struct {
 	Order       int
 	SupplierSku string `gorm:"size:255,not null"`
 
-	Item  *Item  `gorm:"foreignKey:ItemID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	Brand *Brand `gorm:"foreignKey:ID;references:BrandID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Item     *Item     `gorm:"foreignKey:ItemID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Brand    *Brand    `gorm:"foreignKey:ID;references:BrandID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Supplier *Supplier `gorm:"foreignKey:ID;references:SupplierID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (SupplierItem) TableName() string {
