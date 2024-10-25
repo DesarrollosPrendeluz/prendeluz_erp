@@ -60,6 +60,7 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		storeRoutes.PATCH("/:order_code", controllers.UpdateStore)
 		storeRoutes.GET("/:store_name", controllers.GetStoreStock)
+		storeRoutes.GET("", controllers.GetStores)
 
 	}
 

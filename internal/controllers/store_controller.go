@@ -31,3 +31,14 @@ func GetStoreStock(c *gin.Context) {
 	recount, _ := repo.CountConditional(storeId)
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stock, "recount": recount}})
 }
+
+func GetStores(c *gin.Context) {
+	repo := storerepo.NewStoreRepository(db.DB)
+	store, err := repo.FindAll(100, 0)
+	if err != nil {
+		c.IndentedJSON(http.StatusOK, gin.H{"Error": gin.H{"err": err}})
+		return
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": store}})
+
+}
