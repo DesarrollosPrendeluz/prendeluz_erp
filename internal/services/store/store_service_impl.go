@@ -112,11 +112,13 @@ func (s *StoreServiceImpl) GetStoreStock(storeName string, page int, pageSize in
 	store := s.storeRepo.FindByName(storeName)
 	var results []dtos.ItemStockInfo
 	var stock []models.StoreStock
-	
+
 	if searchParam == "" {
 		stock, _ = s.storeStockRepo.FindByStore(store.ID, page, pageSize)
 	} else {
+
 		stock, _ = s.storeStockRepo.FindByStoreAndSearchParams(store.ID, searchParam, page, pageSize)
+
 	}
 	for _, itemInStock := range stock {
 		childs, _ := s.itemsParentsRepo.FindByParent(itemInStock.Item.ID, 3, 0)
