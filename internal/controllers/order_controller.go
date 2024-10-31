@@ -35,6 +35,20 @@ func AddOrder(c *gin.Context) {
 	}
 
 	serviceOrder.UploadOrderExcel(file, header.Filename)
+	if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
+		log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+	} else {
+		fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
+
+	}
+
+	// Llamada al segundo procedimiento almacenado
+	if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
+		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
+	} else {
+		fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
+
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"Ok": "Upload succesfully"}})
 
