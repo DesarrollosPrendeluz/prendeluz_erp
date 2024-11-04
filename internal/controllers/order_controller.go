@@ -271,7 +271,11 @@ func AddQuantityToOrdersLines(c *gin.Context) {
 		}
 
 		if dataItem.RecivedQuantity != nil {
+			fmt.Println("cantidad")
 			newQuantity := *dataItem.RecivedQuantity + model.RecivedAmount
+			fmt.Println(newQuantity)
+			fmt.Println("Amount")
+			fmt.Println(model.Amount)
 			if model.Amount >= newQuantity {
 				model.RecivedAmount = newQuantity
 			} else {
@@ -376,6 +380,20 @@ func updateOrderLine(
 	callback(c, dataItem, model, err, errorList)
 
 	error := orderLines.Update(model)
+	if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
+		log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+	} else {
+		fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
+
+	}
+
+	// Llamada al segundo procedimiento almacenado
+	if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
+		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
+	} else {
+		fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
+
+	}
 	if error != nil {
 		*errorList = append(*errorList, error)
 	}
