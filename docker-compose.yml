@@ -1,13 +1,14 @@
+
 services:
   app:
     image: do_erp
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: mi-proyecto-go-app
+      context: .       # Contexto de construcción (directorio actual)
+      dockerfile: Dockerfile  # Archivo Dockerfile a usar
+    container_name: goApp  # Nombre del contenedor
     volumes:
-      - ./src:/app
-    working_dir: /app
-
+      - ./src:/app     # Monta el código fuente local en el directorio /app del contenedor
+    working_dir: /app  # Establece el directorio de trabajo en /app
     ports:
-      - "8080:8080"
+      - "8080:8080"    # Mapea el puerto 8080 del contenedor al puerto 8080 en el host
+    #command: ["/app/entrypoint.sh"]  # Ejecuta el script de entrada al iniciar el contenedor
