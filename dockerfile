@@ -8,17 +8,8 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copiar archivos de dependencias desde la raíz
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copiar el código fuente de todas las carpetas necesarias al contenedor
-COPY cmd/ /app/cmd
-COPY internal/ /app/internal
-COPY test/ /app/test
-
-# Copiar el script de entrada si lo tienes
-COPY entrypoint.sh /app/entrypoint.sh
-#RUN chmod +x /app/entrypoint.sh
+COPY . .
+#RUN chmod +x /app/scripts.sh
 
 # Compilar la aplicación apuntando a la carpeta cmd
 #RUN go build -o main 
@@ -27,4 +18,11 @@ COPY entrypoint.sh /app/entrypoint.sh
 EXPOSE 8080
 
 # Definir el comando de entrada
-CMD ["/app/entrypoint.sh"]
+# Ordenar y limpiar las dependencias
+RUN go mod tidy
+
+# Ejecutar la aplicación con el entorno de prueba
+# RUN go run cmd/prendeluz_erp/main.go --env test
+#RUN go run cmd/prendeluz_erp/main.go --env test
+#CMD ["scripts.sh"]
+CMD ["go", "run", "cmd/prendeluz_erp/main.go", "--env", "test"]

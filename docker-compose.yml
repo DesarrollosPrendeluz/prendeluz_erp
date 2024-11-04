@@ -7,8 +7,13 @@ services:
       dockerfile: Dockerfile  # Archivo Dockerfile a usar
     container_name: goApp  # Nombre del contenedor
     volumes:
-      - ./src:/app     # Monta el código fuente local en el directorio /app del contenedor
+      - ./:/app
     working_dir: /app  # Establece el directorio de trabajo en /app
     ports:
       - "8080:8080"    # Mapea el puerto 8080 del contenedor al puerto 8080 en el host
     #command: ["/app/entrypoint.sh"]  # Ejecuta el script de entrada al iniciar el contenedor
+    networks:
+      - sincro
+networks:
+  sincro:
+    driver: bridge
