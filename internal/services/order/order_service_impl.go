@@ -28,8 +28,11 @@ func NewOrderService() *OrderServiceImpl {
 	orderItemRepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
 
-	return &OrderServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo,
-		orderErrorRepo: errorOrderRepo, itemsRepo: itemsRepo}
+	return &OrderServiceImpl{
+		orderRepo:      orderRepo,
+		orderItemsRepo: orderItemRepo,
+		orderErrorRepo: errorOrderRepo,
+		itemsRepo:      itemsRepo}
 }
 
 // retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
@@ -84,6 +87,10 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	if err != nil {
 		return err
 	}
+	for _, order := range excelOrderList {
+		fmt.Printf("Contenido del orden: %+v\n", order)
+	}
+
 	succesOrders, orderItems, errorOrders := generateOrdersAndOrderLines(excelOrderList, filename)
 	orderRepo := orderrepo.NewOrderRepository(db.DB)
 	orderItem := orderitemrepo.NewOrderItemRepository(db.DB)
