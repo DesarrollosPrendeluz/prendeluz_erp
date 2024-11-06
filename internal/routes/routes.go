@@ -12,7 +12,9 @@ import (
 func RegisterRoutes(router *gin.Engine) {
 	router.Use(cors.New(cors.Config{
 		// Permitir solicitudes desde http://localhost:3000
+		//https://erp.zarivy.com
 		AllowOrigins: []string{"http://localhost:3000"},
+		//AllowOrigins: []string{"https://erp.zarivy.com"},
 		// Permitir métodos HTTP
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		// Permitir encabezados específicos

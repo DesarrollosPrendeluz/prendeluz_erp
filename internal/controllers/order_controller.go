@@ -117,6 +117,7 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": err.Error()}})
 		return
 	}
+	fechaActual := time.Now().Format("2006-01-02 15:04:05")
 
 	// Acceder a los valores del cuerpo
 	for _, dataItem := range requestBody.Data {
@@ -126,7 +127,7 @@ func CreateOrder(c *gin.Context) {
 		orderObject := models.Order{
 			OrderStatusID: order.Status,
 			OrderTypeID:   order.Type,
-			Code:          "request.generated",
+			Code:          "request.generated." + fechaActual,
 			Filename:      "request",
 			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
