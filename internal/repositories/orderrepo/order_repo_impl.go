@@ -1,7 +1,6 @@
 package orderrepo
 
 import (
-	"fmt"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
@@ -92,11 +91,8 @@ func (repo *OrderRepoImpl) FindOrderFiltered(pageSize int, page int, startDate s
 	}
 
 	// Ejecutar la consulta paginada
-	fmt.Println(page)
-	fmt.Println(pageSize)
+
 	results = query.Find(&orders)
-	fmt.Printf("%+v\n", orders)
-	fmt.Println(totalRecords)
 
 	return orders, totalRecords, results.Error
 }
