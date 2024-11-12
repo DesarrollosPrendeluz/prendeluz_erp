@@ -55,7 +55,7 @@ func AddOrder(c *gin.Context) {
 }
 
 func GetOrders(c *gin.Context) {
-	results := make(map[string][]dtos.ItemInfo)
+
 	orderService := services.NewOrderService()
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
@@ -66,10 +66,7 @@ func GetOrders(c *gin.Context) {
 	code := c.Query("order_code")
 
 	orders, recount, err := orderService.GetOrders(page, pageSize, startDate, endDate, orderType, statusType, code)
-	for _, order := range orders {
 
-		results[order.OrderCode] = order.ItemsOrdered
-	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Results": gin.H{"error": err}})
 		return
