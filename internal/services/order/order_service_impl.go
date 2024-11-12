@@ -177,6 +177,16 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 			} else {
 				itemInfo.Supplier = "No asignado"
 			}
+			if item.ItemLocations != nil && len(*item.ItemLocations) > 0 {
+				var temLocation []string
+				for _, location := range *item.ItemLocations {
+					if location.StoreLocations != nil {
+						temLocation = append(temLocation, location.StoreLocations.Code)
+					}
+				}
+				itemInfo.Locations = temLocation
+
+			}
 
 			if orderItem.AssignedRel.ID != 0 {
 				itemInfo.AssignedUser.AssignationId = orderItem.AssignedRel.ID

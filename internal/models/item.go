@@ -11,7 +11,7 @@ const (
 
 type Item struct {
 	ID                       uint64   `gorm:"primaryKey;autoIncrement"`
-	MainSKU                  string   `gorm:"size:255;not null;uniqueIndex"`
+	MainSKU                  string   `gorm:"size:255;column:main_sku;not null;uniqueIndex"`
 	EAN                      string   `gorm:"size:255;not null;index"`
 	Name                     *string  `gorm:"size:255"`
 	ItemType                 ItemType `gorm:"type:enum('father','son');not null;default:'father'"`
@@ -54,4 +54,5 @@ type Item struct {
 	FatherRel     *ItemsParents   `gorm:"foreignKey:ID;references:ChildItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	AsinRel       *Asin           `gorm:"foreignKey:ID;references:ItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	SupplierItems *[]SupplierItem `gorm:"foreignKey:ItemID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	ItemLocations *[]ItemLocation `gorm:"foreignKey:ItemMainSku;references:MainSKU;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }

@@ -9,6 +9,7 @@ type ItemInfo struct {
 	Ean           string
 	Supplier      string
 	AssignedUser  AssignedUserToOrderItem
+	Locations     []string
 }
 type AssignedUserToOrderItem struct {
 	AssignationId uint64 `json:"assignation_id"`
