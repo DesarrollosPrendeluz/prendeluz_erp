@@ -5,6 +5,9 @@ type ItemInfo struct {
 	Sku           string
 	Amount        int64
 	RecivedAmount int64
+	Name          string
+	Ean           string
+	Supplier      string
 	AssignedUser  AssignedUserToOrderItem
 }
 type AssignedUserToOrderItem struct {

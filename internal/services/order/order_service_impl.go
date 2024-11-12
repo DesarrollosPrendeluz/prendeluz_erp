@@ -165,11 +165,19 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 
 		for _, orderItem := range orderItemList {
 			var itemInfo dtos.ItemInfo
-			item, _ := s.itemsRepo.FindByID(orderItem.ItemID)
+			item, _ := s.itemsRepo.FindByIdExtraData(orderItem.ItemID)
 			itemInfo.Id = orderItem.ID
 			itemInfo.Sku = item.MainSKU
+			itemInfo.Name = *item.Name
+			itemInfo.Ean = item.EAN
 			itemInfo.Amount = orderItem.Amount
 			itemInfo.RecivedAmount = orderItem.RecivedAmount
+			if item.SupplierItems != nil && len(*item.SupplierItems) > 0 && (*item.SupplierItems)[0].Supplier != nil {
+				itemInfo.Supplier = (*item.SupplierItems)[0].Supplier.Name
+			} else {
+				itemInfo.Supplier = "No asignado"
+			}
+
 			if orderItem.AssignedRel.ID != 0 {
 				itemInfo.AssignedUser.AssignationId = orderItem.AssignedRel.ID
 				itemInfo.AssignedUser.UserId = uint64(orderItem.AssignedRel.UserRel.ID)

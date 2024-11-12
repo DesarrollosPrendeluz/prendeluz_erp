@@ -26,6 +26,16 @@ func (repo *ItemRepoImpl) FindByMainSku(sku string) (models.Item, error) {
 
 }
 
+// Retorna el producto de coincidir con el id de item así mismo retorna el proveedor y sus ubicaciones de alamcen
+func (repo *ItemRepoImpl) FindByIdExtraData(id uint64) (models.Item, error) {
+	var item models.Item
+
+	result := repo.DB.Preload("SupplierItems.Supplier").Where("id LIKE ?", id).First(&item)
+
+	return item, result.Error
+
+}
+
 func (repo *ItemRepoImpl) FindSonId(id uint64) (uint64, error) {
 	var item models.Item
 	var idChild uint64
