@@ -60,13 +60,12 @@ func GetOrders(c *gin.Context) {
 	orderService := services.NewOrderService()
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-	orderType, _ := strconv.Atoi(c.DefaultQuery("type_id", "0"))
 	statusType, _ := strconv.Atoi(c.DefaultQuery("status_id", "0"))
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
 	code := c.Query("order_code")
 
-	orders, recount, err := orderService.GetOrders(page, pageSize, startDate, endDate, orderType, statusType, code)
+	orders, recount, err := orderService.GetOrders(page, pageSize, startDate, endDate, statusType, code)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Results": gin.H{"error": err}})
