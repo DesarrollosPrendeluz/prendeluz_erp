@@ -48,6 +48,13 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		adminUsersOrderLineRoutes.PATCH("", controllers.EditOrdersLines)
 	}
+	allUsersFatherOrderRoutes := router.Group("/fatherOrder").Use(middlewares.Auth, middlewares.AllStoreUsers)
+	{
+		allUsersFatherOrderRoutes.GET("", controllers.GetFatherOrdersData)
+		allUsersFatherOrderRoutes.PATCH("", controllers.UpdateFatherOrders)
+		allUsersFatherOrderRoutes.GET("/orderLines", controllers.GetOrderLinesByFatherId)
+
+	}
 
 	//TODO: por implementar
 	allUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AllStoreUsers)
