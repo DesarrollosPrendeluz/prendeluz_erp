@@ -15,7 +15,7 @@ type OrderItem struct {
 	ClientID uint64 `gorm:"-"`
 
 	Order            Order            `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	Item             Item             `gorm:"foreignKey:ItemID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Item             Item             `gorm:"foreignKey:ID;references:ItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	AssignedRel      AssignedLine     `gorm:"foreignKey:OrderLineID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	InOrderRelation  InOrderRelation  `gorm:"foreignKey:ID;references:OrderLineID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	OutOrderRelation OutOrderRelation `gorm:"foreignKey:ID;references:OrderLineID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`

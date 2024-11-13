@@ -9,8 +9,8 @@ type ItemsParents struct {
 	CreatedAt    *time.Time
 	UpdatedAt    *time.Time
 
-	Child  *Item `gorm:"foreignKey:ChildItemID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	Parent *Item `gorm:"foreignKey:ParentItemID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Child  *Item `gorm:"foreignKey:ID;references:ChildItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Parent *Item `gorm:"foreignKey:ID;references:ParentItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (ItemsParents) TableName() string {

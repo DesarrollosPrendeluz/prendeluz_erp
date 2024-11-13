@@ -19,7 +19,7 @@ type Order struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 
-	OrderStatus OrderStatus `gorm:"foreignKey:OrderStatusID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	OrderStatus OrderStatus `gorm:"foreignKey:ID;references:OrderStatusID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	FatherOrder FatherOrder `gorm:"foreignKey:ID;references:FatherOrderID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	OrderLines  []OrderItem `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	// Orden_compra string `gorm:"primaryKey;size:255;not null"`

@@ -29,7 +29,23 @@ func GetFatherOrdersData(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results, "recount": recount}})
 
 }
-func GetOrderLinesByFatherId(c *gin.Context) {}
+func GetOrderLinesByFatherId(c *gin.Context) {
+
+	repo := fatherorderrepo.NewFatherOrderRepository(db.DB)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	fatherCode := c.Query("father_order_code")
+
+	results, recount, err := repo.FindLinesByFatherOrderCode(pageSize, page, fatherCode)
+
+	if err != nil {
+		// Manejo del error si las credenciales no son correctas
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results, "recount": recount}})
+}
 func UpdateFatherOrders(c *gin.Context) {
 	var requestBody dtos.OrdersToUpdatePartially
 	var errorList []error
