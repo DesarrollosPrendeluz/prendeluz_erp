@@ -7,6 +7,9 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+	"time"
+
+	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/ordererrorrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
@@ -36,7 +39,7 @@ func NewOrderService() *OrderServiceImpl {
 }
 
 // retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
-func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
+func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, fatherOrderId uint64) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
 	itemsRepo := itemsrepo.NewItemRepository(db.DB)
 
 	var errorOrdersList []models.ErrorOrder
@@ -69,9 +72,8 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) 
 
 		order := models.Order{
 			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
-			OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
 			Code:          orderCode.OrderCode,
-			Filename:      filename,
+			FatherOrderID: fatherOrderId,
 		}
 		ordersList = append(ordersList, order)
 
@@ -82,6 +84,9 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, filename string) 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
 func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) error {
 	fmt.Println("entra")
+	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
+	fechaActual := time.Now().Format("2006-01-02 15:04:05")
+
 	excelOrderList, err := utils.ExceltoJSON(file)
 
 	if err != nil {
@@ -90,44 +95,58 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	for _, order := range excelOrderList {
 		fmt.Printf("Contenido del orden: %+v\n", order)
 	}
-
-	succesOrders, orderItems, errorOrders := generateOrdersAndOrderLines(excelOrderList, filename)
-	orderRepo := orderrepo.NewOrderRepository(db.DB)
-	orderItem := orderitemrepo.NewOrderItemRepository(db.DB)
-	out := outorderrelationrepo.NewOutOrderRelationRepository(db.DB)
-	orderErr := ordererrorrepo.NewOrderErrRepository(db.DB)
-
-	_, errs := orderRepo.CreateAll(&succesOrders)
-	if errs != nil {
-		return err
+	//pendiente de crear la father order
+	fatherObject := models.FatherOrder{
+		OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
+		OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
+		Code:          "OC-." + fechaActual,
+		Filename:      "request",
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 
-	if len(errorOrders) > 0 {
-		_, err := orderErr.CreateAll(&errorOrders)
+	if fatherRepo.Create(&fatherObject) == nil {
+
+		succesOrders, orderItems, errorOrders := generateOrdersAndOrderLines(excelOrderList, fatherObject.ID)
+		orderRepo := orderrepo.NewOrderRepository(db.DB)
+		orderItem := orderitemrepo.NewOrderItemRepository(db.DB)
+		out := outorderrelationrepo.NewOutOrderRelationRepository(db.DB)
+		orderErr := ordererrorrepo.NewOrderErrRepository(db.DB)
+
+		_, errs := orderRepo.CreateAll(&succesOrders)
+		if errs != nil {
+			return err
+		}
+
+		if len(errorOrders) > 0 {
+			_, err := orderErr.CreateAll(&errorOrders)
+			if err != nil {
+				return err
+			}
+		}
+		var orderItemToInsert []models.OrderItem
+		for _, order := range succesOrders {
+			for _, tmp := range orderItems[order.Code] {
+				tmp.OrderID = order.ID
+				orderItemToInsert = append(orderItemToInsert, tmp)
+			}
+		}
+		for _, orderLine := range orderItemToInsert {
+			err = orderItem.Create(&orderLine)
+			out.Create(&models.OutOrderRelation{
+				ClientID:    orderLine.ClientID,
+				OrderLineID: orderLine.ID,
+			})
+
+		}
+
 		if err != nil {
 			return err
 		}
-	}
-	var orderItemToInsert []models.OrderItem
-	for _, order := range succesOrders {
-		for _, tmp := range orderItems[order.Code] {
-			tmp.OrderID = order.ID
-			orderItemToInsert = append(orderItemToInsert, tmp)
-		}
-	}
-	for _, orderLine := range orderItemToInsert {
-		err = orderItem.Create(&orderLine)
-		out.Create(&models.OutOrderRelation{
-			ClientID:    orderLine.ClientID,
-			OrderLineID: orderLine.ID,
-		})
-
-	}
-
-	if err != nil {
+		return nil
+	} else {
 		return err
 	}
-	return nil
 
 }
 
@@ -157,9 +176,9 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 		fmt.Println(order.ID)
 		itemOrder.Id = order.ID
 		itemOrder.OrderCode = order.Code
-		itemOrder.TypeID = int64(order.OrderTypeID)
+		itemOrder.TypeID = int64(order.FatherOrder.OrderTypeID)
 		itemOrder.StatusID = int64(order.OrderStatusID)
-		itemOrder.Type = order.OrderType.Name
+		itemOrder.Type = order.FatherOrder.OrderType.Name
 		itemOrder.Status = order.OrderStatus.Name
 		orderItemList, _ := s.orderItemsRepo.FindByOrder(order.ID)
 

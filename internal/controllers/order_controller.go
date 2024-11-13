@@ -8,6 +8,7 @@ import (
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
+	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
@@ -120,8 +121,9 @@ func CreateOrder(c *gin.Context) {
 	for _, dataItem := range requestBody.Data {
 		order := dataItem.Order
 		lines := dataItem.Lines
+		fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
 		repo := orderrepo.NewOrderRepository(db.DB)
-		orderObject := models.Order{
+		fatherObject := models.FatherOrder{
 			OrderStatusID: order.Status,
 			OrderTypeID:   order.Type,
 			Code:          "request.generated." + fechaActual,
@@ -130,10 +132,21 @@ func CreateOrder(c *gin.Context) {
 			UpdatedAt:     time.Now(),
 		}
 
-		if repo.Create(&orderObject) == nil {
-			createOrderLines(orderObject, lines)
+		if fatherRepo.Create(&fatherObject) == nil {
+			orderObject := models.Order{
+				OrderStatusID: order.Status,
+				FatherOrderID: fatherObject.ID,
+				Code:          "request.generated." + fechaActual,
+				CreatedAt:     time.Now(),
+				UpdatedAt:     time.Now(),
+			}
+			if repo.Create(&orderObject) == nil {
+				createOrderLines(fatherObject, orderObject, lines)
+
+			}
 
 		}
+
 		if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
 			log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
 		} else {
@@ -153,7 +166,7 @@ func CreateOrder(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
 }
 
-func createOrderLines(order models.Order, lines []dtos.Line) error {
+func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines []dtos.Line) error {
 	repo := orderitemrepo.NewOrderItemRepository(db.DB) // Asumiendo que tienes un repositorio para las líneas
 	itemRepo := itemsrepo.NewItemRepository(db.DB)
 
@@ -174,7 +187,7 @@ func createOrderLines(order models.Order, lines []dtos.Line) error {
 
 			return err
 		}
-		if order.OrderTypeID == uint64(2) && line.ClientID != nil {
+		if fatherOrder.OrderTypeID == uint64(2) && line.ClientID != nil {
 			outRelRepo := outorderrelationrepo.NewOutOrderRelationRepository(db.DB)
 			outRel := models.OutOrderRelation{
 				ClientID:    *line.ClientID,
@@ -209,9 +222,9 @@ func EditOrders(c *gin.Context) {
 		if dataItem.Status != nil {
 			model.OrderStatusID = *dataItem.Status
 		}
-		if dataItem.Type != nil {
-			model.OrderTypeID = *dataItem.Type
-		}
+		// if dataItem.Type != nil {
+		// 	model.OrderTypeID = *dataItem.Type
+		// }
 		error := order.Update(model)
 		if error != nil {
 			errorList = append(errorList, error)

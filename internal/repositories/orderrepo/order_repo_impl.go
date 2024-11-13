@@ -76,7 +76,7 @@ func (repo *OrderRepoImpl) FindOrderFiltered(pageSize int, page int, startDate s
 
 		return query
 	}
-	query := repo.DB.Preload("OrderStatus").Preload("OrderType")
+	query := repo.DB.Preload("OrderStatus").Preload("OrderType").Preload("FatherOrder.OrderType")
 	query = applyFilters(query)
 
 	query2 := repo.DB.Model(&models.Order{})
@@ -108,7 +108,7 @@ func (r *OrderRepoImpl) FindAll(pageSize int, offset int) ([]models.Order, int64
 	}
 
 	// Luego obtener los registros paginados
-	result = r.DB.Preload("OrderStatus").Preload("OrderType").Limit(pageSize).Offset(offset).Find(&items)
+	result = r.DB.Preload("OrderStatus").Preload("FatherOrder.OrderType").Limit(pageSize).Offset(offset).Find(&items)
 
 	return items, totalRecords, result.Error
 }
