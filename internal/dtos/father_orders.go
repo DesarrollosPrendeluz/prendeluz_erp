@@ -11,19 +11,23 @@ type FatherOrderWithRecount struct {
 	PendingStock  float64 `json:"pending_stock"`
 }
 type FatherOrder struct {
-	ID            uint64 `json:"id"`
-	Code          string `json:"code"`
-	OrderStatusID uint   `json:"status_id"`
-	OrderTypeID   uint   `json:"type_id"`
-	Status        string `json:"status"`
-	Type          string `json:"type"`
-	Childs        []ChildOrder
+	ID              uint64 `json:"id"`
+	Code            string `json:"code"`
+	OrderStatusID   uint   `json:"status_id"`
+	OrderTypeID     uint   `json:"type_id"`
+	Status          string `json:"status"`
+	Type            string `json:"type"`
+	Quantity        uint64 `json:"quantity"`
+	RecivedQuantity uint64 `json:"recived_quantity"`
+	Childs          []ChildOrder
 }
 type ChildOrder struct {
-	ID            uint64 `json:"id"`
-	Code          string `json:"code"`
-	OrderStatusID uint   `json:"status_id"`
-	Status        string `json:"status"`
+	ID              uint64 `json:"id"`
+	Code            string `json:"code"`
+	OrderStatusID   uint   `json:"status_id"`
+	Status          string `json:"status"`
+	Quantity        uint64 `json:"quantity"`
+	RecivedQuantity uint64 `json:"recived_quantity"`
 }
 
 type FatherOrderOrdersAndLines struct {

@@ -165,6 +165,8 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 
 func (repo *FatherOrderImpl) findParentAndOrders(code string) (dtos.FatherOrder, []uint64, error) {
 	var data models.FatherOrder
+	var total uint64
+	var partial uint64
 	query := repo.DB.
 		Preload("ChildOrders.OrderStatus").
 		Preload("OrderStatus").
@@ -187,11 +189,15 @@ func (repo *FatherOrderImpl) findParentAndOrders(code string) (dtos.FatherOrder,
 			for _, order := range *data.ChildOrders {
 				ids = append(ids, order.ID)
 				orders = append(orders, dtos.ChildOrder{
-					ID:            order.ID,
-					Code:          order.Code,
-					OrderStatusID: uint(order.OrderStatusID),
-					Status:        order.OrderStatus.Name,
+					ID:              order.ID,
+					Code:            order.Code,
+					OrderStatusID:   uint(order.OrderStatusID),
+					Status:          order.OrderStatus.Name,
+					Quantity:        uint64(order.Quantity),
+					RecivedQuantity: uint64(order.RecivedQuantity),
 				})
+				partial = partial + uint64(order.RecivedQuantity)
+				total = total + uint64(order.Quantity)
 
 			}
 
@@ -200,13 +206,15 @@ func (repo *FatherOrderImpl) findParentAndOrders(code string) (dtos.FatherOrder,
 
 	}()
 	returnData := dtos.FatherOrder{
-		ID:            data.ID,
-		Code:          data.Code,
-		Type:          data.OrderType.Name,
-		OrderTypeID:   uint(data.OrderTypeID),
-		Status:        data.OrderStatus.Name,
-		OrderStatusID: uint(data.OrderStatusID),
-		Childs:        orders,
+		ID:              data.ID,
+		Code:            data.Code,
+		Type:            data.OrderType.Name,
+		OrderTypeID:     uint(data.OrderTypeID),
+		Status:          data.OrderStatus.Name,
+		OrderStatusID:   uint(data.OrderStatusID),
+		Quantity:        total,
+		RecivedQuantity: partial,
+		Childs:          orders,
 	}
 
 	return returnData, orderIds, query.Error

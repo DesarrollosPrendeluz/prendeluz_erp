@@ -17,7 +17,7 @@ func NewStockDeficitRepository(db *gorm.DB) *StockDeficitImpl {
 
 func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset int) ([]models.StockDeficit, error) {
 	var models []models.StockDeficit
-	repo.DB.Debug().
+	repo.DB.
 		Preload("Item.SupplierItems.Supplier").
 		Where("store_id = ?", storeId).
 		Where("quantity != 0 OR pending_stock != 0").
@@ -29,7 +29,7 @@ func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset in
 func (repo *StockDeficitImpl) GetallByStoreAndSupplier(storeId int, supplier int, pageSize int, offset int) ([]models.StockDeficit, error) {
 	var modelsData []models.StockDeficit
 
-	subQuery := repo.DB.Debug().
+	subQuery := repo.DB.
 		Model(&models.StockDeficit{}).
 		Select("stock_deficits.id").
 		Joins("JOIN items ON items.main_sku = stock_deficits.parent_main_sku").
