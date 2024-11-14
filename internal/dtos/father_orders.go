@@ -33,6 +33,7 @@ type FatherOrderOrdersAndLines struct {
 
 type LinesInfo struct {
 	LineID          uint     `json:"id"`
+	OrderCode       uint64   `json:"order_id"`
 	Quantity        int      `json:"quantity"`
 	RecivedQuantity int      `json:"recived_quantity"`
 	MainSku         string   `json:"main_sku"`

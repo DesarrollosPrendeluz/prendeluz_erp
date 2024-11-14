@@ -1,6 +1,7 @@
 package fatherorderrepo
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
@@ -39,7 +40,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 		return query
 	}
 
-	query := repo.DB.Debug().
+	query := repo.DB.
 		Table("father_orders fo").
 		Select("fo.id, fo.code, fo.order_status_id, os.name as status, ot.name as type, fo.order_type_id, SUM(ol.quantity) as total_stock, SUM(ol.recived_quantity) as pending_stock").
 		Joins("LEFT JOIN orders o ON o.father_order_id = fo.id").
@@ -60,31 +61,59 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	return data, totalRecords, results.Error
 }
 
-func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string) (dtos.FatherOrderOrdersAndLines, int64, error) {
+func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string) (dtos.FatherOrderOrdersAndLines, int64, error) {
 	var result dtos.FatherOrderOrdersAndLines
 	var items []models.OrderItem
 	var totalRecords int64
+	var results []models.Item
+	var lines []dtos.LinesInfo
 
 	parentData, orderIds, _ := repo.findParentAndOrders(fatherOrderCode)
 
 	//query de obtención de datos de lineas
-	repo.DB.Debug().
+
+	query := repo.DB.
 		Model(&models.OrderItem{}).
+		Preload("AssignedRel.UserRel").
 		Preload("Item.FatherRel.Parent.SupplierItems.Supplier").
 		Preload("Item.FatherRel.Parent.ItemLocations.StoreLocations").
-		Where("order_id in ?", orderIds).
+		Where("order_id in ?", orderIds)
+	countQuery := repo.DB.
+		Model(&models.OrderItem{}).
+		Where("order_id in ?", orderIds)
+	if ean != "" {
+		errr := repo.DB.
+			Table("items AS i").
+			Where("i.ean = ?", ean).
+			Find(&results).Error
+
+		itemIds := func() []uint64 {
+			var ids []uint64
+			for _, order := range results {
+				ids = append(ids, order.ID)
+
+			}
+			return ids
+
+		}()
+		if errr != nil {
+			fmt.Println(errr.Error())
+
+		}
+		query.Where("item_id in ?", itemIds)
+		countQuery.Where("item_id in ?", itemIds)
+
+	}
+
+	query.
 		Offset(offset).
 		Limit(pageSize).
 		Find(&items)
 
-	repo.DB.
-		Model(&models.OrderItem{}).
-		Where("order_id in ?", orderIds).
+	countQuery.
 		Count(&totalRecords)
 
 	//procesado de datos de la query de lineas
-
-	var lines []dtos.LinesInfo
 
 	for _, item := range items {
 		// Obtener el nombre del proveedor
@@ -109,12 +138,19 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 		// Crear la línea de información
 		lineInfo := dtos.LinesInfo{
 			LineID:          uint(item.ID),
+			OrderCode:       item.OrderID,
+			Name:            *item.Item.Name,
 			Quantity:        int(item.Amount),
 			RecivedQuantity: int(item.RecivedAmount),
 			MainSku:         item.Item.MainSKU,
 			Ean:             item.Item.EAN,
 			SupplierName:    supplierName,
 			Location:        locations,
+			AssignedUser: dtos.AssignedUserToOrderItem{
+				AssignationId: item.AssignedRel.ID,
+				UserId:        item.AssignedRel.UserID,
+				UserName:      item.AssignedRel.UserRel.Name,
+			},
 		}
 
 		// Añadir la línea al resultado
@@ -129,12 +165,20 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 
 func (repo *FatherOrderImpl) findParentAndOrders(code string) (dtos.FatherOrder, []uint64, error) {
 	var data models.FatherOrder
-	results := repo.DB.
+	query := repo.DB.
 		Preload("ChildOrders.OrderStatus").
 		Preload("OrderStatus").
-		Preload("OrderType").
-		Where("code LIKE ?", "%"+code+"%").
-		First(&data)
+		Preload("OrderType")
+
+	if code != "" {
+		query = query.Where("code LIKE ?", "%"+code+"%")
+	}
+
+	err := query.First(&data).Error
+
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
 
 	orderIds, orders := func() ([]uint64, []dtos.ChildOrder) {
 		var ids []uint64
@@ -165,5 +209,5 @@ func (repo *FatherOrderImpl) findParentAndOrders(code string) (dtos.FatherOrder,
 		Childs:        orders,
 	}
 
-	return returnData, orderIds, results.Error
+	return returnData, orderIds, query.Error
 }
