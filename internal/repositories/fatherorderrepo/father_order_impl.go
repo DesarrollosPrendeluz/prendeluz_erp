@@ -34,7 +34,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 
 		// Filtro de código de orden
 		if fatherOrderCode != "" {
-			query = query.Where("code = ?", fatherOrderCode)
+			query = query.Where("fo.code = ?", fatherOrderCode)
 		}
 
 		return query
