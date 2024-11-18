@@ -67,7 +67,7 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 	var deficit StockDeficitResult
 	var pending StockDeficitResult
 
-	if err := repo.DB.Debug().Table("item_parents AS ip").
+	if err := repo.DB.Table("item_parents AS ip").
 		Select("ip.parent_item_id, i.main_sku").
 		Joins("JOIN items i ON i.id = ip.parent_item_id").
 		Where("ip.child_item_id = ?", child_item_id).
@@ -76,7 +76,7 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 		fmt.Printf("Error al ejecutar la consulta: %v", err)
 	}
 
-	err2 := repo.DB.Debug().
+	err2 := repo.DB.
 		Table("order_lines AS ol").
 		Select("GREATEST(0, -(IFNULL(AVG(ss.quantity), 0) - (SUM(ol.quantity) - SUM(ol.recived_quantity)))) AS deficit").
 		Joins("LEFT JOIN item_parents ip ON ip.child_item_id = ol.item_id").
@@ -87,7 +87,7 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 		Where("ol.store_id = ?", store_id).
 		Group("ip.parent_item_id").
 		Take(&deficit).Error
-	err2 = repo.DB.Debug().
+	err2 = repo.DB.
 		Table("order_lines AS ol").
 		Select(" SUM(ol.quantity) - SUM(ol.recived_quantity) AS deficit").
 		Joins("LEFT JOIN item_parents ip ON ip.child_item_id = ol.item_id").

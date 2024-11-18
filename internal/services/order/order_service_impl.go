@@ -99,7 +99,7 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	fatherObject := models.FatherOrder{
 		OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
 		OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
-		Code:          "OC-." + fechaActual,
+		Code:          "OC-" + fechaActual,
 		Filename:      "request",
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),

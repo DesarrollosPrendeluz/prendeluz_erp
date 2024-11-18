@@ -388,9 +388,7 @@ func updateOrderLine(
 	model, err := orderLines.FindByID(dataItem.Id)
 
 	callback(c, dataItem, model, err, errorList)
-	fmt.Println("sale del callback ")
 	error := orderLines.Update(model)
-	fmt.Println("se va a ejecutar las querys ")
 	repoStockDef.CalcStockDeficitByItem(model.ItemID, model.StoreID)
 	if error != nil {
 		*errorList = append(*errorList, error)
