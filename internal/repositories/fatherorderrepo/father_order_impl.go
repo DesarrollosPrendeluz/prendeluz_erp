@@ -117,11 +117,11 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 
 	for _, item := range items {
 		// Obtener el nombre del proveedor
-		supplierName := func() string {
+		supplierName, supplierRef := func() (string, string) {
 			if item.Item.FatherRel.Parent.SupplierItems != nil && len(*item.Item.FatherRel.Parent.SupplierItems) > 0 {
-				return (*item.Item.FatherRel.Parent.SupplierItems)[0].Supplier.Name
+				return (*item.Item.FatherRel.Parent.SupplierItems)[0].Supplier.Name, (*item.Item.FatherRel.Parent.SupplierItems)[0].SupplierSku
 			}
-			return ""
+			return "", ""
 		}()
 
 		// Obtener las ubicaciones
@@ -145,6 +145,7 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 			MainSku:         item.Item.MainSKU,
 			Ean:             item.Item.EAN,
 			SupplierName:    supplierName,
+			SupplierRef:     supplierRef,
 			Location:        locations,
 			AssignedUser: dtos.AssignedUserToOrderItem{
 				AssignationId: item.AssignedRel.ID,

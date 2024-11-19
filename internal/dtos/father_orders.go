@@ -44,6 +44,7 @@ type LinesInfo struct {
 	Ean             string   `json:"ean"`
 	Name            string   `json:"name"`
 	SupplierName    string   `json:"supplier"`
+	SupplierRef     string   `json:"supplier_reference"`
 	Location        []string `json:"locations"`
 	AssignedUser    AssignedUserToOrderItem
 }
