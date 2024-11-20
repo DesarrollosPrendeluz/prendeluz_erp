@@ -61,12 +61,13 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	return data, totalRecords, results.Error
 }
 
-func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string) (dtos.FatherOrderOrdersAndLines, int64, error) {
+func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string) (dtos.FatherOrderOrdersAndLines, int64, error) {
 	var result dtos.FatherOrderOrdersAndLines
 	var items []models.OrderItem
 	var totalRecords int64
 	var results []models.Item
 	var lines []dtos.LinesInfo
+	var itemIds []uint64
 
 	parentData, orderIds, _ := repo.findParentAndOrders(fatherOrderCode)
 
@@ -81,25 +82,42 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 	countQuery := repo.DB.
 		Model(&models.OrderItem{}).
 		Where("order_id in ?", orderIds)
-	if ean != "" {
-		errr := repo.DB.
-			Table("items AS i").
-			Where("i.ean = ?", ean).
-			Find(&results).Error
 
-		itemIds := func() []uint64 {
+	if ean != "" || supplier_sku != "" {
+		query := repo.DB.
+			Table("items AS i").
+			Select(" distinct i.id").
+			Joins("inner join supplier_items as si on si.item_id = i.id")
+
+		if ean != "" && supplier_sku != "" {
+			// Ambos, ean y supplier_sku, tienen valor
+			query = query.Where("i.ean = ? OR si.supplier_sku = ?", ean, supplier_sku)
+		} else if ean != "" {
+			// Solo ean tiene valor
+			query = query.Where("i.ean = ?", ean)
+		} else if supplier_sku != "" {
+			// Solo supplier_sku tiene valor
+			query = query.Where("si.supplier_sku = ?", supplier_sku)
+		}
+
+		errr := query.Find(&results).Error
+		if errr != nil {
+			fmt.Println(errr.Error())
+
+		}
+
+		itemIds = func() []uint64 {
 			var ids []uint64
-			for _, order := range results {
-				ids = append(ids, order.ID)
+			for _, item := range results {
+				ids = append(ids, item.ID)
 
 			}
 			return ids
 
 		}()
-		if errr != nil {
-			fmt.Println(errr.Error())
 
-		}
+	}
+	if len(itemIds) > 0 {
 		query.Where("item_id in ?", itemIds)
 		countQuery.Where("item_id in ?", itemIds)
 

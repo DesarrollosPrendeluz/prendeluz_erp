@@ -36,8 +36,9 @@ func GetOrderLinesByFatherId(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 	fatherCode := c.Query("father_order_code")
 	ean := c.Query("ean")
+	supplierSku := c.Query("ref_prov")
 
-	results, recount, err := repo.FindLinesByFatherOrderCode(pageSize, page, fatherCode, ean)
+	results, recount, err := repo.FindLinesByFatherOrderCode(pageSize, page, fatherCode, ean, supplierSku)
 
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas
