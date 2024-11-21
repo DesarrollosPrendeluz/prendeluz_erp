@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
 )
@@ -37,6 +38,26 @@ func LoadConfig(env string) (*Config, error) {
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		log.Fatalf("Error unmarshalling config file: %v", err)
+	}
+
+	if port := os.Getenv("SERVER_PORT"); port != "" {
+		fmt.Println(port)
+		config.Server.Port, _ = strconv.Atoi(port)
+	}
+	if host := os.Getenv("DB_HOST"); host != "" {
+		config.Database.Host = host
+	}
+	if port := os.Getenv("DB_PORT"); port != "" {
+		config.Database.Port, _ = strconv.Atoi(port)
+	}
+	if username := os.Getenv("DB_USERNAME"); username != "" {
+		config.Database.Username = username
+	}
+	if password := os.Getenv("DB_PASSWORD"); password != "" {
+		config.Database.Password = password
+	}
+	if dbname := os.Getenv("DB_NAME"); dbname != "" {
+		config.Database.Dbname = dbname
 	}
 
 	return &config, nil
