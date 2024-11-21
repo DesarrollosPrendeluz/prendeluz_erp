@@ -47,10 +47,17 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, fatherOrderId uin
 	orderItemsOk := make(map[string][]models.OrderItem)
 
 	for _, orderCode := range rawOrders {
+		var mainSkus []string
 		for _, orderInfo := range orderCode.Info {
-			item, err := itemsRepo.FindByMainSku(orderInfo.MainSku)
+			mainSkus = append(mainSkus, orderInfo.MainSku)
+		}
+		itemsMap, _ := itemsRepo.FindByMainSkus(mainSkus)
 
-			if err != nil {
+		for _, orderInfo := range orderCode.Info {
+			item, exists := itemsMap[orderInfo.MainSku]
+
+			if !exists {
+				fmt.Println("error en el sku " + orderInfo.MainSku)
 				errorOrder := models.ErrorOrder{
 					Main_Sku: orderInfo.MainSku,
 					Error:    "Item with sku " + orderInfo.MainSku + " not found",
@@ -83,7 +90,7 @@ func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, fatherOrderId uin
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
 func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) error {
-	fmt.Println("entra")
+
 	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
 	fechaActual := time.Now().Format("2006-01-02 15:04:05")
 
@@ -92,9 +99,9 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	if err != nil {
 		return err
 	}
-	for _, order := range excelOrderList {
-		fmt.Printf("Contenido del orden: %+v\n", order)
-	}
+	// for _, order := range excelOrderList {
+	// 	fmt.Printf("Contenido del orden: %+v\n", order)
+	// }
 	//pendiente de crear la father order
 	fatherObject := models.FatherOrder{
 		OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),

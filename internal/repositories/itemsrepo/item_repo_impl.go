@@ -50,3 +50,18 @@ func (repo *ItemRepoImpl) FindSonId(id uint64) (uint64, error) {
 	return idChild, result.Error
 
 }
+
+func (repo *ItemRepoImpl) FindByMainSkus(skus []string) (map[string]models.Item, error) {
+	var items []models.Item
+	skuMap := make(map[string]models.Item)
+
+	result := repo.DB.Where("main_sku in ?", skus).Find(&items)
+
+	for _, item := range items {
+		skuMap[item.MainSKU] = item
+
+	}
+
+	return skuMap, result.Error
+
+}
