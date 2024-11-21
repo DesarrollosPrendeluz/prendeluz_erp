@@ -136,7 +136,12 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 	for _, item := range items {
 		// Obtener el nombre del proveedor
 		supplierName, supplierRef := func() (string, string) {
-			if item.Item.FatherRel.Parent.SupplierItems != nil && len(*item.Item.FatherRel.Parent.SupplierItems) > 0 {
+			if item.Item.ItemType != models.Father &&
+				item.Item.FatherRel != nil &&
+				item.Item.FatherRel.Parent != nil &&
+				item.Item.FatherRel.Parent.SupplierItems != nil &&
+				len(*item.Item.FatherRel.Parent.SupplierItems) > 0 {
+
 				return (*item.Item.FatherRel.Parent.SupplierItems)[0].Supplier.Name, (*item.Item.FatherRel.Parent.SupplierItems)[0].SupplierSku
 			}
 			return "", ""
@@ -145,10 +150,15 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 		// Obtener las ubicaciones
 		locations := func() []string {
 			var locs []string
-			if item.Item.FatherRel.Parent.ItemLocations != nil && len(*item.Item.FatherRel.Parent.ItemLocations) > 0 {
+			if item.Item.FatherRel != nil &&
+				item.Item.FatherRel.Parent != nil &&
+				item.Item.FatherRel.Parent.ItemLocations != nil &&
+				len(*item.Item.FatherRel.Parent.ItemLocations) > 0 {
 				for _, location := range *item.Item.FatherRel.Parent.ItemLocations {
 					locs = append(locs, location.StoreLocations.Name)
 				}
+			} else {
+				locs = append(locs, "")
 			}
 			return locs
 		}()
