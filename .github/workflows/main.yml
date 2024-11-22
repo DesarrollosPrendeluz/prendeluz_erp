@@ -28,10 +28,10 @@ jobs:
             --build-arg DB_PSWD=${{ secrets.DB_PASSWORD }} \
             -t ${{ secrets.DOCKER_USERNAME }}/test_backend_erp:latest .
 
-      # 4. Push Docker image to DockerHub
-      # - name: Push Docker image
-      #   run: |
-      #     docker push ${{ secrets.DOCKER_USERNAME }}/my-image:latest
+      #4. Push Docker image to DockerHub
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/test_backend_erp:latest
       # - name: Execute commands via SSH
       #   uses: appleboy/ssh-action@v0.1.8
       #   with:
