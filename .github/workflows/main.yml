@@ -32,16 +32,19 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/test_backend_erp:latest
-      # - name: Execute commands via SSH
-      #   uses: appleboy/ssh-action@v0.1.8
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USERNAME }}
-      #     password: ${{ secrets.SSH_PASSWORD }}
-      #     script: |
-      #       echo "Conectando al servidor remoto..."
-      #       docker pull ${{ secrets.DOCKER_USERNAME }}/my-image:latest
-      #       docker stop my-container || true
-      #       docker rm my-container || true
-      #       docker run -d --name my-container ${{ secrets.DOCKER_USERNAME }}/my-image:latest
+      - name: Execute commands via SSH
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            echo "Conectando al servidor remoto..."
+            docker login
+            docker pull ${{ secrets.DOCKER_USERNAME }}/test_backend_erp:latest
+  # docker stop my-container || true
+  # docker rm my-container || true
+  # docker run -d --name my-container ${{ secrets.DOCKER_USERNAME }}/my-image:latest
+
 
