@@ -20,4 +20,4 @@ RUN go mod tidy
 
 EXPOSE 8880
 
-CMD ["go", "run", "cmd/prendeluz_erp/main.go", "--env", "test"]
+CMD ["go", "run", "cmd/prendeluz_erp/main.go", "--env", "vars"]
