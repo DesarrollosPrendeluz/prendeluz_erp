@@ -153,3 +153,38 @@ func (repo *OrderRepoImpl) GetSupplierOrders(order_type *int) ([]dtos.SupplierOr
 
 	return orders, nil
 }
+
+func (repo *OrderRepoImpl) GetSupplierOrdersByFatherSku(fatherOrderId int) ([]dtos.SupplierOrders, error) {
+	var orders []dtos.SupplierOrders
+
+	// Consulta SQL manual con JOIN
+	query := `
+		SELECT 
+			o.id as order_code, 
+			orl.quantity as stock_to_buy, 
+			it.main_sku as item_sku, 
+			it.id as item_id,
+			ip.parent_item_id as father_id,
+			it.name as name,
+			it.ean as ean,
+			sp.name as supplier_name,
+			spi.supplier_sku as supplier_code,
+			spi.price as supplier_price
+		FROM father_orders fo
+		LEFT JOIN orders  as o on o.father_order_id = of.id
+		INNER JOIN order_lines as orl ON orl.order_id = o.id 
+		LEFT JOIN items as it ON it.id = orl.item_id
+		LEFT JOIN item_parents ip on ip.child_item_id = it.id
+		LEFT JOIN supplier_items as spi ON spi.item_id = ip.parent_item_id AND spi.order = 1
+		LEFT JOIN suppliers as sp ON sp.id = spi.supplier_id
+		WHERE o.order_type_id = 2
+		
+	 ORDER BY o.id`
+
+	// Ejecutamos la consulta con Raw y mapeamos los resultados al slice de `orders`
+	if err := repo.DB.Raw(query).Scan(&orders).Error; err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}

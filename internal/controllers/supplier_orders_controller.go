@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"bytes"
+	"encoding/base64"
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/repositories/orderrepo"
@@ -36,21 +38,17 @@ func GetSupplierOrders(c *gin.Context) {
 func DownloadSupplierOrderExcel(c *gin.Context) {
 	// Ejemplo de obtención de datos desde el repositorio
 	repo := orderrepo.NewOrderRepository(db.DB)
-	var status *int
 
 	// Manejo del parámetro de query `status`
-	statusStr := c.Query("status")
-	if statusStr != "" {
-		statusInt, err := strconv.Atoi(statusStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": "El parámetro 'status' debe ser un número entero."}})
-			return
-		}
-		status = &statusInt
+	fatherOrderId, err := strconv.Atoi(c.DefaultQuery("father_order_id", "0"))
+	if fatherOrderId == 0 || err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": "Father order debe ser distinto de 0 "}})
+		return
 	}
 
 	// Obtener datos del repositorio
-	data, _ := repo.GetSupplierOrders(status)
+	data, _ := repo.GetSupplierOrdersByFatherSku(fatherOrderId)
 
 	// Crear un nuevo archivo Excel
 	f := excelize.NewFile()
@@ -78,14 +76,20 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), datum.StockToBuy)
 	}
 
-	// Configura los encabezados HTTP para la descarga del archivo Excel
-	c.Header("Content-Disposition", "attachment; filename=supplier_orders.xlsx")
-	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Expires", "0")
-
-	// Escribir el archivo Excel en el cuerpo de la respuesta
-	if err := f.Write(c.Writer); err != nil {
-		c.String(http.StatusInternalServerError, "Error al generar el archivo Excel")
+	// Escribir el archivo Excel en un buffer
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al generar el archivo Excel"})
+		return
 	}
+
+	// Codificar el contenido del buffer en Base64
+	base64String := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	// Devolver el archivo como una respuesta JSON
+	c.JSON(http.StatusOK, gin.H{"Results": gin.H{
+		"file":     base64String,
+		"filename": "supplier_orders.xlsx",
+	}})
+
 }
