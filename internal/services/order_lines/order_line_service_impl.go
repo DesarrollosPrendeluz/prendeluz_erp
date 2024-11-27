@@ -42,13 +42,13 @@ func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, erro
 		Preload("Item.AsinRel").
 		Preload("Item.FatherRel").
 		Where("id=?", id).
-		Find(&orderItem)
+		First(&orderItem)
 
 	s.itemsRepo.DB.
 		Preload("SupplierItems").
 		Preload("SupplierItems.Brand").
 		Where("id=?", orderItem.Item.FatherRel.ParentItemID).
-		Find(&item)
+		First(&item)
 
 	label.Ean = orderItem.Item.EAN
 	if orderItem.Item.AsinRel != nil {
