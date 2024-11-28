@@ -27,6 +27,7 @@ func RegisterRoutes(router *gin.Engine) {
 	}))
 	router.POST("/login", controllers.Login)
 
+	//Order routes
 	allUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
 		allUsersOrderRoutes.GET("", controllers.GetOrders)
@@ -36,7 +37,6 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
 
 	}
-
 	adminUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AdminStoreUsers)
 	{
 		adminUsersOrderRoutes.POST("/add", controllers.AddOrder)
@@ -44,19 +44,12 @@ func RegisterRoutes(router *gin.Engine) {
 		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
 	}
 
+	//Order lines
 	adminUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AdminStoreUsers)
 	{
 		adminUsersOrderLineRoutes.PATCH("", controllers.EditOrdersLines)
 	}
-	allUsersFatherOrderRoutes := router.Group("/fatherOrder").Use(middlewares.Auth, middlewares.AllStoreUsers)
-	{
-		allUsersFatherOrderRoutes.GET("", controllers.GetFatherOrdersData)
-		allUsersFatherOrderRoutes.PATCH("", controllers.UpdateFatherOrders)
-		allUsersFatherOrderRoutes.GET("/orderLines", controllers.GetOrderLinesByFatherId)
 
-	}
-
-	//TODO: por implementar
 	allUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
 		allUsersOrderLineRoutes.GET("", controllers.GetOrders)
@@ -72,6 +65,15 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderLineAssignRoutes.PATCH("", controllers.EditOrderLinesAssignation)
 	}
 
+	//Father routes
+	allUsersFatherOrderRoutes := router.Group("/fatherOrder").Use(middlewares.Auth, middlewares.AllStoreUsers)
+	{
+		allUsersFatherOrderRoutes.GET("", controllers.GetFatherOrdersData)
+		allUsersFatherOrderRoutes.PATCH("", controllers.UpdateFatherOrders)
+		allUsersFatherOrderRoutes.GET("/orderLines", controllers.GetOrderLinesByFatherId)
+
+	}
+	//Store
 	storeRoutes := router.Group("/store").Use(middlewares.Auth)
 	{
 		storeRoutes.PATCH("/:order_code", controllers.UpdateStore)
@@ -79,12 +81,23 @@ func RegisterRoutes(router *gin.Engine) {
 		storeRoutes.GET("", controllers.GetStores)
 
 	}
-
+	//stock deficit
 	stockDeficit := router.Group("/stock_deficit").Use(middlewares.Auth)
 	{
 		stockDeficit.GET("", controllers.GetStockDeficit)
 	}
 
+	//stock deficit
+	itemStockLocations := router.Group("/item_stock_location").Use(middlewares.Auth)
+	{
+		itemStockLocations.GET("", controllers.GetStockDeficit)
+		itemStockLocations.POST("", controllers.GetStockDeficit)
+		itemStockLocations.PATCH("", controllers.GetStockDeficit)
+		itemStockLocations.PATCH("/movement", controllers.GetStockDeficit)
+
+	}
+
+	//supplier
 	suppliers := router.Group("/supplier").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
 		suppliers.GET("", controllers.GetSuppliers)
