@@ -382,7 +382,6 @@ func updateOrderLine(
 	dataItem dtos.LineToUpdate,
 	errorList *[]error,
 	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
-	fmt.Println("fase final")
 	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
 	repoStockDef := stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	model, err := orderLines.FindByID(dataItem.Id)
