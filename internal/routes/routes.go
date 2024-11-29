@@ -92,7 +92,7 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		storeLocations.GET("", controllers.GetStoreLocation)
 		storeLocations.POST("", controllers.PostStoreLocation)
-		storeLocations.PATCH("", controllers.PostStoreLocation)
+		storeLocations.PATCH("", controllers.PatchStoreLocation)
 
 	}
 
@@ -101,7 +101,6 @@ func RegisterRoutes(router *gin.Engine) {
 		itemStockLocations.GET("", controllers.GetItemStockLocation)
 		itemStockLocations.POST("", controllers.PostItemStockLocation)
 		itemStockLocations.PATCH("", controllers.PatchItemStockLocation)
-		itemStockLocations.PATCH("/movement", controllers.MovItemStockLocation)
 
 	}
 
