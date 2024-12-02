@@ -34,6 +34,8 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderRoutes.GET("/status", controllers.GetOrderStatus)
 		allUsersOrderRoutes.GET("/type", controllers.GetOrderTypes)
 		allUsersOrderRoutes.GET("/supplierOrders", controllers.GetSupplierOrders)
+		allUsersOrderRoutes.PATCH("/closeOrders", controllers.CloseOrderLines)
+
 		allUsersOrderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
 
 	}
@@ -71,6 +73,7 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersFatherOrderRoutes.GET("", controllers.GetFatherOrdersData)
 		allUsersFatherOrderRoutes.PATCH("", controllers.UpdateFatherOrders)
 		allUsersFatherOrderRoutes.GET("/orderLines", controllers.GetOrderLinesByFatherId)
+		allUsersFatherOrderRoutes.PATCH("/close", controllers.CloseOrderLines)
 
 	}
 	//Store

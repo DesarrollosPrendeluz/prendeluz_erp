@@ -390,3 +390,22 @@ func updateOrderLine(
 	}
 
 }
+func CloseOrderLines(c *gin.Context) {
+	var requestBody dtos.FatherOrderId
+	//var errorList []error
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Llamada al segundo procedimiento almacenado
+	if err := db.DB.Exec("CALL UpdatePendingStocks(" + strconv.FormatInt(requestBody.FatherOrderId, 10) + ");").Error; err != nil {
+		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
+}

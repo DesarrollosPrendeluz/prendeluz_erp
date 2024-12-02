@@ -48,3 +48,7 @@ type LinesInfo struct {
 	Location        []string `json:"locations"`
 	AssignedUser    AssignedUserToOrderItem
 }
+
+type FatherOrderId struct {
+	FatherOrderId int64 `json:"fatherOrderId"`
+}
