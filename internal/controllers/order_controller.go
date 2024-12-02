@@ -15,7 +15,6 @@ import (
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
 	"prendeluz/erp/internal/repositories/ordertyperepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
-	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"prendeluz/erp/internal/repositories/tokenrepo"
 	services "prendeluz/erp/internal/services/order"
 
@@ -39,17 +38,11 @@ func AddOrder(c *gin.Context) {
 	serviceOrder.UploadOrderExcel(file, header.Filename)
 	if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
 		log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
-	} else {
-		fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
-
 	}
 
 	// Llamada al segundo procedimiento almacenado
 	if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
 		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
-	} else {
-		fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
-
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"Ok": "Upload succesfully"}})
@@ -382,14 +375,16 @@ func updateOrderLine(
 	dataItem dtos.LineToUpdate,
 	errorList *[]error,
 	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
-	fmt.Println("fase final")
 	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
-	repoStockDef := stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	//repoStockDef := stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	model, err := orderLines.FindByID(dataItem.Id)
 
 	callback(c, dataItem, model, err, errorList)
 	error := orderLines.Update(model)
-	repoStockDef.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+	// if(model.StoreID == 1 && ){
+	// 	repoStockDef.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+
+	// }
 	if error != nil {
 		*errorList = append(*errorList, error)
 	}
