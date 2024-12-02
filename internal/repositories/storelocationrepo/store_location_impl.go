@@ -11,6 +11,6 @@ type StoreLocationImpl struct {
 	*repositories.GORMRepository[models.StoreLocation]
 }
 
-func NewInStoreLocationRepository(db *gorm.DB) *StoreLocationImpl {
+func NewStoreLocationRepository(db *gorm.DB) *StoreLocationImpl {
 	return &StoreLocationImpl{repositories.NewGORMRepository(db, models.StoreLocation{})}
 }

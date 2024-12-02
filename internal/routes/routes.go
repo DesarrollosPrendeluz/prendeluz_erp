@@ -88,12 +88,21 @@ func RegisterRoutes(router *gin.Engine) {
 	}
 
 	//stock deficit
+	storeLocations := router.Group("/store_location").Use(middlewares.Auth)
+	{
+		storeLocations.GET("", controllers.GetStoreLocation)
+		storeLocations.POST("", controllers.PostStoreLocation)
+		storeLocations.PATCH("", controllers.PatchStoreLocation)
+
+	}
+
 	itemStockLocations := router.Group("/item_stock_location").Use(middlewares.Auth)
 	{
-		itemStockLocations.GET("", controllers.GetStockDeficit)
-		itemStockLocations.POST("", controllers.GetStockDeficit)
-		itemStockLocations.PATCH("", controllers.GetStockDeficit)
-		itemStockLocations.PATCH("/movement", controllers.GetStockDeficit)
+		itemStockLocations.GET("", controllers.GetItemStockLocation)
+		itemStockLocations.POST("", controllers.PostItemStockLocation)
+		itemStockLocations.PATCH("", controllers.PatchItemStockLocation)
+		itemStockLocations.PATCH("/stockChanges", controllers.StockChanges)
+		itemStockLocations.PATCH("/stockMovement", controllers.StockMovements)
 
 	}
 

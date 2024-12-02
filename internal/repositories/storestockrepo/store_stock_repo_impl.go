@@ -23,6 +23,14 @@ func (repo *StoreStockRepoImpl) FindByItem(sku_parent string) (models.StoreStock
 	return storeStocks, results.Error
 }
 
+func (repo *StoreStockRepoImpl) FindByItemAndStore(sku_parent string, store_id string) (models.StoreStock, error) {
+	var storeStocks models.StoreStock
+
+	results := repo.DB.Where("parent_main_sku LIKE ? AND store_id = ? ", "%"+sku_parent+"%", store_id).First(&storeStocks)
+
+	return storeStocks, results.Error
+}
+
 func (repo *StoreStockRepoImpl) FindByStore(idStore uint64, pageSize int, offset int) ([]models.StoreStock, error) {
 	var storeStocks []models.StoreStock
 
