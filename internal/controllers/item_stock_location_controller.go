@@ -8,6 +8,8 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/itemlocationrepo"
+	"prendeluz/erp/internal/repositories/storelocationrepo"
+	"prendeluz/erp/internal/repositories/storestockrepo"
 
 	"github.com/gin-gonic/gin"
 )
@@ -99,6 +101,92 @@ func PatchItemStockLocation(c *gin.Context) {
 		if error != nil {
 			errorList = append(errorList, error)
 		}
+
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Stock locations are updated", "Errors": errorList}})
+
+}
+
+// n las request hay que enviarle el stock de articulo nuevo el total es decir si tenemos 100 y le restas 4 le mandamos 96
+func StockChanges(c *gin.Context) {
+
+	var requestBody dtos.ItemStockLocationStockChangeRequest
+	var errorList []error
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Acceder a los valores del cuerpo
+	repo := itemlocationrepo.NewInItemLocationRepository(db.DB)
+	repoLoc := storelocationrepo.NewStoreLocationRepository(db.DB)
+	repoStock := storestockrepo.NewStoreStockRepository(db.DB)
+	for _, requestObject := range requestBody.Data {
+		model, err := repo.FindByID(requestObject.Id)
+		loc, err1 := repoLoc.FindByID(model.StoreLocationID)
+		stock, err2 := repoStock.FindByItemAndStore(model.ItemMainSku, strconv.FormatUint(loc.StoreID, 10))
+		if err != nil || err1 != nil || err2 != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		stock.Amount = ((stock.Amount - int64(model.Stock)) + int64(requestObject.Stock))
+		model.Stock = requestObject.Stock
+
+		error := repo.Update(model)
+		error2 := repoStock.Update(&stock)
+		if error != nil && error2 != nil {
+			errorList = append(errorList, error)
+			errorList = append(errorList, error2)
+		}
+
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Stock locations are updated", "Errors": errorList}})
+
+}
+
+func StockMovements(c *gin.Context) {
+
+	var requestBody dtos.ItemStockLocationStockMovementRequest
+	var errorList []error
+	repo := itemlocationrepo.NewInItemLocationRepository(db.DB)
+	repoLoc := storelocationrepo.NewStoreLocationRepository(db.DB)
+	repoStock := storestockrepo.NewStoreStockRepository(db.DB)
+
+	stockMov := func(sku string, location uint64, stockVariant int64) {
+		model, err := repo.FindByItemsAndLocation(sku, location)
+		loc, err1 := repoLoc.FindByID(model.StoreLocationID)
+		stock, err2 := repoStock.FindByItemAndStore(model.ItemMainSku, strconv.FormatUint(loc.StoreID, 10))
+		if err != nil || err1 != nil || err2 != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		stock.Amount = (stock.Amount + stockVariant)
+		model.Stock = model.Stock + int(stockVariant)
+
+		error := repo.Update(&model)
+		error2 := repoStock.Update(&stock)
+		if error != nil || error2 != nil {
+			errorList = append(errorList, error)
+			errorList = append(errorList, error2)
+		}
+	}
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Acceder a los valores del cuerpo
+
+	for _, requestObject := range requestBody.Data {
+		stockMov(requestObject.MainSku, requestObject.StoreLocationID1, -int64(requestObject.Stock))
+		stockMov(requestObject.MainSku, requestObject.StoreLocationID2, int64(requestObject.Stock))
 
 	}
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Stock locations are updated", "Errors": errorList}})

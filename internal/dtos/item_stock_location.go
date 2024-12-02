@@ -20,3 +20,21 @@ type ItemStockLocationToUpdate struct {
 type ItemStockLocationUpdateReq struct {
 	Data []ItemStockLocationToUpdate `json:"data"`
 }
+
+type ItemStockLocationStockChange struct {
+	Id    uint64 `json:"id"`
+	Stock int    `json:"stock"`
+}
+type ItemStockLocationStockChangeRequest struct {
+	Data []ItemStockLocationStockChange `json:"data"`
+}
+
+type ItemStockLocationStockMovement struct {
+	MainSku          string `json:"productSku"`
+	StoreLocationID1 uint64 `json:"beforeStoreLocationId"`
+	StoreLocationID2 uint64 `json:"aftherStoreLocationId"`
+	Stock            int    `json:"stock"`
+}
+type ItemStockLocationStockMovementRequest struct {
+	Data []ItemStockLocationStockMovement `json:"data"`
+}

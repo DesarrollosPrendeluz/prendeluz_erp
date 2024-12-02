@@ -101,6 +101,8 @@ func RegisterRoutes(router *gin.Engine) {
 		itemStockLocations.GET("", controllers.GetItemStockLocation)
 		itemStockLocations.POST("", controllers.PostItemStockLocation)
 		itemStockLocations.PATCH("", controllers.PatchItemStockLocation)
+		itemStockLocations.PATCH("/stockChanges", controllers.StockChanges)
+		itemStockLocations.PATCH("/stockMovement", controllers.StockMovements)
 
 	}
 
