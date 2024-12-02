@@ -61,6 +61,7 @@ func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, erro
 			label.Brand = supplierItem.Brand.Name
 			label.BrandAddress = supplierItem.Brand.Address
 			label.BrandEmail = supplierItem.Brand.Email
+			label.Company = supplierItem.Brand.Company
 			break
 		}
 	}
