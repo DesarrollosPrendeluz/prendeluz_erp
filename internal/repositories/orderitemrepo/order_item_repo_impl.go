@@ -26,7 +26,15 @@ func (repo *OrderItemRepoImpl) FindByOrder(idOrder uint64) ([]models.OrderItem, 
 // Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
 func (repo *OrderItemRepoImpl) FindByItem(idPedido uint64) ([]models.OrderItem, error) {
 	var orderItems []models.OrderItem
-	results := repo.DB.Where("id_item = ?", idPedido).Find(&orderItems)
+	results := repo.DB.Where("item_id = ?", idPedido).Find(&orderItems)
+
+	return orderItems, results.Error
+}
+
+// Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
+func (repo *OrderItemRepoImpl) FindByItemAndOrder(itemId uint64, orderId uint64) (models.OrderItem, error) {
+	var orderItems models.OrderItem
+	results := repo.DB.Where("item_id = ? and order_id = ?", itemId, orderId).First(&orderItems)
 
 	return orderItems, results.Error
 }

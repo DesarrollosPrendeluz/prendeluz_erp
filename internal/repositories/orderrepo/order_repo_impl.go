@@ -10,9 +10,9 @@ import (
 
 var Order_Status = map[string]int{
 	"iniciada":   1,
-	"finalizada": 2,
-	"en_proceso": 3,
-	"en_espera":  4,
+	"en_espera":  2,
+	"finalizada": 3,
+	"pediente":   4,
 }
 
 var Order_Types = map[string]int{

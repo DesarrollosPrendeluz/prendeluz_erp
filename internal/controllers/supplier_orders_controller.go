@@ -3,9 +3,11 @@ package controllers
 import (
 	"bytes"
 	"encoding/base64"
+	"log"
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	services "prendeluz/erp/internal/services/order"
 	"strconv"
 
 	"github.com/xuri/excelize/v2"
@@ -92,4 +94,18 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 		"filename": "supplier_orders.xlsx",
 	}})
 
+}
+
+func UpdateOrderByExcel(c *gin.Context) {
+	file, header, err := c.Request.FormFile("file")
+
+	serviceOrder := services.NewOrderService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		log.Fatal(err)
+		return
+
+	}
+
+	serviceOrder.UploadOrdersByExcel(file, header.Filename)
 }

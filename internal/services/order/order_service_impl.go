@@ -104,7 +104,7 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	// }
 	//pendiente de crear la father order
 	fatherObject := models.FatherOrder{
-		OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
+		OrderStatusID: uint64(orderrepo.Order_Status["pediente"]),
 		OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
 		Code:          "OC-" + fechaActual,
 		Filename:      "request",
@@ -240,4 +240,38 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 	s.orderRepo.UpdateStatus(orderrepo.Order_Status["finalizada"], order.ID)
 
 	return nil
+}
+
+// Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
+func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, filename string) error {
+	repo := orderrepo.NewOrderRepository(db.DB)
+	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
+	lineRepo := orderitemrepo.NewOrderItemRepository(db.DB)
+	itemRepo := itemsrepo.NewItemRepository(db.DB)
+	var order models.Order
+
+	excelOrderList, _ := utils.ExceltoJSON(file)
+	for _, line := range excelOrderList {
+
+		order, _ = repo.FindByOrderCode(line.OrderCode)
+		for _, rowInfo := range line.Info {
+			if rowInfo.MainSku != "" {
+				item, _ := itemRepo.FindByMainSku(rowInfo.MainSku)
+				orderLine, _ := lineRepo.FindByItemAndOrder(item.ID, order.ID)
+				orderLine.Amount = rowInfo.Amount
+				lineRepo.Update(&orderLine)
+
+			}
+
+		}
+
+		order.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+		repo.Update(&order)
+		fatherOrder, _ := fatherRepo.FindByID(order.FatherOrderID)
+		fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+		fatherRepo.Update(fatherOrder)
+
+	}
+	return nil
+
 }
