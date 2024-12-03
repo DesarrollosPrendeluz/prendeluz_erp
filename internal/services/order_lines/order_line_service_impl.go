@@ -34,37 +34,41 @@ func NewOrderLineServiceImpl() *OrderLineServiceImpl {
 
 func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, error) {
 	var orderItem models.OrderItem
-	var item models.Item
+	//var item models.Item
 	var label dtos.OrderLineLable
 	//itemsRepo := itemsrepo.NewItemRepository(db.DB)
 	s.orderItemsRepo.DB.
 		Preload("Item").
-		Preload("Item.AsinRel").
+		Preload("Item.AsinRel.Brand").
 		Preload("Item.FatherRel").
 		Where("id=?", id).
 		First(&orderItem)
 
-	s.itemsRepo.DB.
-		Preload("SupplierItems").
-		Preload("SupplierItems.Brand").
-		Where("id=?", orderItem.Item.FatherRel.ParentItemID).
-		First(&item)
+	// s.itemsRepo.DB.
+	// 	Preload("SupplierItems").
+	// 	Preload("SupplierItems.Brand").
+	// 	Where("id=?", orderItem.Item.FatherRel.ParentItemID).
+	// 	First(&item)
 
 	label.Ean = orderItem.Item.EAN
 	if orderItem.Item.AsinRel != nil {
 		label.Asin = &orderItem.Item.AsinRel.Code
+		label.Brand = orderItem.Item.AsinRel.Brand.Name
+		label.BrandAddress = orderItem.Item.AsinRel.Brand.Address
+		label.BrandEmail = orderItem.Item.AsinRel.Brand.Email
+		label.Company = orderItem.Item.AsinRel.Brand.Company
 	}
 
-	for _, supplierItem := range *item.SupplierItems {
+	// for _, supplierItem := range *item.SupplierItems {
 
-		if supplierItem.Order == 1 {
-			label.Brand = supplierItem.Brand.Name
-			label.BrandAddress = supplierItem.Brand.Address
-			label.BrandEmail = supplierItem.Brand.Email
-			label.Company = supplierItem.Brand.Company
-			break
-		}
-	}
+	// 	if supplierItem.Order == 1 {
+	// 		label.Brand = supplierItem.Brand.Name
+	// 		label.BrandAddress = supplierItem.Brand.Address
+	// 		label.BrandEmail = supplierItem.Brand.Email
+	// 		label.Company = supplierItem.Brand.Company
+	// 		break
+	// 	}
+	// }
 
 	return label, nil
 }
