@@ -400,12 +400,15 @@ func CloseOrderLines(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	procedureCall := "CALL UpdateOrderLinesAndStock(" + strconv.FormatInt(requestBody.FatherOrderId, 10) + ")"
 	// Llamada al segundo procedimiento almacenado
-	if err := db.DB.Exec("CALL UpdatePendingStocks(" + strconv.FormatInt(requestBody.FatherOrderId, 10) + ");").Error; err != nil {
+	if err := db.DB.Exec(procedureCall).Error; err != nil {
 		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	} else {
+		fmt.Println("se ha ejecutado bien")
+		fmt.Println(procedureCall)
 	}
 	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
 }

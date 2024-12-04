@@ -243,7 +243,7 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
-func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, filename string) error {
+func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader) error {
 	repo := orderrepo.NewOrderRepository(db.DB)
 	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
 	lineRepo := orderitemrepo.NewOrderItemRepository(db.DB)
