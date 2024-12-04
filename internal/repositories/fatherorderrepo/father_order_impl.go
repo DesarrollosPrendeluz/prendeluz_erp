@@ -22,19 +22,19 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	var results *gorm.DB
 	var totalRecords int64
 
-	applyFilters := func(query *gorm.DB) *gorm.DB {
+	applyFilters := func(query *gorm.DB, prefix string) *gorm.DB {
 		// Filtros de tipo y estado
 		if typeId != 0 && statusId != 0 {
-			query = query.Where("fo.order_type_id = ? AND fo.order_status_id = ?", typeId, statusId)
+			query = query.Where(prefix+"order_type_id = ? AND "+prefix+"order_status_id = ?", typeId, statusId)
 		} else if typeId != 0 {
-			query = query.Where("fo.order_type_id = ?", typeId)
+			query = query.Where(prefix+"order_type_id = ?", typeId)
 		} else if statusId != 0 {
-			query = query.Where("fo.order_status_id = ?", statusId)
+			query = query.Where(prefix+"order_status_id = ?", statusId)
 		}
 
 		// Filtro de código de orden
 		if fatherOrderCode != "" {
-			query = query.Where("fo.code = ?", fatherOrderCode)
+			query = query.Where(prefix+"code = ?", fatherOrderCode)
 		}
 
 		return query
@@ -47,7 +47,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 		Joins("LEFT JOIN order_lines ol ON o.id = ol.order_id").
 		Joins("LEFT JOIN order_statuses os ON os.id = fo.order_status_id").
 		Joins("LEFT JOIN order_types ot ON ot.id = fo.order_type_id")
-	query = applyFilters(query)
+	query = applyFilters(query, "fo.")
 	query = query.Group("fo.id")
 	if offset >= 0 && pageSize > 0 {
 		query = query.Offset(offset).Limit(pageSize)
@@ -55,7 +55,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	results = query.Find(&data)
 
 	query2 := repo.DB.Model(&models.FatherOrder{})
-	query2 = applyFilters(query2)
+	query2 = applyFilters(query2, "")
 	query2.Count(&totalRecords)
 
 	return data, totalRecords, results.Error
