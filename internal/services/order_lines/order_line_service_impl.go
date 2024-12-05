@@ -50,8 +50,8 @@ func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, erro
 	// 	Where("id=?", orderItem.Item.FatherRel.ParentItemID).
 	// 	First(&item)
 
-	label.Ean = orderItem.Item.EAN
 	if orderItem.Item.AsinRel != nil {
+		label.Ean = orderItem.Item.AsinRel.Ean
 		label.Asin = &orderItem.Item.AsinRel.Code
 		label.Brand = orderItem.Item.AsinRel.Brand.Name
 		label.BrandAddress = orderItem.Item.AsinRel.Brand.Address
