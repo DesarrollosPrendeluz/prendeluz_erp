@@ -21,19 +21,25 @@ func GetItemStockLocation(c *gin.Context) {
 	var recount int64
 
 	repo := itemlocationrepo.NewInItemLocationRepository(db.DB)
+	main_sku := c.Query("main_sku")
+	store_id, _ := strconv.Atoi(c.DefaultQuery("store_id", "0"))
 	storeLocation, _ := strconv.Atoi(c.DefaultQuery("item_stock_location", "0"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-
-	if storeLocation != 0 {
-		datum, err = repo.FindByID(uint64(storeLocation))
-		if datum != nil {
-			data = append(data, *datum)
-		}
-		recount = 1
+	if main_sku != "" && store_id != 0 {
+		data, err = repo.FindByItemsAndStore(main_sku, uint64(store_id), pageSize, page)
 	} else {
-		data, err = repo.FindAll(pageSize, page)
-		recount, _ = repo.CountAll()
+		if storeLocation != 0 {
+			datum, err = repo.FindByID(uint64(storeLocation))
+			if datum != nil {
+				data = append(data, *datum)
+			}
+			recount = 1
+		} else {
+			data, err = repo.FindAll(pageSize, page)
+			recount, _ = repo.CountAll()
+
+		}
 
 	}
 
