@@ -26,6 +26,7 @@ func GetItemStockLocation(c *gin.Context) {
 	storeLocation, _ := strconv.Atoi(c.DefaultQuery("item_stock_location", "0"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
 	if main_sku != "" && store_id != 0 {
 		data, err = repo.FindByItemsAndStore(main_sku, uint64(store_id), pageSize, page)
 	} else {
@@ -53,6 +54,7 @@ func GetItemStockLocation(c *gin.Context) {
 
 func PostItemStockLocation(c *gin.Context) {
 	var requestBody dtos.ItemStockLocationCreateReq
+	var idArray []uint64
 
 	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
@@ -70,8 +72,9 @@ func PostItemStockLocation(c *gin.Context) {
 			Stock:           dataItem.Stock,
 		}
 		repo.Create(&model)
+		idArray = append(idArray, model.ID)
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Registers are created"}})
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Registers are created", "CreatedIds": idArray}})
 
 }
 
