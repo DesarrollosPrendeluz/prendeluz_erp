@@ -28,7 +28,7 @@ func (repo *ItemLocationImpl) FindByItemsAndStore(mainSku string, store uint64, 
 		Table("store_locations").
 		Select("id").
 		Where("store_id = ?", store)
-	result := repo.DB.Debug().
+	result := repo.DB.Preload("StoreLocations").
 		Where("item_main_sku = ? and store_location_id in (?)", mainSku, subQuery).
 		Find(&item).
 		Offset(offset).
