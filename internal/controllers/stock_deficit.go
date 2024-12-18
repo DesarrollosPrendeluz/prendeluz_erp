@@ -24,6 +24,7 @@ func GetStockDeficit(c *gin.Context) {
 	if filter != "" {
 		service := services.NewStockDeficitService()
 		stockDeficits, _ = service.SearchBySkuAndEan(filter, store, page, pageSize)
+		recount = 1
 	} else {
 		if supplier == 0 {
 			stockDeficits, _ = repo.GetallByStore(store, pageSize, page)
