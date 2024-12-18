@@ -12,6 +12,13 @@ import (
 type StockDeficitImpl struct {
 	*repositories.GORMRepository[models.StockDeficit]
 }
+type ParentItemResult struct {
+	ParentItemID int    `gorm:"column:parent_item_id"`
+	MainSKU      string `gorm:"column:main_sku"`
+}
+type StockDeficitResult struct {
+	Deficit float64 `gorm:"column:deficit"`
+}
 
 func NewStockDeficitRepository(db *gorm.DB) *StockDeficitImpl {
 	return &StockDeficitImpl{repositories.NewGORMRepository(db, models.StockDeficit{})}
@@ -87,6 +94,9 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 		Where("ol.store_id = ?", store_id).
 		Group("ip.parent_item_id").
 		Take(&deficit).Error
+	if err2 != nil {
+		fmt.Printf("Error al ejecutar la consulta: %v", err2)
+	}
 	err2 = repo.DB.
 		Table("order_lines AS ol").
 		Select(" SUM(ol.quantity) - SUM(ol.recived_quantity) AS deficit").
@@ -129,12 +139,4 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 
 	}
 
-}
-
-type ParentItemResult struct {
-	ParentItemID int    `gorm:"column:parent_item_id"`
-	MainSKU      string `gorm:"column:main_sku"`
-}
-type StockDeficitResult struct {
-	Deficit float64 `gorm:"column:deficit"`
 }
