@@ -26,28 +26,23 @@ func NewStockDeficitService() *StockDeficitServiceImpl {
 		itemsRepo:        itemsRepo}
 }
 
-func (s *StockDeficitServiceImpl) SearchBySkuAndEan(filter string, store int, page int, pageSize int) ([]models.StockDeficit, error) {
+func (s *StockDeficitServiceImpl) SearchBySkuAndEan(filter string, store int, page int, pageSize int) ([]models.StockDeficit, []error) {
 
-	var modelsData []models.StockDeficit
-
-	subQuery := s.orderErrorRepo.DB.
-		Model(&models.StockDeficit{}).
-		Select("stock_deficits.id").
-		Joins("JOIN items ON items.main_sku = stock_deficits.parent_main_sku").
-		Where("store_id = ?", store).
-		Where("items.main_sku LIKE ?", "%"+filter+"%").
-		Or("items.ean LIKE ?", "%"+filter+"%")
-
-	err := s.orderErrorRepo.DB.Debug().
-		Preload("Item.SupplierItems.Supplier").
-		Where("id IN (?)", subQuery).
-		Limit(pageSize).
-		Offset(page).
-		Find(&modelsData).Error
-
-	if err != nil {
-		return nil, err
+	var fatherSkus []string
+	var errArray []error
+	//subQuery := s.stockDeficitRepo.
+	items, err1 := s.itemsRepo.FindByFathersMainSkuOrEan(filter)
+	for _, item := range items {
+		fatherSkus = append(fatherSkus, item.MainSKU)
 	}
-	return modelsData, nil
+
+	stockDef, err2 := s.stockDeficitRepo.GetByRegsitersByFatherSkuIn(fatherSkus, store, page, pageSize)
+
+	if err1 != nil || err2 != nil {
+		errArray = append(errArray, err1)
+		errArray = append(errArray, err2)
+		return nil, errArray
+	}
+	return stockDef, errArray
 
 }

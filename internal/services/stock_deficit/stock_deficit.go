@@ -5,5 +5,5 @@ import (
 )
 
 type StockDeficitService interface {
-	SearchBySkuAndEan(filter string, store int, page int, pageSize int) ([]models.StockDeficit, error)
+	SearchBySkuAndEan(filter string, store int, page int, pageSize int) ([]models.StockDeficit, []error)
 }
