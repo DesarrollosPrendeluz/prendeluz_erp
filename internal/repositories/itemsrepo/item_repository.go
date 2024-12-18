@@ -11,4 +11,5 @@ type ItemRepo interface {
 	FindSonId(id uint64) (uint64, error)
 	FindByIdExtraData(id int) (models.Item, error)
 	FindByMainSkus(skus []string) (map[string]models.Item, error)
+	FindByFathersMainSkuOrEan(filter string) ([]models.Item, error)
 }
