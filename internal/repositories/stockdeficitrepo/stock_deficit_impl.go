@@ -38,7 +38,7 @@ func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset in
 func (repo *StockDeficitImpl) GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error) {
 	var modelsData []models.StockDeficit
 
-	err := repo.DB.Debug().
+	err := repo.DB.
 		Preload("Item.SupplierItems.Supplier").
 		Where("parent_main_sku IN (?)", filter).
 		Where("store_id = ?", store).

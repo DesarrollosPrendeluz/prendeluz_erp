@@ -70,7 +70,7 @@ func (repo *ItemRepoImpl) FindByMainSkus(skus []string) (map[string]models.Item,
 func (repo *ItemRepoImpl) FindByFathersMainSkuOrEan(filter string) ([]models.Item, error) {
 	var item []models.Item
 
-	result := repo.DB.Debug().
+	result := repo.DB.
 		Select("main_sku").
 		Where("item_type like 'father'").
 		Where(repo.DB.Where("main_sku = ?", filter).Or("ean = ?", filter)).
