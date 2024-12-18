@@ -9,4 +9,5 @@ type StockDeficitRepo interface {
 	repositories.Repository[models.StockDeficit]
 	GetallByStore(storeId int, pageSize int, offset int) ([]models.StockDeficit, error)
 	CountConditional(storeId int) (int64, error)
+	GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error)
 }

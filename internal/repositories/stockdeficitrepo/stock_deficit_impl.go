@@ -12,6 +12,13 @@ import (
 type StockDeficitImpl struct {
 	*repositories.GORMRepository[models.StockDeficit]
 }
+type ParentItemResult struct {
+	ParentItemID int    `gorm:"column:parent_item_id"`
+	MainSKU      string `gorm:"column:main_sku"`
+}
+type StockDeficitResult struct {
+	Deficit float64 `gorm:"column:deficit"`
+}
 
 func NewStockDeficitRepository(db *gorm.DB) *StockDeficitImpl {
 	return &StockDeficitImpl{repositories.NewGORMRepository(db, models.StockDeficit{})}
@@ -28,6 +35,21 @@ func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset in
 		Find(&models)
 	return models, nil
 }
+func (repo *StockDeficitImpl) GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error) {
+	var modelsData []models.StockDeficit
+
+	err := repo.DB.
+		Preload("Item.SupplierItems.Supplier").
+		Where("parent_main_sku IN (?)", filter).
+		Where("store_id = ?", store).
+		Limit(pageSize).
+		Offset(page).
+		Find(&modelsData).Error
+
+	return modelsData, err
+
+}
+
 func (repo *StockDeficitImpl) GetallByStoreAndSupplier(storeId int, supplier int, pageSize int, offset int) ([]models.StockDeficit, error) {
 	var modelsData []models.StockDeficit
 
@@ -87,6 +109,9 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 		Where("ol.store_id = ?", store_id).
 		Group("ip.parent_item_id").
 		Take(&deficit).Error
+	if err2 != nil {
+		fmt.Printf("Error al ejecutar la consulta: %v", err2)
+	}
 	err2 = repo.DB.
 		Table("order_lines AS ol").
 		Select(" SUM(ol.quantity) - SUM(ol.recived_quantity) AS deficit").
@@ -129,12 +154,4 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 
 	}
 
-}
-
-type ParentItemResult struct {
-	ParentItemID int    `gorm:"column:parent_item_id"`
-	MainSKU      string `gorm:"column:main_sku"`
-}
-type StockDeficitResult struct {
-	Deficit float64 `gorm:"column:deficit"`
 }
