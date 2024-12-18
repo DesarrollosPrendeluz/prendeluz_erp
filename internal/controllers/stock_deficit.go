@@ -5,6 +5,7 @@ import (
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
+	services "prendeluz/erp/internal/services/stock_deficit"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -15,15 +16,21 @@ func GetStockDeficit(c *gin.Context) {
 	supplier, _ := strconv.Atoi(c.DefaultQuery("supplier", "0"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	filter := c.Query("filter")
 
 	repo := stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	recount, _ := repo.CountConditional(store)
 	var stockDeficits []models.StockDeficit
-	if supplier == 0 {
-		stockDeficits, _ = repo.GetallByStore(store, pageSize, page)
+	if filter != "" {
+		service := services.NewStockDeficitService()
+		stockDeficits, _ = service.SearchBySkuAndEan(filter, store, page, pageSize)
 	} else {
-		stockDeficits, _ = repo.GetallByStoreAndSupplier(store, supplier, pageSize, page)
+		if supplier == 0 {
+			stockDeficits, _ = repo.GetallByStore(store, pageSize, page)
+		} else {
+			stockDeficits, _ = repo.GetallByStoreAndSupplier(store, supplier, pageSize, page)
 
+		}
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stockDeficits, "recount": recount}})
