@@ -35,6 +35,21 @@ func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset in
 		Find(&models)
 	return models, nil
 }
+func (repo *StockDeficitImpl) GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error) {
+	var modelsData []models.StockDeficit
+
+	err := repo.DB.Debug().
+		Preload("Item.SupplierItems.Supplier").
+		Where("parent_main_sku IN (?)", filter).
+		Where("store_id = ?", store).
+		Limit(pageSize).
+		Offset(page).
+		Find(&modelsData).Error
+
+	return modelsData, err
+
+}
+
 func (repo *StockDeficitImpl) GetallByStoreAndSupplier(storeId int, supplier int, pageSize int, offset int) ([]models.StockDeficit, error) {
 	var modelsData []models.StockDeficit
 
