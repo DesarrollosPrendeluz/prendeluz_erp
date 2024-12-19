@@ -15,6 +15,7 @@ import (
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
 	"prendeluz/erp/internal/repositories/ordertyperepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
+	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"prendeluz/erp/internal/repositories/tokenrepo"
 	services "prendeluz/erp/internal/services/order"
 
@@ -376,15 +377,15 @@ func updateOrderLine(
 	errorList *[]error,
 	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
 	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
-	//repoStockDef := stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	repoStockDef := stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	model, err := orderLines.FindByID(dataItem.Id)
 
 	callback(c, dataItem, model, err, errorList)
 	error := orderLines.Update(model)
-	// if(model.StoreID == 1 && ){
-	// 	repoStockDef.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+	if model.StoreID == 1 {
+		repoStockDef.CalcStockDeficitByItem(model.ItemID, model.StoreID)
 
-	// }
+	}
 	if error != nil {
 		*errorList = append(*errorList, error)
 	}
