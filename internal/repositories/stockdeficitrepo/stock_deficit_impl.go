@@ -134,8 +134,9 @@ func (repo *StockDeficitImpl) CalcStockDeficitByItem(child_item_id uint64, store
 	if err3 != nil {
 		if errors.Is(err3, gorm.ErrRecordNotFound) {
 			// El registro no existe, realizar una inserción
+			//hay que verlo pero def en principipio solo en el 2
 			newRecord := models.StockDeficit{
-				StoreID:       uint64(store_id),
+				StoreID:       2, //uint64(store_id),
 				SKU_Parent:    result.MainSKU,
 				Amount:        int64(deficit.Deficit),
 				PendingAmount: int64(pending.Deficit),
