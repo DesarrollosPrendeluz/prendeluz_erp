@@ -36,7 +36,7 @@ func NewStoreService() *StoreServiceImpl {
 }
 
 // Obtiene un registro padre en base a uno de sus hijos
-func (s *StoreServiceImpl) getParent(child uint64) (models.Item, error) {
+func (s *StoreServiceImpl) GetParent(child uint64) (models.Item, error) {
 	itemsParent, _ := s.itemsParentsRepo.FindByChild(child)
 	parent, err := s.itemsRepo.FindByID(itemsParent.ParentItemID)
 
@@ -57,7 +57,7 @@ func (s *StoreServiceImpl) UpdateStoreStock(orderCode string) error {
 		item, _ := s.itemsRepo.FindByID(order.ItemID)
 		parentSKU := item.MainSKU
 		if item.ItemType != "father" {
-			itemParent, err := s.getParent(item.ID)
+			itemParent, err := s.GetParent(item.ID)
 			parentSKU = itemParent.MainSKU
 			if err != nil {
 				log.SetPrefix("[ERROR]")
