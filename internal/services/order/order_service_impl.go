@@ -7,15 +7,15 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
-	"time"
-
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/ordererrorrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
+	stockrepo "prendeluz/erp/internal/repositories/storestockrepo"
 	"prendeluz/erp/internal/utils"
+	"time"
 )
 
 type OrderServiceImpl struct {
@@ -36,56 +36,6 @@ func NewOrderService() *OrderServiceImpl {
 		orderItemsRepo: orderItemRepo,
 		orderErrorRepo: errorOrderRepo,
 		itemsRepo:      itemsRepo}
-}
-
-// retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
-func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, fatherOrderId uint64) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
-	itemsRepo := itemsrepo.NewItemRepository(db.DB)
-
-	var errorOrdersList []models.ErrorOrder
-	var ordersList []models.Order
-	orderItemsOk := make(map[string][]models.OrderItem)
-
-	for _, orderCode := range rawOrders {
-		var mainSkus []string
-		for _, orderInfo := range orderCode.Info {
-			mainSkus = append(mainSkus, orderInfo.MainSku)
-		}
-		itemsMap, _ := itemsRepo.FindByMainSkus(mainSkus)
-
-		for _, orderInfo := range orderCode.Info {
-			item, exists := itemsMap[orderInfo.MainSku]
-
-			if !exists {
-				fmt.Println("error en el sku " + orderInfo.MainSku)
-				errorOrder := models.ErrorOrder{
-					Main_Sku: orderInfo.MainSku,
-					Error:    "Item with sku " + orderInfo.MainSku + " not found",
-					Order:    orderCode.OrderCode,
-				}
-
-				errorOrdersList = append(errorOrdersList, errorOrder)
-			} else {
-				orderItem := models.OrderItem{
-					ItemID:        item.ID,
-					Amount:        orderInfo.Amount,
-					RecivedAmount: 0,
-					StoreID:       int64(orderInfo.Store),
-					ClientID:      orderInfo.Client,
-				}
-				orderItemsOk[orderCode.OrderCode] = append(orderItemsOk[orderCode.OrderCode], orderItem)
-			}
-		}
-
-		order := models.Order{
-			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
-			Code:          orderCode.OrderCode,
-			FatherOrderID: fatherOrderId,
-		}
-		ordersList = append(ordersList, order)
-
-	}
-	return ordersList, orderItemsOk, errorOrdersList
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
@@ -273,5 +223,105 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader) error {
 
 	}
 	return nil
+
+}
+
+// retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
+func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, fatherOrderId uint64) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
+	itemsRepo := itemsrepo.NewItemRepository(db.DB)
+
+	var errorOrdersList []models.ErrorOrder
+	var ordersList []models.Order
+	orderItemsOk := make(map[string][]models.OrderItem)
+
+	for _, orderCode := range rawOrders {
+		var mainSkus []string
+		for _, orderInfo := range orderCode.Info {
+			mainSkus = append(mainSkus, orderInfo.MainSku)
+		}
+		itemsMap, _ := itemsRepo.FindByMainSkus(mainSkus)
+
+		for _, orderInfo := range orderCode.Info {
+			processOrderItem(orderInfo, itemsMap, orderCode.OrderCode, orderItemsOk, &errorOrdersList)
+		}
+
+		order := models.Order{
+			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
+			Code:          orderCode.OrderCode,
+			FatherOrderID: fatherOrderId,
+		}
+		ordersList = append(ordersList, order)
+
+	}
+	return ordersList, orderItemsOk, errorOrdersList
+}
+
+func processOrderItem(orderInfo utils.OrderInfo, itemsMap map[string]models.Item, orderCode string, orderItemsOk map[string][]models.OrderItem, errorOrdersList *[]models.ErrorOrder) {
+	item, exists := itemsMap[orderInfo.MainSku]
+
+	if !exists {
+		fmt.Println("error en el sku " + orderInfo.MainSku)
+		errorOrder := models.ErrorOrder{
+			Main_Sku: orderInfo.MainSku,
+			Error:    "Item with sku " + orderInfo.MainSku + " not found",
+			Order:    orderCode,
+		}
+
+		*errorOrdersList = append(*errorOrdersList, errorOrder)
+	} else {
+		orderItem := models.OrderItem{
+			ItemID:        item.ID,
+			Amount:        orderInfo.Amount,
+			RecivedAmount: 0,
+			StoreID:       int64(orderInfo.Store),
+			ClientID:      orderInfo.Client,
+		}
+		orderItemsOk[orderCode] = append(orderItemsOk[orderCode], orderItem)
+		addPickingLines(orderInfo, orderCode, item.ID, orderItemsOk, errorOrdersList)
+	}
+}
+
+func addPickingLines(orderItemInfo utils.OrderInfo, orderCode string, itemId uint64, orderItemsOk map[string][]models.OrderItem, errorOrdersList *[]models.ErrorOrder) {
+	stockrepo := stockrepo.NewStoreStockRepository(db.DB)
+	parentStock, errorInParentStock := stockrepo.FindByItemAndStore(orderItemInfo.ParentSku, "1")
+
+	if errorInParentStock != nil {
+		fmt.Println("error en el sku " + orderItemInfo.ParentSku)
+		errorOrder := models.ErrorOrder{
+			Main_Sku: orderItemInfo.ParentSku,
+			Error:    "Item with sku " + orderItemInfo.ParentSku + " not found" + errorInParentStock.Error(),
+			Order:    orderCode,
+		}
+
+		*errorOrdersList = append(*errorOrdersList, errorOrder)
+	} else {
+		actualStock := parentStock.Amount - parentStock.ReservedAmount
+
+		if parentStock.Amount > 0 && actualStock > 0 {
+
+			orderItem := models.OrderItem{
+				ItemID:        itemId,
+				Amount:        parentStock.ReservedAmount,
+				RecivedAmount: 0,
+				StoreID:       1,
+				ClientID:      orderItemInfo.Client,
+			}
+			if actualStock > orderItemInfo.Amount {
+				parentStock.ReservedAmount += orderItemInfo.Amount
+				stockrepo.Update(&parentStock)
+				orderItem.Amount = orderItemInfo.Amount
+			} else {
+				parentStock.ReservedAmount += actualStock
+				stockrepo.Update(&parentStock)
+				orderItem.Amount = actualStock
+			}
+
+			if orderItem.Amount > 0 {
+				orderItemsOk[orderCode] = append(orderItemsOk[orderCode], orderItem)
+			}
+
+		}
+
+	}
 
 }
