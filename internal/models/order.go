@@ -23,11 +23,13 @@ type Order struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 
-	OrderStatus     OrderStatus `gorm:"foreignKey:ID;references:OrderStatusID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	FatherOrder     FatherOrder `gorm:"foreignKey:ID;references:FatherOrderID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	OrderLines      []OrderItem `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	Quantity        int64       `gorm:"-"`
-	RecivedQuantity int64       `gorm:"-"`
+	OrderStatus OrderStatus `gorm:"foreignKey:ID;references:OrderStatusID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	FatherOrder FatherOrder `gorm:"foreignKey:ID;references:FatherOrderID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	OrderLines  []OrderItem `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Pallets     *[]Pallet   `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+
+	Quantity        int64 `gorm:"-"`
+	RecivedQuantity int64 `gorm:"-"`
 	// Orden_compra string `gorm:"primaryKey;size:255;not null"`
 	// Filename     string      `gorm:"size:255; not null"`
 	// Status       OrderStatus `gorm:"size:255;not null; type:enum('in progress','received','canceled','completed');default:'received'"`
