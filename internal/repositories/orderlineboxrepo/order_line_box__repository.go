@@ -1,4 +1,4 @@
-package storelocationrepo
+package orderlineboxrepo
 
 import (
 	"prendeluz/erp/internal/models"

@@ -8,7 +8,7 @@ import (
 type OrderLineBox struct {
 	ID          int       `json:"id" gorm:"column:id"`
 	OrderLineID int       `json:"order_line_id" gorm:"column:order_line_id"`
-	BoxID       string    `json:"box_id" gorm:"column:box_id"`
+	BoxID       int       `json:"box_id" gorm:"column:box_id"`
 	Quantity    int       `json:"quantity" gorm:"column:quantity"`
 	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
