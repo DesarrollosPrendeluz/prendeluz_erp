@@ -4,7 +4,7 @@ type Box struct {
 	PalletID uint64 `json:"palletId"`
 	Number   uint64 `json:"number"`
 	Label    string `json:"label"`
-	Quantity string `json:"quantity"`
+	Quantity int    `json:"quantity"`
 }
 type BoxCreateReq struct {
 	Data []Box `json:"data"`

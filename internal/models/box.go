@@ -9,7 +9,7 @@ type Box struct {
 	PalletID uint64 `json:"palletId" gorm:"column:pallet_id"`
 	Number   int    `json:"number" gorm:"column:number"`
 	Label    string `json:"label" gorm:"column:label"`
-	Quantity string `json:"quantity" gorm:"column:quantity"`
+	Quantity int    `json:"quantity" gorm:"column:quantity"`
 
 	Pallet     *Pallet         `gorm:"foreignKey:ID;references:PalletID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	BoxContent *[]OrderLineBox `gorm:"foreignKey:BoxID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`

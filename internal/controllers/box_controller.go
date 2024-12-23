@@ -99,7 +99,7 @@ func PatchBox(c *gin.Context) {
 		}
 
 		if requestObject.Quantity != nil {
-			model.Number = *requestObject.Quantity
+			model.Quantity = *requestObject.Quantity
 		}
 
 		error := repo.Update(model)
