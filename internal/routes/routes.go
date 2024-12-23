@@ -119,6 +119,7 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		order_lines_boxes.GET("", controllers.GetOrderLineBox)
 		order_lines_boxes.POST("", controllers.PostOrderLineBox)
+		order_lines_boxes.POST("/withProcess", controllers.PostOrderLineBoxWithProcess)
 		order_lines_boxes.PATCH("", controllers.PatchOrderLineBox)
 
 	}
