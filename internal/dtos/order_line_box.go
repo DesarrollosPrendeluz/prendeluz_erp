@@ -2,7 +2,7 @@ package dtos
 
 type OrderLineBox struct {
 	BoxID       uint64 `json:"boxId"`
-	OrderLineID uint64 `json:"OrderLineId"`
+	OrderLineID uint64 `json:"orderLineId"`
 	Quantity    int    `json:"quantity"`
 }
 type OrderLineBoxCreateReq struct {
@@ -12,7 +12,7 @@ type OrderLineBoxCreateReq struct {
 type OrderLineBoxToUpdate struct {
 	Id          uint64  `json:"id"`
 	BoxID       *uint64 `json:"boxId"`
-	OrderLineID *uint64 `json:"OrderLineId"`
+	OrderLineID *uint64 `json:"orderLineId"`
 	Quantity    *int    `json:"quantity"`
 }
 type OrderLineBoxUpdateReq struct {
