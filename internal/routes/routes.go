@@ -100,6 +100,30 @@ func RegisterRoutes(router *gin.Engine) {
 
 	}
 
+	pallets := router.Group("/pallet").Use(middlewares.Auth)
+	{
+		pallets.GET("", controllers.GetPallet)
+		pallets.GET("/crossDataByOrderId", controllers.GetPalletByOrderID)
+		pallets.POST("", controllers.PostPallet)
+		pallets.PATCH("", controllers.PatchPallet)
+
+	}
+	boxes := router.Group("/box").Use(middlewares.Auth)
+	{
+		boxes.GET("", controllers.GetBox)
+		boxes.POST("", controllers.PostBox)
+		boxes.PATCH("", controllers.PatchBox)
+
+	}
+	order_lines_boxes := router.Group("/order_line_boxes").Use(middlewares.Auth)
+	{
+		order_lines_boxes.GET("", controllers.GetOrderLineBox)
+		order_lines_boxes.POST("", controllers.PostOrderLineBox)
+		order_lines_boxes.POST("/withProcess", controllers.PostOrderLineBoxWithProcess)
+		order_lines_boxes.PATCH("", controllers.PatchOrderLineBox)
+
+	}
+
 	itemStockLocations := router.Group("/item_stock_location").Use(middlewares.Auth)
 	{
 		itemStockLocations.GET("", controllers.GetItemStockLocation)
