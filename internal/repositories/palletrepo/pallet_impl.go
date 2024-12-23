@@ -25,3 +25,28 @@ func (repo *PalletImpl) GetBoxesAndLinesRaletedDataByOrderId(orderId int, pageSi
 		Find(&models)
 	return models, nil
 }
+
+func (repo *PalletImpl) GetOrCreatePalletByOrderIdAndNumber(orderId int, number int) (models.Pallet, bool, error) {
+	var model models.Pallet
+	flag := false
+	err := repo.DB.
+		Preload("Boxes.BoxContent").
+		Where("order_id = ?", orderId).
+		Where("number = ?", number).
+		First(&model).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			modelCreate := models.Pallet{
+				OrderID: uint64(orderId),
+				Number:  number,
+				Label:   "",
+			}
+			repo.DB.Create(&modelCreate)
+			model = modelCreate
+			flag = true
+
+		}
+	}
+	return model, flag, nil
+}

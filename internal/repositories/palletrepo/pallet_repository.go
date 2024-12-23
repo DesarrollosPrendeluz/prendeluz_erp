@@ -8,4 +8,5 @@ import (
 type PalletRepo interface {
 	repositories.Repository[models.Pallet]
 	GetBoxesAndLinesRaletedDataByOrderId(orderId int, pageSize int, offset int) ([]models.Pallet, error)
+	GetOrCreatePalletByOrderIdAndNumber(orderId int, number int) (models.Pallet, bool, error)
 }
