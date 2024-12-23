@@ -8,6 +8,7 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/orderlineboxrepo"
+	pallet_boxes_order_lines "prendeluz/erp/internal/services/pallet_boxes_order_lines"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,6 +65,28 @@ func PostOrderLineBox(c *gin.Context) {
 		repo.Create(&model)
 	}
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Registers are created"}})
+
+}
+
+func PostOrderLineBoxWithProcess(c *gin.Context) {
+	var requestBody dtos.OrderLineBoxProcessedCreateReq
+	var response []string
+	var err []error
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": err.Error()}})
+		return
+	}
+
+	// Acceder a los valores del cuerpo
+	for _, dataItem := range requestBody.Data {
+
+		service := pallet_boxes_order_lines.NewStockDeficitService()
+		response, err = service.CheckAndCreateBoxOrderLines(dataItem.OrderLineID, dataItem.Pallet, dataItem.Box, dataItem.Quantity)
+
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Responses": response, "Errors": err}})
 
 }
 
