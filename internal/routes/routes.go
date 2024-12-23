@@ -103,6 +103,7 @@ func RegisterRoutes(router *gin.Engine) {
 	pallets := router.Group("/pallet").Use(middlewares.Auth)
 	{
 		pallets.GET("", controllers.GetPallet)
+		pallets.GET("/crossDataByOrderId", controllers.GetPalletByOrderID)
 		pallets.POST("", controllers.PostPallet)
 		pallets.PATCH("", controllers.PatchPallet)
 

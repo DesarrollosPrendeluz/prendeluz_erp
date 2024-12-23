@@ -42,6 +42,28 @@ func GetPallet(c *gin.Context) {
 
 }
 
+func GetPalletByOrderID(c *gin.Context) {
+	var err error
+	var data []models.Pallet
+	var recount int64
+
+	repo := palletrepo.NewPalletRepository(db.DB)
+	orderId, _ := strconv.Atoi(c.DefaultQuery("order_id", "0"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
+	data, err = repo.GetBoxesAndLinesRaletedDataByOrderId(orderId, pageSize, page)
+
+	recount = 1
+
+	if err != nil {
+		c.IndentedJSON(http.StatusOK, gin.H{"Error": gin.H{"err": err}})
+		return
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": data, "recount": recount}})
+
+}
+
 func PostPallet(c *gin.Context) {
 	var requestBody dtos.PalletCreateReq
 
