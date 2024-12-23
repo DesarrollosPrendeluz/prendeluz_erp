@@ -50,7 +50,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	query = applyFilters(query)
 	query = query.Group("fo.id")
 	if offset >= 0 && pageSize > 0 {
-		query = query.Offset(offset).Limit(pageSize)
+		query = query.Offset(offset * pageSize).Limit(pageSize)
 	}
 	results = query.Find(&data)
 
