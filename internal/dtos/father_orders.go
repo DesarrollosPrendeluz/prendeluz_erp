@@ -41,6 +41,7 @@ type LinesInfo struct {
 	Quantity        int      `json:"quantity"`
 	RecivedQuantity int      `json:"recived_quantity"`
 	MainSku         string   `json:"main_sku"`
+	FatherMainSku   string   `json:"father_main_sku"`
 	Ean             string   `json:"ean"`
 	Name            string   `json:"name"`
 	SupplierName    string   `json:"supplier"`
