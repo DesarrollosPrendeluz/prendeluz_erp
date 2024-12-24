@@ -4,6 +4,8 @@ import (
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
+	"strconv"
+
 	"gorm.io/gorm"
 )
 
@@ -27,6 +29,19 @@ func (repo *StoreStockRepoImpl) FindByItemAndStore(sku_parent string, store_id s
 	var storeStocks models.StoreStock
 
 	results := repo.DB.Where("parent_main_sku LIKE ? AND store_id = ? ", "%"+sku_parent+"%", store_id).First(&storeStocks)
+	storeId, _ := strconv.ParseUint(store_id, 10, 64)
+	if results.Error == gorm.ErrRecordNotFound {
+		storeStock := models.StoreStock{
+			SKU_Parent:     sku_parent,
+			StoreID:        storeId,
+			Amount:         0,
+			ReservedAmount: 0,
+		}
+		if err := repo.DB.Create(&storeStock).Error; err != nil {
+			return storeStock, err
+		}
+		return storeStock, nil
+	}
 
 	return storeStocks, results.Error
 }

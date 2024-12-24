@@ -1,6 +1,7 @@
 package itemlocationrepo
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
@@ -18,6 +19,15 @@ func NewInItemLocationRepository(db *gorm.DB) *ItemLocationImpl {
 func (repo *ItemLocationImpl) FindByItemsAndLocation(mainSku string, location uint64) (models.ItemLocation, error) {
 	var item models.ItemLocation
 	result := repo.DB.Where("item_main_sku = ? and store_location_id = ?", mainSku, location).First(&item)
+	if result.Error != nil && result.Error == gorm.ErrRecordNotFound {
+		fmt.Println("No se encontró el item y po eso se creará uno nuevo")
+		item = models.ItemLocation{
+			ItemMainSku:     mainSku,
+			StoreLocationID: location,
+			Stock:           0,
+		}
+		result = repo.DB.Create(&item)
+	}
 	return item, result.Error
 }
 

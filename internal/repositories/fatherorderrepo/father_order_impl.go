@@ -177,6 +177,7 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 			Quantity:        int(item.Amount),
 			RecivedQuantity: int(item.RecivedAmount),
 			MainSku:         item.Item.MainSKU,
+			FatherMainSku:   item.Item.FatherRel.Parent.MainSKU,
 			Ean:             item.Item.EAN,
 			SupplierName:    supplierName,
 			SupplierRef:     supplierRef,
