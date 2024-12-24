@@ -61,7 +61,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	return data, totalRecords, results.Error
 }
 
-func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string) (dtos.FatherOrderOrdersAndLines, int64, error) {
+func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int) (dtos.FatherOrderOrdersAndLines, int64, error) {
 	var result dtos.FatherOrderOrdersAndLines
 	var items []models.OrderItem
 	var totalRecords int64
@@ -79,9 +79,15 @@ func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int
 		Preload("Item.FatherRel.Parent.SupplierItems.Supplier").
 		Preload("Item.FatherRel.Parent.ItemLocations.StoreLocations").
 		Where("order_id in ?", orderIds)
+	if storeId != 0 {
+		query = query.Where("store_id = ?", storeId)
+	}
 	countQuery := repo.DB.
 		Model(&models.OrderItem{}).
 		Where("order_id in ?", orderIds)
+	if storeId != 0 {
+		countQuery = countQuery.Where("store_id = ?", storeId)
+	}
 
 	if ean != "" || supplier_sku != "" {
 		query := repo.DB.
