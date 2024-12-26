@@ -42,7 +42,11 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 
 	query := repo.DB.
 		Table("father_orders fo").
-		Select("fo.id, fo.code, fo.order_status_id, os.name as status, ot.name as type, fo.order_type_id, SUM(ol.quantity) as total_stock, SUM(ol.recived_quantity) as pending_stock").
+		Select("fo.id, fo.code, fo.order_status_id, os.name as status, ot.name as type, " +
+			"SUM(CASE WHEN ol.store_id = 2 THEN ol.quantity ELSE 0 END) AS total_stock, " +
+			"SUM(CASE WHEN ol.store_id = 2 THEN ol.recived_quantity ELSE 0 END) AS total_recived_quantity, " +
+			"SUM(CASE WHEN ol.store_id = 1 THEN ol.quantity ELSE 0 END) AS total_picking_stock, " +
+			"SUM(CASE WHEN ol.store_id = 1 THEN ol.recived_quantity ELSE 0 END) AS total_recived_picking_quantity").
 		Joins("LEFT JOIN orders o ON o.father_order_id = fo.id").
 		Joins("LEFT JOIN order_lines ol ON o.id = ol.order_id").
 		Joins("LEFT JOIN order_statuses os ON os.id = fo.order_status_id").

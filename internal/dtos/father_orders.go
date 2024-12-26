@@ -1,14 +1,16 @@
 package dtos
 
 type FatherOrderWithRecount struct {
-	ID            uint    `json:"id"`
-	Code          string  `json:"code"`
-	OrderStatusID uint    `json:"status_id"`
-	OrderTypeID   uint    `json:"type_id"`
-	Status        string  `json:"status"`
-	Type          string  `json:"type"`
-	TotalStock    float64 `json:"total_stock"`
-	PendingStock  float64 `json:"pending_stock"`
+	ID                          uint    `json:"id"`
+	Code                        string  `json:"code"`
+	OrderStatusID               uint    `json:"status_id"`
+	OrderTypeID                 uint    `json:"type_id"`
+	Status                      string  `json:"status"`
+	Type                        string  `json:"type"`
+	TotalStock                  float64 `json:"total_stock"`
+	PendingStock                float64 `json:"pending_stock"`
+	TotalPickingStock           float64 `json:"total_picking_stock"`
+	TotalRecivedPickingQuantity float64 `json:"total_recived_picking_quantity"`
 }
 type FatherOrder struct {
 	ID              uint64 `json:"id"`
