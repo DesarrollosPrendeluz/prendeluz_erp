@@ -14,7 +14,7 @@ func RegisterRoutes(router *gin.Engine) {
 		// Permitir solicitudes desde http://localhost:3000
 		//https://erp.zarivy.com
 		//AllowOrigins: []string{"http://127.0.0.1:3000"},
-		AllowOrigins: []string{"http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "https://erp.zarivy.com"},
+		AllowOrigins: []string{"http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "https://testerp.zarivy.com", "https://erp.zarivy.com"},
 		//AllowOrigins: []string{"https://erp.zarivy.com"},
 		// Permitir métodos HTTP
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
