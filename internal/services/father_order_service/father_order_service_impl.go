@@ -62,6 +62,7 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 			Quantity:        int(item.Amount),
 			RecivedQuantity: int(item.RecivedAmount),
 			MainSku:         item.Item.MainSKU,
+			Ean:             item.Item.EAN,
 			FatherMainSku:   fatherSku,
 			SupplierName:    supplierName,
 			SupplierRef:     supplierRef,
