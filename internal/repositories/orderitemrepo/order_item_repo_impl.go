@@ -38,3 +38,40 @@ func (repo *OrderItemRepoImpl) FindByItemAndOrder(itemId uint64, orderId uint64)
 
 	return orderItems, results.Error
 }
+
+func (repo *OrderItemRepoImpl) FindByOrderAndItem(orderIds []uint64, storeId int, itemIds []uint64, offset int, pageSize int) ([]models.OrderItem, int64) {
+	var items []models.OrderItem
+	var totalRecords int64
+
+	query := repo.DB.
+		Model(&models.OrderItem{}).
+		Preload("AssignedRel.UserRel").
+		Preload("Item.FatherRel.Parent.SupplierItems.Supplier").
+		Preload("Item.FatherRel.Parent.ItemLocations.StoreLocations").
+		Preload("Item.SupplierItems.Supplier").
+		Preload("Item.ItemLocations.StoreLocations").
+		Where("order_id in ?", orderIds)
+
+	countQuery := repo.DB.
+		Model(&models.OrderItem{}).
+		Where("order_id in ?", orderIds)
+
+	if storeId != 0 {
+		query = query.Where("store_id = ?", storeId)
+		countQuery = countQuery.Where("store_id = ?", storeId)
+	}
+
+	if len(itemIds) > 0 {
+		query.Where("item_id in ?", itemIds)
+		countQuery.Where("item_id in ?", itemIds)
+
+	}
+
+	query.Offset(offset).
+		Limit(pageSize).
+		Find(&items)
+
+	countQuery.Count(&totalRecords)
+
+	return items, totalRecords
+}
