@@ -1,6 +1,7 @@
 package itemsrepo
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
@@ -77,5 +78,46 @@ func (repo *ItemRepoImpl) FindByFathersMainSkuOrEan(filter string) ([]models.Ite
 		Find(&item)
 
 	return item, result.Error
+}
+
+func (repo *ItemRepoImpl) FindByEanAndSupplierSku(ean string, supplier_sku string) ([]uint64, error) {
+	var itemIds []uint64
+	var results []models.Item
+
+	if ean != "" || supplier_sku != "" {
+		query := repo.DB.
+			Table("items AS i").
+			Select(" distinct i.id").
+			Joins("inner join supplier_items as si on si.item_id = i.id")
+
+		if ean != "" && supplier_sku != "" {
+			// Ambos, ean y supplier_sku, tienen valor
+			query = query.Where("i.ean = ? OR si.supplier_sku = ?", ean, supplier_sku)
+		} else if ean != "" {
+			// Solo ean tiene valor
+			query = query.Where("i.ean = ?", ean)
+		} else if supplier_sku != "" {
+			// Solo supplier_sku tiene valor
+			query = query.Where("si.supplier_sku = ?", supplier_sku)
+		}
+
+		errr := query.Find(&results).Error
+		if errr != nil {
+			fmt.Println(errr.Error())
+
+		}
+
+		itemIds = func() []uint64 {
+			var ids []uint64
+			for _, item := range results {
+				ids = append(ids, item.ID)
+
+			}
+			return ids
+
+		}()
+
+	}
+	return itemIds, nil
 
 }
