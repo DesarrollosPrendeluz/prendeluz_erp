@@ -30,7 +30,6 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 	var result dtos.FatherOrderOrdersAndLines
 	var items []models.OrderItem
 	var totalRecords int64
-
 	var lines []dtos.LinesInfo
 	var itemIds []uint64
 
