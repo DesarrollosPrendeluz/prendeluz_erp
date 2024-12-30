@@ -135,7 +135,7 @@ func (repo *OrderRepoImpl) GetSupplierOrders(order_type *int) ([]dtos.SupplierOr
 		INNER JOIN order_lines as orl ON orl.order_id = o.id 
 		LEFT JOIN items as it ON it.id = orl.item_id
 		LEFT JOIN item_parents ip on ip.child_item_id = it.id
-		LEFT JOIN supplier_items as spi ON spi.item_id = ip.parent_item_id AND spi.order = 1
+		LEFT JOIN supplier_items as spi ON spi.item_id = IF(i.item_type = 'son',ip.parent_item_id , it.id) AND spi.order = 1
 		LEFT JOIN suppliers as sp ON sp.id = spi.supplier_id
 		WHERE o.order_type_id = 2
 		
@@ -164,7 +164,7 @@ func (repo *OrderRepoImpl) GetSupplierOrdersByFatherSku(fatherOrderId int) ([]dt
 			orl.quantity as stock_to_buy, 
 			it.main_sku as item_sku, 
 			it.id as item_id,
-			ip.parent_item_id as father_id,
+			IF(i.item_type = 'son',ip.parent_item_id , it.id) AS father_id,
 			it.name as name,
 			it.ean as ean,
 			sp.name as supplier_name,
@@ -175,7 +175,7 @@ func (repo *OrderRepoImpl) GetSupplierOrdersByFatherSku(fatherOrderId int) ([]dt
 		INNER JOIN order_lines as orl ON orl.order_id = o.id 
 		LEFT JOIN items as it ON it.id = orl.item_id
 		LEFT JOIN item_parents ip on ip.child_item_id = it.id
-		LEFT JOIN supplier_items as spi ON spi.item_id = ip.parent_item_id AND spi.order = 1
+		LEFT JOIN supplier_items as spi ON spi.item_id = IF(i.item_type = 'son',ip.parent_item_id , it.id) AND spi.order = 1
 		LEFT JOIN suppliers as sp ON sp.id = spi.supplier_id
 		WHERE fo.order_type_id = 1
 		
