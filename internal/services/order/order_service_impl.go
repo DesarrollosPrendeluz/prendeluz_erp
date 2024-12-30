@@ -193,12 +193,20 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
-func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader) error {
+func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string) error {
 	repo := orderrepo.NewOrderRepository(db.DB)
 	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
 	lineRepo := orderitemrepo.NewOrderItemRepository(db.DB)
 	itemRepo := itemsrepo.NewItemRepository(db.DB)
 	var order models.Order
+	orderId := order.ID
+	if requestFatherOrderCode != "" {
+		father, _, _ := fatherRepo.FindParentAndOrders(requestFatherOrderCode)
+		if len(father.Childs) > 0 {
+			orderId = father.Childs[0].ID
+		}
+
+	}
 
 	excelOrderList, _ := utils.ExceltoJSON(file)
 	for _, line := range excelOrderList {
@@ -207,7 +215,7 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader) error {
 		for _, rowInfo := range line.Info {
 			if rowInfo.MainSku != "" {
 				item, _ := itemRepo.FindByMainSku(rowInfo.MainSku)
-				orderLine, _ := lineRepo.FindByItemAndOrder(item.ID, order.ID)
+				orderLine, _ := lineRepo.FindByItemAndOrder(item.ID, orderId)
 				orderLine.Amount = rowInfo.Amount
 				lineRepo.Update(&orderLine)
 
