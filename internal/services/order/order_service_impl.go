@@ -15,6 +15,7 @@ import (
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	stockrepo "prendeluz/erp/internal/repositories/storestockrepo"
 	"prendeluz/erp/internal/utils"
+	"strings"
 	"time"
 )
 
@@ -42,7 +43,6 @@ func NewOrderService() *OrderServiceImpl {
 func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) error {
 
 	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
-	fechaActual := time.Now().Format("2006-01-02 15:04:05")
 
 	excelOrderList, err := utils.ExceltoJSON(file)
 
@@ -56,8 +56,8 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	fatherObject := models.FatherOrder{
 		OrderStatusID: uint64(orderrepo.Order_Status["pediente"]),
 		OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
-		Code:          "OC-" + fechaActual,
-		Filename:      "request",
+		Code:          quitarExtension(filename),
+		Filename:      filename,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -324,4 +324,17 @@ func addPickingLines(orderItemInfo utils.OrderInfo, orderCode string, itemId uin
 
 	}
 
+}
+
+func quitarExtension(nombreArchivo string) string {
+	// Busca la última aparición del punto en el nombre del archivo
+	indiceUltimoPunto := strings.LastIndex(nombreArchivo, ".")
+
+	// Si no hay punto, retorna el nombre completo
+	if indiceUltimoPunto == -1 {
+		return nombreArchivo
+	}
+
+	// Retorna el nombre sin la extensión
+	return nombreArchivo[:indiceUltimoPunto]
 }
