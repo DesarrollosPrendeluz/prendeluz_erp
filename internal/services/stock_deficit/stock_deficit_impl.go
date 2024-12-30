@@ -60,6 +60,7 @@ func (s *StockDeficitServiceImpl) SearchBySkuAndEan(filter string, store int, pa
 }
 
 func (s *StockDeficitServiceImpl) CalcStockDeficitByItem(child_item_id uint64, store_id int64) {
+	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
 	var result ParentItemResult
 	var existing models.StockDeficit
 	var deficit StockDeficitResult
