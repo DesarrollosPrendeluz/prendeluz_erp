@@ -26,10 +26,10 @@ func (repo *ItemRepoImpl) FindByMainSku(sku string) (models.Item, error) {
 
 }
 
-func (repo *ItemRepoImpl) FindByEan(sku string) ([]models.Item, error) {
+func (repo *ItemRepoImpl) FindByEan(ean string) ([]models.Item, error) {
 	var item []models.Item
 
-	result := repo.DB.Where("ean LIKE ?", "%"+sku+"%").Find(&item)
+	result := repo.DB.Where("ean = ?", ean).Find(&item)
 
 	return item, result.Error
 

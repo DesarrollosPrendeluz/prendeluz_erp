@@ -20,10 +20,11 @@ import (
 )
 
 type OrderServiceImpl struct {
-	orderRepo      orderrepo.OrderRepoImpl
-	orderItemsRepo orderitemrepo.OrderItemRepoImpl
-	orderErrorRepo repositories.GORMRepository[models.ErrorOrder]
-	itemsRepo      itemsrepo.ItemRepoImpl
+	orderRepo       orderrepo.OrderRepoImpl
+	orderItemsRepo  orderitemrepo.OrderItemRepoImpl
+	fatherOrderRepo fatherorderrepo.FatherOrderImpl
+	orderErrorRepo  repositories.GORMRepository[models.ErrorOrder]
+	itemsRepo       itemsrepo.ItemRepoImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
@@ -31,12 +32,14 @@ func NewOrderService() *OrderServiceImpl {
 	errorOrderRepo := *repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
 	orderItemRepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
+	fatherOrderRepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
 
 	return &OrderServiceImpl{
-		orderRepo:      orderRepo,
-		orderItemsRepo: orderItemRepo,
-		orderErrorRepo: errorOrderRepo,
-		itemsRepo:      itemsRepo}
+		orderRepo:       orderRepo,
+		orderItemsRepo:  orderItemRepo,
+		orderErrorRepo:  errorOrderRepo,
+		itemsRepo:       itemsRepo,
+		fatherOrderRepo: fatherOrderRepo}
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
@@ -194,42 +197,34 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
 func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string) error {
-	repo := orderrepo.NewOrderRepository(db.DB)
-	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
-	lineRepo := orderitemrepo.NewOrderItemRepository(db.DB)
-	itemRepo := itemsrepo.NewItemRepository(db.DB)
-	var order models.Order
-	orderId := order.ID
+
+	var order *models.Order
+	orderId := uint64(0)
+	//asiganmos el padre de la orden si lo hay y el order id
 	if requestFatherOrderCode != "" {
-		father, _, _ := fatherRepo.FindParentAndOrders(requestFatherOrderCode)
+		father, _, _ := s.fatherOrderRepo.FindParentAndOrders(requestFatherOrderCode)
 		if len(father.Childs) > 0 {
 			orderId = father.Childs[0].ID
 		}
 
 	}
+	excelOrderList, _ := utils.ExcelToJSONOrder(file)
 
-	excelOrderList, _ := utils.ExceltoJSON(file)
 	for _, line := range excelOrderList {
-
-		order, _ = repo.FindByOrderCode(line.OrderCode)
-		for _, rowInfo := range line.Info {
-			if rowInfo.MainSku != "" {
-				item, _ := itemRepo.FindByMainSku(rowInfo.MainSku)
-				orderLine, _ := lineRepo.FindByItemAndOrder(item.ID, orderId)
-				orderLine.Amount = rowInfo.Amount
-				lineRepo.Update(&orderLine)
-
-			}
-
-		}
-
-		order.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
-		repo.Update(&order)
-		fatherOrder, _ := fatherRepo.FindByID(order.FatherOrderID)
-		fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
-		fatherRepo.Update(fatherOrder)
+		item, _ := s.itemsRepo.FindByMainSku(line.MainSku)
+		orderLine, _ := s.orderItemsRepo.FindByItemAndOrder(item.ID, orderId)
+		orderLine.Amount = line.Quantity
+		s.orderItemsRepo.Update(&orderLine)
 
 	}
+	//update order status
+	order, _ = s.orderRepo.FindByID(orderId)
+	order.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+	s.orderRepo.Update(order)
+	//update father order status
+	fatherOrder, _ := s.fatherOrderRepo.FindByID(order.FatherOrderID)
+	fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+	s.fatherOrderRepo.Update(fatherOrder)
 	return nil
 
 }
