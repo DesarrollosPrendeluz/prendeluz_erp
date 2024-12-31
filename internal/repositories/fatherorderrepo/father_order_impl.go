@@ -40,7 +40,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 		return query
 	}
 
-	query := repo.DB.Debug().
+	query := repo.DB.
 		Table("father_orders fo").
 		Select("fo.id, fo.code, fo.order_status_id, os.name as status, ot.name as type, " +
 			"SUM(CASE WHEN ol.store_id = 2 THEN ol.quantity ELSE 0 END) AS total_stock, " +
