@@ -16,6 +16,7 @@ import (
 	"prendeluz/erp/internal/repositories/ordertyperepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/repositories/tokenrepo"
+	fatherOrderServices "prendeluz/erp/internal/services/father_order_service"
 	services "prendeluz/erp/internal/services/order"
 	stockservices "prendeluz/erp/internal/services/stock_deficit"
 
@@ -401,15 +402,10 @@ func CloseOrderLines(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	procedureCall := "CALL UpdateOrderLinesAndStock(" + strconv.FormatInt(requestBody.FatherOrderId, 10) + ")"
-	// Llamada al segundo procedimiento almacenado
-	if err := db.DB.Exec(procedureCall).Error; err != nil {
-		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	} else {
-		fmt.Println("se ha ejecutado bien")
-		fmt.Println(procedureCall)
+	err := fatherOrderServices.NewFatherOrderService().CloseOrderByFather(uint64(requestBody.FatherOrderId))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"err": "err"})
 	}
 	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
 }
