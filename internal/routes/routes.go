@@ -90,6 +90,11 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		stockDeficit.GET("", controllers.GetStockDeficit)
 	}
+	//stock
+	stock := router.Group("/stock").Use(middlewares.Auth)
+	{
+		stock.GET("getExcel", controllers.GetStockExcelData)
+	}
 
 	//stock deficit
 	storeLocations := router.Group("/store_location").Use(middlewares.Auth)
