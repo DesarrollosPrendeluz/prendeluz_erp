@@ -1,6 +1,7 @@
 package stockdeficitrepo
 
 import (
+	"log"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
@@ -25,6 +26,18 @@ func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset in
 		Offset(offset).
 		Find(&models)
 	return models, nil
+}
+
+func (repo *StockDeficitImpl) GetByFatherAndStore(fatherSku string, store int64) (models.StockDeficit, error) {
+	var modelsData models.StockDeficit
+
+	err := repo.DB.
+		Where("parent_main_sku = ?", fatherSku).
+		Where("store_id = ?", store).
+		First(&modelsData).Error
+
+	return modelsData, err
+
 }
 func (repo *StockDeficitImpl) GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error) {
 	var modelsData []models.StockDeficit
@@ -72,4 +85,20 @@ func (repo *StockDeficitImpl) CountConditional(storeId int) (int64, error) {
 	var count int64
 	err := repo.DB.Table("stock_deficits").Count(&count).Where("store_id = ?", storeId).Error
 	return count, err
+}
+
+func (repo *StockDeficitImpl) CallStockDefProc() {
+
+	if err := repo.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
+		log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+	}
+
+}
+
+func (repo *StockDeficitImpl) CallPendingStockProc() {
+	// Llamada al segundo procedimiento almacenado
+	if err := repo.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
+		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
+	}
+
 }
