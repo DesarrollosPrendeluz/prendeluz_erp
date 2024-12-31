@@ -12,4 +12,5 @@ type OrdeRepo interface {
 	UpdateStatus(newStatus string, orderID uint64) error
 	GetSupplierOrders(order_type *int) ([]dtos.SupplierOrders, error)
 	GetSupplierOrdersByFatherSku(fatherOrderId int) ([]dtos.SupplierOrders, error)
+	FindByFatherId(fatherId uint64) ([]models.Order, error)
 }
