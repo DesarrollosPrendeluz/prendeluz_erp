@@ -13,8 +13,9 @@ type StoreStock struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 
-	Item  Item  `gorm:"foreignKey:SKU_Parent;references:main_sku;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	Store Store `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Item      Item            `gorm:"foreignKey:SKU_Parent;references:main_sku;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Locations *[]ItemLocation `gorm:"foreignKey:ItemMainSku;references:SKU_Parent;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Store     Store           `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (StoreStock) TableName() string {

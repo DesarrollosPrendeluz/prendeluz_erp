@@ -3,6 +3,7 @@ package utils
 import (
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -19,6 +20,11 @@ type OrderInfo struct {
 type ExcelOrder struct {
 	OrderCode string
 	Info      []OrderInfo
+}
+
+type ExcelModifyOrder struct {
+	MainSku  string
+	Quantity int64
 }
 
 func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
@@ -62,6 +68,37 @@ func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 			OrderCode: code,
 			Info:      info,
 		})
+	}
+
+	return result, nil
+
+}
+
+func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
+	var result []ExcelModifyOrder
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+	rows, err := f.GetRows("OC SQL")
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows[1:] {
+
+		amount, _ := strconv.ParseInt(row[1], 10, 64)
+
+		item := ExcelModifyOrder{
+			MainSku:  strings.Trim(row[0], " "),
+			Quantity: amount}
+
+		result = append(result, item)
+
 	}
 
 	return result, nil

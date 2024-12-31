@@ -26,6 +26,24 @@ func (repo *ItemRepoImpl) FindByMainSku(sku string) (models.Item, error) {
 
 }
 
+func (repo *ItemRepoImpl) FindByIdWithFatherPreload(id uint64) (models.Item, error) {
+	var item models.Item
+
+	result := repo.DB.Preload("FatherRel.Parent").Where("id = ?", id).First(&item)
+
+	return item, result.Error
+
+}
+
+func (repo *ItemRepoImpl) FindByEan(ean string) ([]models.Item, error) {
+	var item []models.Item
+
+	result := repo.DB.Where("ean = ?", ean).Find(&item)
+
+	return item, result.Error
+
+}
+
 // Retorna el producto de coincidir con el id de item así mismo retorna el proveedor y sus ubicaciones de alamcen
 func (repo *ItemRepoImpl) FindByIdExtraData(id uint64) (models.Item, error) {
 	var item models.Item

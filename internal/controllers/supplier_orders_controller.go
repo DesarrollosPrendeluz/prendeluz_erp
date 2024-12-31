@@ -98,6 +98,7 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 
 func UpdateOrderByExcel(c *gin.Context) {
 	file, _, err := c.Request.FormFile("file")
+	fatherOrder := c.DefaultPostForm("father_order", "")
 
 	serviceOrder := services.NewOrderService()
 	if err != nil {
@@ -107,7 +108,7 @@ func UpdateOrderByExcel(c *gin.Context) {
 
 	}
 
-	if serviceOrder.UploadOrdersByExcel(file) == nil {
+	if serviceOrder.UploadOrdersByExcel(file, fatherOrder) == nil {
 		c.JSON(http.StatusAccepted, gin.H{"Ok": "ok"})
 	}
 

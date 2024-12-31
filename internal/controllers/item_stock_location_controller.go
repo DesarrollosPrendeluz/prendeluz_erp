@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"errors"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
@@ -144,14 +145,23 @@ func StockChanges(c *gin.Context) {
 
 		stock.Amount = ((stock.Amount - int64(model.Stock)) + int64(requestObject.Stock))
 		model.Stock = requestObject.Stock
+		if requestObject.Stock > 0 {
+			error := repo.Update(model)
+			error2 := repoStock.Update(&stock)
+			if error != nil && error2 != nil {
+				errorList = append(errorList, error)
+				errorList = append(errorList, error2)
+			}
 
-		error := repo.Update(model)
-		error2 := repoStock.Update(&stock)
-		if error != nil && error2 != nil {
-			errorList = append(errorList, error)
-			errorList = append(errorList, error2)
+		} else {
+
+			errorList = append(errorList, errors.New("Stock can't be negative"))
 		}
 
+	}
+	if len(errorList) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": errorList}})
+		return
 	}
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Stock locations are updated", "Errors": errorList}})
 
@@ -165,24 +175,28 @@ func StockMovements(c *gin.Context) {
 	repoLoc := storelocationrepo.NewStoreLocationRepository(db.DB)
 	repoStock := storestockrepo.NewStoreStockRepository(db.DB)
 
-	stockMov := func(sku string, location uint64, stockVariant int64) {
+	stockMov := func(sku string, location uint64, stockVariant int64) error {
 		model, err := repo.FindByItemsAndLocation(sku, location)
 		loc, err1 := repoLoc.FindByID(model.StoreLocationID)
 		stock, err2 := repoStock.FindByItemAndStore(model.ItemMainSku, strconv.FormatUint(loc.StoreID, 10))
 		if err != nil || err1 != nil || err2 != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+			return err
 		}
 
 		stock.Amount = (stock.Amount + stockVariant)
 		model.Stock = model.Stock + int(stockVariant)
+		if model.Stock < 0 {
+			return errors.New("Stock can't be negative")
 
+		}
 		error := repo.Update(&model)
 		error2 := repoStock.Update(&stock)
 		if error != nil || error2 != nil {
 			errorList = append(errorList, error)
 			errorList = append(errorList, error2)
 		}
+		return nil
 	}
 
 	// Intentar bindear los datos del cuerpo de la request al struct
@@ -194,8 +208,20 @@ func StockMovements(c *gin.Context) {
 	// Acceder a los valores del cuerpo
 
 	for _, requestObject := range requestBody.Data {
-		stockMov(requestObject.MainSku, requestObject.StoreLocationID1, -int64(requestObject.Stock))
-		stockMov(requestObject.MainSku, requestObject.StoreLocationID2, int64(requestObject.Stock))
+		errMov := stockMov(requestObject.MainSku, requestObject.StoreLocationID1, -int64(requestObject.Stock))
+		if errMov == nil {
+			errMov2 := stockMov(requestObject.MainSku, requestObject.StoreLocationID2, int64(requestObject.Stock))
+			if errMov2 != nil {
+				errorList = append(errorList, errMov2)
+			}
+		} else {
+			errorList = append(errorList, errMov)
+		}
+
+	}
+	if len(errorList) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": errorList}})
+		return
 
 	}
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Stock locations are updated", "Errors": errorList}})

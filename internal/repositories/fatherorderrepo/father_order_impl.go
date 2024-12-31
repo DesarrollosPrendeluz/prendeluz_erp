@@ -44,7 +44,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 		Table("father_orders fo").
 		Select("fo.id, fo.code, fo.order_status_id, os.name as status, ot.name as type, " +
 			"SUM(CASE WHEN ol.store_id = 2 THEN ol.quantity ELSE 0 END) AS total_stock, " +
-			"SUM(CASE WHEN ol.store_id = 2 THEN ol.recived_quantity ELSE 0 END) AS total_recived_quantity, " +
+			"SUM(CASE WHEN ol.store_id = 2 THEN ol.recived_quantity ELSE 0 END) AS pending_stock, " +
 			"SUM(CASE WHEN ol.store_id = 1 THEN ol.quantity ELSE 0 END) AS total_picking_stock, " +
 			"SUM(CASE WHEN ol.store_id = 1 THEN ol.recived_quantity ELSE 0 END) AS total_recived_picking_quantity").
 		Joins("LEFT JOIN orders o ON o.father_order_id = fo.id").

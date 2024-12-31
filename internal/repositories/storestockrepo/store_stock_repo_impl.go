@@ -55,6 +55,15 @@ func (repo *StoreStockRepoImpl) FindByStore(idStore uint64, pageSize int, offset
 
 }
 
+func (repo *StoreStockRepoImpl) FindByStoreWithLocations(idStore uint64) ([]models.StoreStock, error) {
+	var storeStocks []models.StoreStock
+
+	results := repo.DB.Preload("Item").Preload("Locations.StoreLocations", "store_id = ?", idStore).Where("store_id = ?", idStore).Find(&storeStocks)
+
+	return storeStocks, results.Error
+
+}
+
 func (repo *StoreStockRepoImpl) FindByStoreAndSearchParams(idStore uint64, searchParam string, pageSize int, offset int) ([]models.StoreStock, error) {
 	var storeStocks []models.StoreStock
 	var itemsParent []interface{}
