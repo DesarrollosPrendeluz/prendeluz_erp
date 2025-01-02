@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
@@ -112,7 +111,7 @@ func (s *FatherOrderImpl) CloseOrderByFather(fatherOrderId uint64) error {
 				var location uint64
 				diffAmount := line.Amount - line.RecivedAmount
 				item, _ := s.itemsRepo.FindByIdWithFatherPreload(line.ItemID)
-				fmt.Println("debug")
+
 				if item.ItemType == "father" {
 					fatherSku = item.MainSKU
 				} else {
