@@ -39,6 +39,31 @@ func (repo *StockDeficitImpl) GetByFatherAndStore(fatherSku string, store int64)
 	return modelsData, err
 
 }
+
+func (repo *StockDeficitImpl) FindOrCreateByFatherAndStore(fatherSku string, store int64) (models.StockDeficit, error) {
+	var modelsData models.StockDeficit
+
+	err := repo.DB.
+		Where("parent_main_sku = ?", fatherSku).
+		Where("store_id = ?", store).
+		First(&modelsData).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			modelCreate := models.StockDeficit{
+				SKU_Parent:    fatherSku,
+				StoreID:       uint64(store),
+				Amount:        0,
+				PendingAmount: 0,
+			}
+			repo.DB.Create(&modelCreate)
+			modelsData = modelCreate
+
+		}
+	}
+
+	return modelsData, err
+
+}
 func (repo *StockDeficitImpl) GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error) {
 	var modelsData []models.StockDeficit
 

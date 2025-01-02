@@ -141,21 +141,21 @@ func CreateOrder(c *gin.Context) {
 			}
 
 		}
+		//README: Por el funcionamiento de la aplicación se ha decidido no ejecutar los procedimientos almacenados
+		// if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
+		// 	log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+		// } else {
+		// 	fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
 
-		if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
-			log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
-		} else {
-			fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
+		// }
 
-		}
+		// // Llamada al segundo procedimiento almacenado
+		// if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
+		// 	log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
+		// } else {
+		// 	fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
 
-		// Llamada al segundo procedimiento almacenado
-		if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
-			log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
-		} else {
-			fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
-
-		}
+		// }
 
 	}
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
@@ -190,6 +190,9 @@ func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines 
 			}
 			outRelRepo.Create(&outRel)
 
+		}
+		if fatherOrder.OrderTypeID == uint64(1) {
+			stockservices.NewStockDeficitService().AddPendingStockByItem(son, line.StoreID, int(line.Quantity))
 		}
 	}
 	return nil
