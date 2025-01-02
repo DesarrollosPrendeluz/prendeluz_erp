@@ -29,8 +29,8 @@ Revisar la ruta hacia la que hace las peticiones el en o en este caso el archivo
 ## Upload image to Dockerhub
 
 ```bash
-  docker tag backend-erp-prod desarrollospr/backend-erp-prod:1.0.1... (tags varios)
-  docker push desarrollospr/backend-erp-prod:1.0.1  (tags varios)
+  docker tag backend-erp-prod desarrollospr/backend-erp-prod:1.1.0 ... (tags varios)
+  docker push desarrollospr/backend-erp-prod:1.1.0  (tags varios)
 ```
 
 ## Upload image to Plesk via Ssh
