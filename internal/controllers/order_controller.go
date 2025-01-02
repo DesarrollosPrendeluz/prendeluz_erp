@@ -9,7 +9,6 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
-	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
@@ -163,13 +162,14 @@ func CreateOrder(c *gin.Context) {
 
 func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines []dtos.Line) error {
 	repo := orderitemrepo.NewOrderItemRepository(db.DB) // Asumiendo que tienes un repositorio para las líneas
-	itemRepo := itemsrepo.NewItemRepository(db.DB)
+	//itemRepo := itemsrepo.NewItemRepository(db.DB)
 
 	for _, line := range lines {
-		son, _ := itemRepo.FindSonId(line.ItemID)
+		//son, _ := itemRepo.FindSonId(line.ItemID)
+
 		orderLine := models.OrderItem{
 			OrderID:       order.ID,
-			ItemID:        son,
+			ItemID:        line.ItemID,
 			Amount:        line.Quantity,
 			RecivedAmount: line.RecivedQuantity,
 			StoreID:       line.StoreID,
@@ -192,7 +192,7 @@ func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines 
 
 		}
 		if fatherOrder.OrderTypeID == uint64(1) {
-			stockservices.NewStockDeficitService().AddPendingStockByItem(son, line.StoreID, int(line.Quantity))
+			stockservices.NewStockDeficitService().AddPendingStockByItem(line.ItemID, line.StoreID, int(line.Quantity))
 		}
 	}
 	return nil

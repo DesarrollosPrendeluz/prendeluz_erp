@@ -62,7 +62,7 @@ func (repo *ItemRepoImpl) FindSonId(id uint64) (uint64, error) {
 
 	if item.ItemType == "father" {
 
-		idChild = item.ChildRel.ChildItemID
+		idChild = item.ChildRel.Child.ID
 	} else {
 		idChild = item.ID
 	}
