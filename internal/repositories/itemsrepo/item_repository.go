@@ -14,4 +14,5 @@ type ItemRepo interface {
 	FindByFathersMainSkuOrEan(filter string) ([]models.Item, error)
 	FindByEanAndSupplierSku(ean string, supplierSku string) (models.Item, error)
 	FindByEan(sku string) ([]models.Item, error)
+	FindByIdWithFatherPreload(id uint64) (models.Item, error)
 }

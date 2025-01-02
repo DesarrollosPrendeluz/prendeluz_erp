@@ -1,29 +1,46 @@
 package services
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
+	"prendeluz/erp/internal/repositories/itemlocationrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
+	"prendeluz/erp/internal/repositories/orderrepo"
+	"prendeluz/erp/internal/repositories/stockdeficitrepo"
+	"prendeluz/erp/internal/repositories/storestockrepo"
+	"strconv"
 )
 
 type FatherOrderImpl struct {
-	fatherorderrepo fatherorderrepo.FatherOrderImpl
-	itemsRepo       itemsrepo.ItemRepoImpl
-	orderitemrepo   orderitemrepo.OrderItemRepoImpl
+	fatherorderrepo  fatherorderrepo.FatherOrderImpl
+	orderrepo        orderrepo.OrderRepoImpl
+	itemsRepo        itemsrepo.ItemRepoImpl
+	orderitemrepo    orderitemrepo.OrderItemRepoImpl
+	storestockrepo   storestockrepo.StoreStockRepoImpl
+	itemlocationrepo itemlocationrepo.ItemLocationImpl
+	stockdeficitrepo stockdeficitrepo.StockDeficitImpl
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
 	fatherorderrepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
 	orderitemrepo := *orderitemrepo.NewOrderItemRepository(db.DB)
-
+	orderrepo := *orderrepo.NewOrderRepository(db.DB)
+	storestockrepo := *storestockrepo.NewStoreStockRepository(db.DB)
+	itemlocationrepo := *itemlocationrepo.NewInItemLocationRepository(db.DB)
+	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	return &FatherOrderImpl{
-		fatherorderrepo: fatherorderrepo,
-		itemsRepo:       itemsRepo,
-		orderitemrepo:   orderitemrepo}
+		fatherorderrepo:  fatherorderrepo,
+		itemsRepo:        itemsRepo,
+		orderitemrepo:    orderitemrepo,
+		orderrepo:        orderrepo,
+		storestockrepo:   storestockrepo,
+		itemlocationrepo: itemlocationrepo,
+		stockdeficitrepo: stockdeficitrepo}
 }
 
 func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int) (dtos.FatherOrderOrdersAndLines, int64, error) {
@@ -82,6 +99,73 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 	result.Lines = lines
 
 	return result, totalRecords, nil
+}
+
+func (s *FatherOrderImpl) CloseOrderByFather(fatherOrderId uint64) error {
+	fatherData, _ := s.fatherorderrepo.FindByID(fatherOrderId)
+	orderData, _ := s.orderrepo.FindByFatherId(fatherData.ID)
+	for _, order := range orderData {
+		linesData, _ := s.orderitemrepo.FindByOrder(order.ID)
+		for _, line := range linesData {
+			if line.RecivedAmount < line.Amount {
+				var fatherSku string
+				var location uint64
+				diffAmount := line.Amount - line.RecivedAmount
+				item, _ := s.itemsRepo.FindByIdWithFatherPreload(line.ItemID)
+				fmt.Println("debug")
+				if item.ItemType == "father" {
+					fatherSku = item.MainSKU
+				} else {
+					fatherSku = item.FatherRel.Parent.MainSKU
+				}
+
+				switch line.StoreID {
+				case 1:
+					location = 1
+				case 2:
+					location = 86
+
+				}
+
+				line.RecivedAmount = line.Amount
+				s.orderitemrepo.Update(&line)
+
+				itemStock, _ := s.storestockrepo.FindByItemAndStore(fatherSku, strconv.FormatInt(line.StoreID, 10))
+				itemStock.Amount = itemStock.Amount + diffAmount
+				s.storestockrepo.Update(&itemStock)
+
+				itemStockLocation, _ := s.itemlocationrepo.FindByItemsAndLocation(fatherSku, location)
+				itemStockLocation.Stock = itemStockLocation.Stock + int(diffAmount)
+				s.itemlocationrepo.Update(&itemStockLocation)
+
+				stockDef, _ := s.stockdeficitrepo.GetByFatherAndStore(fatherSku, line.StoreID)
+
+				stockDef.Amount = stockDef.Amount - diffAmount
+				stockDef.PendingAmount = stockDef.PendingAmount - diffAmount
+				if stockDef.Amount < 0 {
+					stockDef.Amount = 0
+				}
+				if stockDef.PendingAmount < 0 {
+					stockDef.Amount = 0
+				}
+				s.stockdeficitrepo.Update(&stockDef)
+
+			}
+		}
+
+		order.OrderStatusID = 3
+		s.orderrepo.Update(&order)
+
+	}
+
+	fatherData.OrderStatusID = 3
+	s.fatherorderrepo.Update(fatherData)
+
+	//s.stockdeficitrepo.CallStockDefProc()
+	//s.stockdeficitrepo.CallPendingStockProc()
+
+	return nil
+
 }
 
 func returnLocations(item models.OrderItem) []string {

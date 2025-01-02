@@ -38,6 +38,14 @@ func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, erro
 	return order, results.Error
 }
 
+func (repo *OrderRepoImpl) FindByFatherId(fatherId uint64) ([]models.Order, error) {
+	var order []models.Order
+
+	results := repo.DB.Where("father_order_id = ?", fatherId).Find(&order)
+
+	return order, results.Error
+}
+
 // FindOrderByDate recupera un pedido basado en un rango de fechas.
 // Acepta startDate y endDate como cadenas de texto con el formato: "YYYY-MM-DD".
 // Si se proporcionan tanto startDate como endDate, devuelve los pedidos entre esas fechas.

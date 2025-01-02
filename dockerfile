@@ -13,7 +13,7 @@ ENV DB_HOST="70.35.197.24"
 ENV DB_PORT=32991
 ENV DB_USERNAME="root"
 ENV DB_PASSWORD=${DB_PSWD}
-ENV DB_NAME="prend_items_luz"
+ENV DB_NAME="test_prend_items_luz"
 #RUN echo "Valor de MY_ENV_VAR: $DB_PSWD"
 
 RUN go mod tidy

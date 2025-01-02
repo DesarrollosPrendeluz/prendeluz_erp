@@ -1,16 +1,14 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
+	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
-
-	"gorm.io/gorm"
 )
 
 type ParentItemResult struct {
@@ -59,32 +57,38 @@ func (s *StockDeficitServiceImpl) SearchBySkuAndEan(filter string, store int, pa
 
 }
 
+func (s *StockDeficitServiceImpl) AddPendingStockByItem(child_item_id uint64, store_id int64, quantity int) error {
+	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
+
+	result := returnParentItemById(child_item_id)
+
+	stockDef, err := s.stockDeficitRepo.FindOrCreateByFatherAndStore(result.MainSKU, store_id)
+
+	if err != nil {
+		fmt.Errorf("error al buscar registro existente: %w", err)
+		return err
+	}
+
+	stockDef.PendingAmount += int64(quantity)
+
+	err2 := s.stockDeficitRepo.Update(&stockDef)
+	if err2 != nil {
+		fmt.Errorf("error al actualizar: %w", err)
+		return err
+	}
+	return nil
+
+}
+
 func (s *StockDeficitServiceImpl) CalcStockDeficitByItem(child_item_id uint64, store_id int64) {
 	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
-	var result ParentItemResult
 	var existing models.StockDeficit
 	var deficit StockDeficitResult
 	var pending StockDeficitResult
 
-	item, _ := s.itemsRepo.FindByID(child_item_id)
+	result := returnParentItemById(child_item_id)
 
-	if item.ItemType == "father" {
-		result.MainSKU = item.MainSKU
-		result.ParentItemID = int(item.ID)
-
-	} else {
-		if err := s.stockDeficitRepo.DB.Table("item_parents AS ip").
-			Select("ip.parent_item_id, i.main_sku").
-			Joins("JOIN items i ON i.id = ip.parent_item_id").
-			Where("ip.child_item_id = ?", child_item_id).
-			Limit(1).
-			Scan(&result).Error; err != nil {
-			fmt.Printf("Error al ejecutar la consulta: %v", err)
-		}
-
-	}
-
-	err2 := s.stockDeficitRepo.DB.
+	err1 := s.stockDeficitRepo.DB.
 		Table("order_lines AS ol").
 		Select("GREATEST(0, -(IFNULL(AVG(ss.quantity), 0) - (SUM(ol.quantity) - SUM(ol.recived_quantity)))) AS deficit").
 		Joins("LEFT JOIN item_parents ip ON ip.child_item_id = ol.item_id").
@@ -95,10 +99,10 @@ func (s *StockDeficitServiceImpl) CalcStockDeficitByItem(child_item_id uint64, s
 		Where("ol.store_id = ?", store_id).
 		Group("ip.parent_item_id").
 		Take(&deficit).Error
-	if err2 != nil {
-		fmt.Printf("Error al ejecutar la consulta: %v", err2)
+	if err1 != nil {
+		fmt.Printf("Error al ejecutar la consulta: %v", err1)
 	}
-	err2 = s.stockDeficitRepo.DB.
+	err2 := s.stockDeficitRepo.DB.
 		Table("order_lines AS ol").
 		Select(" SUM(ol.quantity) - SUM(ol.recived_quantity) AS deficit").
 		Joins("LEFT JOIN item_parents ip ON ip.child_item_id = ol.item_id").
@@ -113,31 +117,39 @@ func (s *StockDeficitServiceImpl) CalcStockDeficitByItem(child_item_id uint64, s
 		fmt.Printf("Error al ejecutar la consulta: %v", err2)
 	}
 
-	err3 := s.stockDeficitRepo.DB.Table("stock_deficits").
-		Where("store_id = ? AND parent_main_sku = ?", store_id, result.MainSKU).
-		First(&existing).Error
-
+	existing, err3 := s.stockDeficitRepo.FindOrCreateByFatherAndStore(result.MainSKU, store_id)
 	if err3 != nil {
-		if errors.Is(err3, gorm.ErrRecordNotFound) {
-			// El registro no existe, realizar una inserción
-			//hay que verlo pero def en principipio solo en el 2
-			newRecord := models.StockDeficit{
-				StoreID:       2, //uint64(store_id),
-				SKU_Parent:    result.MainSKU,
-				Amount:        int64(deficit.Deficit),
-				PendingAmount: int64(pending.Deficit),
-			}
-			s.stockDeficitRepo.Create(&newRecord)
+		fmt.Errorf("error al buscar registro existente: %w", err3)
+		return
+	}
 
-		} else {
-			// Error diferente a "registro no encontrado"
-			fmt.Errorf("error al buscar registro existente: %w", err3)
-		}
+	// El registro ya existe, realizar una actualización
+	existing.Amount = int64(deficit.Deficit)
+	existing.PendingAmount = int64(pending.Deficit)
+	s.stockDeficitRepo.Update(&existing)
+
+}
+
+func returnParentItemById(id uint64) (parent ParentItemResult) {
+	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
+	var result ParentItemResult
+
+	item, _ := itemsrepo.NewItemRepository(db.DB).FindByID(id)
+
+	if item.ItemType == "father" {
+		result.MainSKU = item.MainSKU
+		result.ParentItemID = int(item.ID)
+
 	} else {
-		// El registro ya existe, realizar una actualización
-		existing.Amount = int64(deficit.Deficit)
-		existing.PendingAmount = int64(pending.Deficit)
-		s.stockDeficitRepo.Update(&existing)
+		parent, err := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(id)
+		if err != nil {
+			fmt.Printf("Error al ejecutar la consulta: %v", err)
+		}
+		result.MainSKU = parent.Parent.MainSKU
+		result.ParentItemID = int(parent.Parent.ID)
 
 	}
+
+	return result
+
 }
