@@ -7,4 +7,7 @@ import (
 
 type StoreLocationRepo interface {
 	repositories.Repository[models.StoreLocation]
+	FindByItem(mainSku string, pageSize int, offset int) ([]models.ItemLocation, error)
+	FindByItemsAndStore(mainSku string, store uint64, pageSize int, offset int) ([]models.ItemLocation, error)
+	FindByItemsAndLocation(mainSku string, location uint64) (models.ItemLocation, error)
 }

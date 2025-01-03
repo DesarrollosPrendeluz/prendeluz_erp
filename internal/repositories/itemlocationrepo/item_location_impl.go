@@ -45,3 +45,15 @@ func (repo *ItemLocationImpl) FindByItemsAndStore(mainSku string, store uint64, 
 		Limit(pageSize)
 	return item, result.Error
 }
+
+// Busca un producto hijo en base a su aparición en la tabla parent_items
+func (repo *ItemLocationImpl) FindByItem(mainSku string, pageSize int, offset int) ([]models.ItemLocation, error) {
+	var item []models.ItemLocation
+
+	result := repo.DB.Preload("StoreLocations.Store").
+		Where("item_main_sku = ? ", mainSku).
+		Find(&item).
+		Offset(offset).
+		Limit(pageSize)
+	return item, result.Error
+}

@@ -30,6 +30,9 @@ func GetItemStockLocation(c *gin.Context) {
 
 	if main_sku != "" && store_id != 0 {
 		data, err = repo.FindByItemsAndStore(main_sku, uint64(store_id), pageSize, page)
+
+	} else if main_sku != "" {
+		data, err = repo.FindByItem(main_sku, pageSize, page)
 	} else {
 		if storeLocation != 0 {
 			datum, err = repo.FindByID(uint64(storeLocation))
