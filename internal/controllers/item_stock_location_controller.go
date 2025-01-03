@@ -211,14 +211,19 @@ func StockMovements(c *gin.Context) {
 	// Acceder a los valores del cuerpo
 
 	for _, requestObject := range requestBody.Data {
-		errMov := stockMov(requestObject.MainSku, requestObject.StoreLocationID1, -int64(requestObject.Stock))
-		if errMov == nil {
-			errMov2 := stockMov(requestObject.MainSku, requestObject.StoreLocationID2, int64(requestObject.Stock))
-			if errMov2 != nil {
-				errorList = append(errorList, errMov2)
+		if requestObject.StoreLocationID1 != requestObject.StoreLocationID2 {
+			errMov := stockMov(requestObject.MainSku, requestObject.StoreLocationID1, -int64(requestObject.Stock))
+			if errMov == nil {
+				errMov2 := stockMov(requestObject.MainSku, requestObject.StoreLocationID2, int64(requestObject.Stock))
+				if errMov2 != nil {
+					errorList = append(errorList, errMov2)
+				}
+			} else {
+				errorList = append(errorList, errMov)
 			}
+
 		} else {
-			errorList = append(errorList, errMov)
+			errorList = append(errorList, errors.New("The locations are the same"))
 		}
 
 	}
