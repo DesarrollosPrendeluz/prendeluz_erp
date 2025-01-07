@@ -26,6 +26,15 @@ func (repo *ItemRepoImpl) FindByMainSku(sku string) (models.Item, error) {
 
 }
 
+func (repo *ItemRepoImpl) FindByIdWithAsinPreload(id uint64) (models.Item, error) {
+	var item models.Item
+
+	result := repo.DB.Preload("AsinRel").Where("id = ?", id).First(&item)
+
+	return item, result.Error
+
+}
+
 func (repo *ItemRepoImpl) FindByIdWithFatherPreload(id uint64) (models.Item, error) {
 	var item models.Item
 
