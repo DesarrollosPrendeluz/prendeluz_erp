@@ -151,6 +151,9 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 			itemInfo.Ean = item.EAN
 			itemInfo.Amount = orderItem.Amount
 			itemInfo.RecivedAmount = orderItem.RecivedAmount
+			//FIXME: quitar una vez se haya externalizado
+			itemInfo.Box = *orderItem.Box
+			itemInfo.Pallet = *orderItem.Pallet
 			if item.SupplierItems != nil && len(*item.SupplierItems) > 0 && (*item.SupplierItems)[0].Supplier != nil {
 				itemInfo.Supplier = (*item.SupplierItems)[0].Supplier.Name
 			} else {

@@ -10,6 +10,9 @@ type ItemInfo struct {
 	Supplier      string
 	AssignedUser  AssignedUserToOrderItem
 	Locations     []string
+	//FIXME:quitar una vez se haya externalizado
+	Box    string
+	Pallet string
 }
 type AssignedUserToOrderItem struct {
 	AssignationId uint64 `json:"assignation_id"`

@@ -83,6 +83,8 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 			SupplierName:    supplierName,
 			SupplierRef:     supplierRef,
 			Location:        locations,
+			Box:             item.Box,
+			Pallet:          item.Pallet,
 			AssignedUser: dtos.AssignedUserToOrderItem{
 				AssignationId: item.AssignedRel.ID,
 				UserId:        item.AssignedRel.UserID,
