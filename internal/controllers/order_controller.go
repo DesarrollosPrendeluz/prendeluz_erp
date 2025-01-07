@@ -257,6 +257,12 @@ func EditOrdersLines(c *gin.Context) {
 		if dataItem.StoreID != nil {
 			model.Amount = *dataItem.StoreID
 		}
+		if dataItem.Pallet != nil {
+			model.Pallet = dataItem.Pallet
+		}
+		if dataItem.Box != nil {
+			model.Box = dataItem.Box
+		}
 
 	}
 	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
