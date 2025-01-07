@@ -74,6 +74,7 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersFatherOrderRoutes.GET("", controllers.GetFatherOrdersData)
 		allUsersFatherOrderRoutes.PATCH("", controllers.UpdateFatherOrders)
 		allUsersFatherOrderRoutes.GET("/orderLines", controllers.GetOrderLinesByFatherId)
+		allUsersFatherOrderRoutes.GET("/amazonExcel", controllers.DownLoadExcelForAmazon)
 		allUsersFatherOrderRoutes.PATCH("/close", controllers.CloseOrderLines)
 
 	}

@@ -1,9 +1,13 @@
 package services
 
 import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
+	"prendeluz/erp/internal/repositories/asinrepo"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemlocationrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
@@ -12,7 +16,19 @@ import (
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
 	"strconv"
+
+	"github.com/xuri/excelize/v2"
 )
+
+type ExcelExportation struct {
+	OC_code string
+	Asin    string
+	Total   int
+	Per_box int
+	Rest    string
+	Pallet  string
+	Box     string
+}
 
 type FatherOrderImpl struct {
 	fatherorderrepo  fatherorderrepo.FatherOrderImpl
@@ -22,6 +38,7 @@ type FatherOrderImpl struct {
 	storestockrepo   storestockrepo.StoreStockRepoImpl
 	itemlocationrepo itemlocationrepo.ItemLocationImpl
 	stockdeficitrepo stockdeficitrepo.StockDeficitImpl
+	asinrepo         asinrepo.AsinRepoImpl
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
@@ -32,6 +49,7 @@ func NewFatherOrderService() *FatherOrderImpl {
 	storestockrepo := *storestockrepo.NewStoreStockRepository(db.DB)
 	itemlocationrepo := *itemlocationrepo.NewInItemLocationRepository(db.DB)
 	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	asinrepo := *asinrepo.NewAsinRepository(db.DB)
 	return &FatherOrderImpl{
 		fatherorderrepo:  fatherorderrepo,
 		itemsRepo:        itemsRepo,
@@ -39,7 +57,8 @@ func NewFatherOrderService() *FatherOrderImpl {
 		orderrepo:        orderrepo,
 		storestockrepo:   storestockrepo,
 		itemlocationrepo: itemlocationrepo,
-		stockdeficitrepo: stockdeficitrepo}
+		stockdeficitrepo: stockdeficitrepo,
+		asinrepo:         asinrepo}
 }
 
 func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int) (dtos.FatherOrderOrdersAndLines, int64, error) {
@@ -214,4 +233,75 @@ func returnSupplierData(item models.OrderItem) (string, string) {
 	}
 
 	return supplierName, supplierRef
+}
+
+func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
+	var exportData []ExcelExportation
+
+	fatherData, fatherError := s.orderrepo.FindByFatherId(fatherID)
+	if fatherError != nil {
+		fmt.Println(fatherError.Error())
+	}
+	for _, father := range fatherData {
+		orderItems, orderItemError := s.orderitemrepo.FindByOrder(father.ID)
+		if orderItemError != nil {
+			fmt.Println(fatherError.Error())
+		}
+		for _, orderItem := range orderItems {
+			asin, asinError := s.asinrepo.FindByItemId(orderItem.ItemID)
+			// var subStrings []string
+			if asinError != nil {
+				fmt.Println(fatherError.Error())
+			}
+			// if orderItem.Box != nil && *orderItem.Box != "" {
+			// 	subStrings = strings.Split(*orderItem.Box, ",")
+			// 	fmt.Printf("El número de subcadenas es: %d\n", len(subStrings))
+			// } else {
+			// 	fmt.Println("Box es nil o está vacío")
+			// }
+			data := ExcelExportation{
+				OC_code: father.Code,
+				Asin:    asin.Code,
+				Total:   int(orderItem.Amount),
+				Box:     *orderItem.Box,
+				Pallet:  *orderItem.Pallet,
+			}
+			exportData = append(exportData, data)
+		}
+
+	}
+
+	f := excelize.NewFile()
+
+	// Crear encabezados en la primera fila
+	sheetName := "Amazon_Data"
+
+	f.NewSheet(sheetName)
+	f.SetCellValue(sheetName, "A1", "Order Code")
+	f.SetCellValue(sheetName, "B1", "Asin")
+	f.SetCellValue(sheetName, "C1", "Total")
+	f.SetCellValue(sheetName, "D1", "Box")
+	f.SetCellValue(sheetName, "E1", "Pallet")
+
+	// Escribir los datos en las filas siguientes
+	for i, data := range exportData {
+		row := i + 2 // La primera fila es para los encabezados
+
+		f.SetCellValue(sheetName, "A"+strconv.Itoa(row), data.OC_code)
+		f.SetCellValue(sheetName, "B"+strconv.Itoa(row), data.Asin)
+		f.SetCellValue(sheetName, "C"+strconv.Itoa(row), data.Total)
+		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), data.Box)
+		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), data.Pallet)
+
+	}
+	f.DeleteSheet("Sheet1")
+	// Escribir el archivo Excel en un buffer
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+		return ""
+	}
+
+	// Codificar el contenido del buffer en Base64
+	return base64.StdEncoding.EncodeToString(buf.Bytes())
+
 }
