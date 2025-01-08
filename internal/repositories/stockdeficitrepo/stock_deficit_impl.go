@@ -92,8 +92,8 @@ func (repo *StockDeficitImpl) GetallByStoreAndSupplier(storeId int, supplier int
 		Where("quantity != 0 OR pending_stock != 0").
 		Where("supplier_items.supplier_id = ?", supplier)
 
-	err := repo.DB.
-		//("Item.SupplierItems", "item_id = ?", 2).
+	err := repo.DB.Debug().
+		Preload("Item.SupplierItems", "supplier_id = ?", supplier).
 		Preload("Item.SupplierItems.Supplier").
 		Where("id IN (?)", subQuery).
 		Limit(pageSize).
