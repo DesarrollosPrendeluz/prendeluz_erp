@@ -53,6 +53,7 @@ func (repo *ItemLocationImpl) FindByItem(mainSku string, pageSize int, offset in
 	result := repo.DB.Preload("StoreLocations.Store").
 		Where("item_main_sku = ? ", mainSku).
 		Find(&item).
+		Order("store_location_id DESC").
 		Offset(offset).
 		Limit(pageSize)
 	return item, result.Error
