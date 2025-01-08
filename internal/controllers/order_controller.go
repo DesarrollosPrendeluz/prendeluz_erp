@@ -8,7 +8,6 @@ import (
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
-	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
@@ -109,55 +108,13 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": err.Error()}})
 		return
 	}
-	fechaActual := time.Now().Format("2006-01-02 15:04:05")
-
-	// Acceder a los valores del cuerpo
-	for _, dataItem := range requestBody.Data {
-		order := dataItem.Order
-		lines := dataItem.Lines
-		fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
-		repo := orderrepo.NewOrderRepository(db.DB)
-		fatherObject := models.FatherOrder{
-			OrderStatusID: order.Status,
-			OrderTypeID:   order.Type,
-			Code:          "request.generated." + fechaActual,
-			Filename:      "request",
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
-		}
-
-		if fatherRepo.Create(&fatherObject) == nil {
-			orderObject := models.Order{
-				OrderStatusID: order.Status,
-				FatherOrderID: fatherObject.ID,
-				Code:          "request.generated." + fechaActual,
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-			}
-			if repo.Create(&orderObject) == nil {
-				createOrderLines(fatherObject, orderObject, lines)
-
-			}
-
-		}
-		//README: Por el funcionamiento de la aplicación se ha decidido no ejecutar los procedimientos almacenados
-		// if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
-		// 	log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
-		// } else {
-		// 	fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
-
-		// }
-
-		// // Llamada al segundo procedimiento almacenado
-		// if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
-		// 	log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
-		// } else {
-		// 	fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
-
-		// }
-
+	flag := fatherOrderServices.NewFatherOrderService().CreateOrder(requestBody)
+	if flag {
+		c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
+		return
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
+	c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"Err": "Orders are not created"}})
+
 }
 
 func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines []dtos.Line) error {

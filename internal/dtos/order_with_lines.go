@@ -1,8 +1,10 @@
 package dtos
 
 type Order struct {
-	Status uint64 `json:"status"`
-	Type   uint64 `json:"type"`
+	Name     *string `json:"name"`
+	Supplier *uint64 `json:"supplier"`
+	Status   uint64  `json:"status"`
+	Type     uint64  `json:"type"`
 }
 
 type OrderToUpdate struct {
