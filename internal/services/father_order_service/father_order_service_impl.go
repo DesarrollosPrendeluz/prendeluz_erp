@@ -16,6 +16,7 @@ import (
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
+	"prendeluz/erp/internal/repositories/supplieritemrepo"
 	"prendeluz/erp/internal/repositories/supplierorderrepo"
 	stockservices "prendeluz/erp/internal/services/stock_deficit"
 	"strconv"
@@ -87,7 +88,7 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 	for _, item := range items {
 		// Obtener el nombre del proveedor
 
-		supplierName, supplierRef := returnSupplierData(item)
+		supplierName, supplierRef := returnSupplierData(item, parentData.GenericSupplier)
 		locations := returnLocations(item)
 		var fatherSku string
 
@@ -219,25 +220,37 @@ func returnLocations(item models.OrderItem) []string {
 	return locs
 }
 
-func returnSupplierData(item models.OrderItem) (string, string) {
+func returnSupplierData(item models.OrderItem, supplier *models.SupplierOrder) (string, string) {
 	supplierName, supplierRef := "", ""
 
 	var supplierItems *[]models.SupplierItem
-
-	if item.Item.ItemType != models.Father {
-		if item.Item.FatherRel != nil && item.Item.FatherRel.Parent != nil {
-			supplierItems = item.Item.FatherRel.Parent.SupplierItems
+	if supplier != nil && supplier.SupplierID != 0 {
+		var id uint64
+		if item.Item.ItemType != models.Father {
+			id = item.Item.FatherRel.Parent.ID
+		} else {
+			id = item.Item.ID
 		}
+		item, _ := supplieritemrepo.NewSupplierItemRepository(db.DB).FindBySupplierIdAndItemId(id, supplier.SupplierID)
+		return supplier.Supplier.Name, item.SupplierSku
+
 	} else {
-		supplierItems = item.Item.SupplierItems
-	}
-
-	if supplierItems != nil && len(*supplierItems) > 0 {
-		firstSupplierItem := (*supplierItems)[0]
-		if firstSupplierItem.Supplier != nil {
-			supplierName = firstSupplierItem.Supplier.Name
-			supplierRef = firstSupplierItem.SupplierSku
+		if item.Item.ItemType != models.Father {
+			if item.Item.FatherRel != nil && item.Item.FatherRel.Parent != nil {
+				supplierItems = item.Item.FatherRel.Parent.SupplierItems
+			}
+		} else {
+			supplierItems = item.Item.SupplierItems
 		}
+
+		if supplierItems != nil && len(*supplierItems) > 0 {
+			firstSupplierItem := (*supplierItems)[0]
+			if firstSupplierItem.Supplier != nil {
+				supplierName = firstSupplierItem.Supplier.Name
+				supplierRef = firstSupplierItem.SupplierSku
+			}
+		}
+
 	}
 
 	return supplierName, supplierRef

@@ -1,5 +1,7 @@
 package dtos
 
+import "prendeluz/erp/internal/models"
+
 type FatherOrderWithRecount struct {
 	ID                          uint    `json:"id"`
 	Code                        string  `json:"code"`
@@ -13,14 +15,15 @@ type FatherOrderWithRecount struct {
 	TotalRecivedPickingQuantity float64 `json:"total_recived_picking_quantity"`
 }
 type FatherOrder struct {
-	ID              uint64 `json:"id"`
-	Code            string `json:"code"`
-	OrderStatusID   uint   `json:"status_id"`
-	OrderTypeID     uint   `json:"type_id"`
-	Status          string `json:"status"`
-	Type            string `json:"type"`
-	Quantity        uint64 `json:"quantity"`
-	RecivedQuantity uint64 `json:"recived_quantity"`
+	ID              uint64                `json:"id"`
+	Code            string                `json:"code"`
+	OrderStatusID   uint                  `json:"status_id"`
+	OrderTypeID     uint                  `json:"type_id"`
+	Status          string                `json:"status"`
+	Type            string                `json:"type"`
+	Quantity        uint64                `json:"quantity"`
+	RecivedQuantity uint64                `json:"recived_quantity"`
+	GenericSupplier *models.SupplierOrder `json:"supplier_order"`
 	Childs          []ChildOrder
 }
 type ChildOrder struct {

@@ -70,6 +70,7 @@ func (repo *FatherOrderImpl) FindParentAndOrders(code string) (dtos.FatherOrder,
 	var total uint64
 	var partial uint64
 	query := repo.DB.
+		Preload("SupplierOrder.Supplier").
 		Preload("ChildOrders.OrderStatus").
 		Preload("OrderStatus").
 		Preload("OrderType")
@@ -115,6 +116,7 @@ func (repo *FatherOrderImpl) FindParentAndOrders(code string) (dtos.FatherOrder,
 		Status:          data.OrderStatus.Name,
 		OrderStatusID:   uint(data.OrderStatusID),
 		Quantity:        total,
+		GenericSupplier: &data.SupplierOrder,
 		RecivedQuantity: partial,
 		Childs:          orders,
 	}

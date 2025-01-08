@@ -7,6 +7,8 @@ type SupplierOrder struct {
 	SupplierID    uint64 `gorm:"not null"`
 	CreatedAt     *time.Time
 	UpdatedAt     *time.Time
+
+	Supplier *Supplier `gorm:"foreignKey:ID;references:SupplierID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (SupplierOrder) TableName() string {
