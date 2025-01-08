@@ -13,10 +13,14 @@ import (
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
+	"prendeluz/erp/internal/repositories/supplierorderrepo"
+	stockservices "prendeluz/erp/internal/services/stock_deficit"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -32,14 +36,15 @@ type ExcelExportation struct {
 }
 
 type FatherOrderImpl struct {
-	fatherorderrepo  fatherorderrepo.FatherOrderImpl
-	orderrepo        orderrepo.OrderRepoImpl
-	itemsRepo        itemsrepo.ItemRepoImpl
-	orderitemrepo    orderitemrepo.OrderItemRepoImpl
-	storestockrepo   storestockrepo.StoreStockRepoImpl
-	itemlocationrepo itemlocationrepo.ItemLocationImpl
-	stockdeficitrepo stockdeficitrepo.StockDeficitImpl
-	asinrepo         asinrepo.AsinRepoImpl
+	supplierorderrepo supplierorderrepo.SupplierOrderImpl
+	fatherorderrepo   fatherorderrepo.FatherOrderImpl
+	orderrepo         orderrepo.OrderRepoImpl
+	itemsRepo         itemsrepo.ItemRepoImpl
+	orderitemrepo     orderitemrepo.OrderItemRepoImpl
+	storestockrepo    storestockrepo.StoreStockRepoImpl
+	itemlocationrepo  itemlocationrepo.ItemLocationImpl
+	stockdeficitrepo  stockdeficitrepo.StockDeficitImpl
+	asinrepo          asinrepo.AsinRepoImpl
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
@@ -51,15 +56,17 @@ func NewFatherOrderService() *FatherOrderImpl {
 	itemlocationrepo := *itemlocationrepo.NewInItemLocationRepository(db.DB)
 	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	asinrepo := *asinrepo.NewAsinRepository(db.DB)
+	supplierorderrepo := *supplierorderrepo.NewSupplierOrderRepository(db.DB)
 	return &FatherOrderImpl{
-		fatherorderrepo:  fatherorderrepo,
-		itemsRepo:        itemsRepo,
-		orderitemrepo:    orderitemrepo,
-		orderrepo:        orderrepo,
-		storestockrepo:   storestockrepo,
-		itemlocationrepo: itemlocationrepo,
-		stockdeficitrepo: stockdeficitrepo,
-		asinrepo:         asinrepo}
+		fatherorderrepo:   fatherorderrepo,
+		itemsRepo:         itemsRepo,
+		orderitemrepo:     orderitemrepo,
+		orderrepo:         orderrepo,
+		storestockrepo:    storestockrepo,
+		itemlocationrepo:  itemlocationrepo,
+		stockdeficitrepo:  stockdeficitrepo,
+		asinrepo:          asinrepo,
+		supplierorderrepo: supplierorderrepo}
 }
 
 func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int) (dtos.FatherOrderOrdersAndLines, int64, error) {
@@ -289,6 +296,112 @@ func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 
 	return generateExcelBase64(exportData)
 
+}
+
+func (s *FatherOrderImpl) CreateOrder(requestBody dtos.OrderWithLinesRequest) bool {
+
+	var code string
+
+	fechaActual := time.Now().Format("2006-01-02 15:04:05")
+	code = "request.generated." + fechaActual
+
+	// Acceder a los valores del cuerpo
+	for _, dataItem := range requestBody.Data {
+		order := dataItem.Order
+		lines := dataItem.Lines
+		fatherRepo := s.fatherorderrepo
+		repo := s.orderrepo
+		if order.Name != nil {
+			code = *order.Name
+		}
+		fatherObject := models.FatherOrder{
+			OrderStatusID: order.Status,
+			OrderTypeID:   order.Type,
+			Code:          code,
+			Filename:      "request",
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+
+		if fatherRepo.Create(&fatherObject) == nil {
+			orderObject := models.Order{
+				OrderStatusID: order.Status,
+				FatherOrderID: fatherObject.ID,
+				Code:          "request.generated." + fechaActual,
+				CreatedAt:     time.Now(),
+				UpdatedAt:     time.Now(),
+			}
+			if repo.Create(&orderObject) == nil {
+				createOrderLines(fatherObject, orderObject, lines)
+
+			}
+
+			if dataItem.Order.Supplier != nil {
+				supplierOrderObject := models.SupplierOrder{
+					SupplierID:    *dataItem.Order.Supplier,
+					FatherOrderID: fatherObject.ID,
+				}
+				s.supplierorderrepo.Create(&supplierOrderObject)
+			}
+
+		}
+		//README: Por el funcionamiento de la aplicación se ha decidido no ejecutar los procedimientos almacenados
+		// if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
+		// 	log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+		// } else {
+		// 	fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
+
+		// }
+
+		// // Llamada al segundo procedimiento almacenado
+		// if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
+		// 	log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
+		// } else {
+		// 	fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
+
+		// }
+
+	}
+	return true
+
+}
+
+func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines []dtos.Line) error {
+	repo := orderitemrepo.NewOrderItemRepository(db.DB) // Asumiendo que tienes un repositorio para las líneas
+	//itemRepo := itemsrepo.NewItemRepository(db.DB)
+
+	for _, line := range lines {
+		//son, _ := itemRepo.FindSonId(line.ItemID)
+
+		orderLine := models.OrderItem{
+			OrderID:       order.ID,
+			ItemID:        line.ItemID,
+			Amount:        line.Quantity,
+			RecivedAmount: line.RecivedQuantity,
+			StoreID:       line.StoreID,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+
+		// Guardar cada línea en la base de datos
+		if err := repo.Create(&orderLine); err != nil {
+
+			return err
+		}
+		if fatherOrder.OrderTypeID == uint64(2) && line.ClientID != nil {
+			outRelRepo := outorderrelationrepo.NewOutOrderRelationRepository(db.DB)
+			outRel := models.OutOrderRelation{
+				ClientID:    *line.ClientID,
+				OrderLineID: orderLine.ID,
+			}
+			outRelRepo.Create(&outRel)
+
+		}
+		if fatherOrder.OrderTypeID == uint64(1) {
+			stockservices.NewStockDeficitService().AddPendingStockByItem(line.ItemID, line.StoreID, int(line.Quantity))
+		}
+	}
+	return nil
 }
 
 func generateExcelBase64(exportData []ExcelExportation) string {
