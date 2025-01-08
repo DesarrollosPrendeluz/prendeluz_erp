@@ -42,7 +42,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 
 	query := repo.DB.
 		Table("father_orders fo").
-		Select("fo.id, fo.code, fo.order_status_id, os.name as status, ot.name as type, " +
+		Select("fo.id, fo.code, fo.order_status_id, fo.order_type_id, os.name as status, ot.name as type, " +
 			"SUM(CASE WHEN ol.store_id = 2 THEN ol.quantity ELSE 0 END) AS total_stock, " +
 			"SUM(CASE WHEN ol.store_id = 2 THEN ol.recived_quantity ELSE 0 END) AS pending_stock, " +
 			"SUM(CASE WHEN ol.store_id = 1 THEN ol.quantity ELSE 0 END) AS total_picking_stock, " +
@@ -54,7 +54,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	query = applyFilters(query, "fo.")
 	query = query.Group("fo.id")
 	if offset >= 0 && pageSize > 0 {
-		query = query.Offset(offset).Limit(pageSize)
+		query = query.Order("fo.id DESC").Offset(offset).Limit(pageSize)
 	}
 	results = query.Find(&data)
 
