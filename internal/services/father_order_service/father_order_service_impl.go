@@ -16,6 +16,7 @@ import (
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
 	"strconv"
+	"strings"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -24,7 +25,7 @@ type ExcelExportation struct {
 	OC_code string
 	Asin    string
 	Total   int
-	Per_box int
+	Per_box float64
 	Rest    string
 	Pallet  string
 	Box     string
@@ -237,6 +238,15 @@ func returnSupplierData(item models.OrderItem) (string, string) {
 
 func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 	var exportData []ExcelExportation
+	var boxSubStrings []string
+	var palletSubStrings []string
+
+	subStringsDivider := func(data *string) []string {
+		if data != nil && *data != "" {
+			return strings.Split(*data, ",")
+		}
+		return []string{"-"}
+	}
 
 	fatherData, fatherError := s.orderrepo.FindByFatherId(fatherID)
 	if fatherError != nil {
@@ -249,30 +259,40 @@ func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 		}
 		for _, orderItem := range orderItems {
 			asin, asinError := s.asinrepo.FindByItemId(orderItem.ItemID)
-			// var subStrings []string
+			// var boxSubStrings []string
 			if asinError != nil {
 				fmt.Println(fatherError.Error())
 			}
-			// if orderItem.Box != nil && *orderItem.Box != "" {
-			// 	subStrings = strings.Split(*orderItem.Box, ",")
-			// 	fmt.Printf("El número de subcadenas es: %d\n", len(subStrings))
-			// } else {
-			// 	fmt.Println("Box es nil o está vacío")
-			// }
-			data := ExcelExportation{
-				OC_code: father.Code,
-				Asin:    asin.Code,
-				Total:   int(orderItem.Amount),
-				Box:     *orderItem.Box,
-				Pallet:  *orderItem.Pallet,
+			boxSubStrings = subStringsDivider(orderItem.Box)
+			palletSubStrings = subStringsDivider(orderItem.Pallet)
+			numberOfBoxes := len(boxSubStrings) * len(palletSubStrings)
+			for _, pallet := range palletSubStrings {
+				for _, boxIndv := range boxSubStrings {
+					partials := float64(orderItem.Amount) / float64(numberOfBoxes)
+					data := ExcelExportation{
+						OC_code: father.Code,
+						Asin:    asin.Code,
+						Total:   int(orderItem.Amount),
+						Per_box: partials,
+						Box:     boxIndv,
+						Pallet:  pallet,
+					}
+					exportData = append(exportData, data)
+
+				}
+
 			}
-			exportData = append(exportData, data)
+
 		}
 
 	}
 
-	f := excelize.NewFile()
+	return generateExcelBase64(exportData)
 
+}
+
+func generateExcelBase64(exportData []ExcelExportation) string {
+	f := excelize.NewFile()
 	// Crear encabezados en la primera fila
 	sheetName := "Amazon_Data"
 
@@ -280,8 +300,11 @@ func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 	f.SetCellValue(sheetName, "A1", "Order Code")
 	f.SetCellValue(sheetName, "B1", "Asin")
 	f.SetCellValue(sheetName, "C1", "Total")
-	f.SetCellValue(sheetName, "D1", "Box")
+	f.SetCellValue(sheetName, "D1", "Per box")
 	f.SetCellValue(sheetName, "E1", "Pallet")
+	f.SetCellValue(sheetName, "F1", "Box")
+	f.SetCellValue(sheetName, "G1", "Pallet Label")
+	f.SetCellValue(sheetName, "H1", "Box Label")
 
 	// Escribir los datos en las filas siguientes
 	for i, data := range exportData {
@@ -290,8 +313,9 @@ func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 		f.SetCellValue(sheetName, "A"+strconv.Itoa(row), data.OC_code)
 		f.SetCellValue(sheetName, "B"+strconv.Itoa(row), data.Asin)
 		f.SetCellValue(sheetName, "C"+strconv.Itoa(row), data.Total)
-		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), data.Box)
+		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), data.Per_box)
 		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), data.Pallet)
+		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), data.Box)
 
 	}
 	f.DeleteSheet("Sheet1")

@@ -4,6 +4,7 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -187,6 +188,7 @@ func (repo *OrderRepoImpl) GetSupplierOrdersByFatherSku(fatherOrderId int) ([]dt
 		LEFT JOIN supplier_items as spi ON spi.item_id = IF(it.item_type = 'son',ip.parent_item_id , it.id) AND spi.order = 1
 		LEFT JOIN suppliers as sp ON sp.id = spi.supplier_id
 		WHERE fo.order_type_id = 1
+		AND fo.id = ` + strconv.Itoa(fatherOrderId) + `
 		
 	 ORDER BY o.id`
 
