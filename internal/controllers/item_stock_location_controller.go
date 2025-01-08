@@ -148,7 +148,7 @@ func StockChanges(c *gin.Context) {
 
 		stock.Amount = ((stock.Amount - int64(model.Stock)) + int64(requestObject.Stock))
 		model.Stock = requestObject.Stock
-		if requestObject.Stock > 0 {
+		if requestObject.Stock >= 0 {
 			error := repo.Update(model)
 			error2 := repoStock.Update(&stock)
 			if error != nil && error2 != nil {
@@ -189,7 +189,7 @@ func StockMovements(c *gin.Context) {
 
 		stock.Amount = (stock.Amount + stockVariant)
 		model.Stock = model.Stock + int(stockVariant)
-		if model.Stock < 0 {
+		if model.Stock <= 0 {
 			return errors.New("Stock can't be negative")
 
 		}
