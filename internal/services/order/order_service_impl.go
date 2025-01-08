@@ -214,8 +214,12 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 	excelOrderList, _ := utils.ExcelToJSONOrder(file)
 
 	for _, line := range excelOrderList {
-		item, _ := s.itemsRepo.FindByMainSku(line.MainSku)
-		orderLine, _ := s.orderItemsRepo.FindByItemAndOrder(item.ID, orderId)
+		items, _ := s.itemsRepo.FindByEan(line.Ean)
+		var ids []uint64
+		for _, v := range items {
+			ids = append(ids, v.ID)
+		}
+		orderLine, _ := s.orderItemsRepo.FindByItemsAndOrder(ids, orderId)
 		orderLine.Amount = line.Quantity
 		s.orderItemsRepo.Update(&orderLine)
 

@@ -23,7 +23,7 @@ type ExcelOrder struct {
 }
 
 type ExcelModifyOrder struct {
-	MainSku  string
+	Ean      string
 	Quantity int64
 }
 
@@ -94,7 +94,7 @@ func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
 		amount, _ := strconv.ParseInt(row[1], 10, 64)
 
 		item := ExcelModifyOrder{
-			MainSku:  strings.Trim(row[0], " "),
+			Ean:      strings.Trim(row[0], " "),
 			Quantity: amount}
 
 		result = append(result, item)

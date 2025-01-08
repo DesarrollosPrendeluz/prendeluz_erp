@@ -42,7 +42,7 @@ func (repo *OrderItemRepoImpl) FindByItemAndOrder(itemId uint64, orderId uint64)
 // Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
 func (repo *OrderItemRepoImpl) FindByItemsAndOrder(itemIds []uint64, orderId uint64) (models.OrderItem, error) {
 	var orderItems models.OrderItem
-	results := repo.DB.Where("item_id in ? and order_id = ?", itemIds, orderId).First(&orderItems)
+	results := repo.DB.Debug().Where("item_id in ? and order_id = ?", itemIds, orderId).First(&orderItems)
 
 	return orderItems, results.Error
 }
