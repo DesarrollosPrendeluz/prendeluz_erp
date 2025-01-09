@@ -6,7 +6,9 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	service "prendeluz/erp/internal/services/father_order_service"
+	serviceOrderLine "prendeluz/erp/internal/services/order_lines"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -49,6 +51,28 @@ func GetOrderLinesByFatherId(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results, "recount": recount}})
 }
+
+func DownloadPickingExcelByFatherId(c *gin.Context) {
+
+	fatherCode := c.Query("father_order_code")
+
+	results, _, err := service.NewFatherOrderService().FindLinesByFatherOrderCode(-1, -1, fatherCode, "", "", 1)
+
+	if err != nil {
+		// Manejo del error si las credenciales no son correctas
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	data := serviceOrderLine.NewOrderLineServiceImpl().ReturnDownloadPickingExcel(results)
+
+	fechaActual := time.Now().Format("2006-01-02 15:04:05")
+	code := "picking_" + fatherCode + "_" + fechaActual + ".xlsx"
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{
+		"file":     data,
+		"filename": code,
+	}})
+}
+
 func UpdateFatherOrders(c *gin.Context) {
 	var requestBody dtos.OrdersToUpdatePartially
 	var errorList []error

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"bytes"
+	"encoding/base64"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
@@ -8,6 +10,9 @@ import (
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	"strconv"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type OrderLineServiceImpl struct {
@@ -71,4 +76,53 @@ func (s *OrderLineServiceImpl) OrderLineLabel(id int) (dtos.OrderLineLable, erro
 	// }
 
 	return label, nil
+}
+
+func (s *OrderLineServiceImpl) ReturnDownloadPickingExcel(data dtos.FatherOrderOrdersAndLines) string {
+	//s.stockRepo.FindByStore(store_id);
+	//stockDeficits, _ := s.stockDeficitRepo.GetallByStore(2, -1, -1)
+	f := excelize.NewFile()
+
+	// Inicia en la fila 2 para Locations
+
+	// Crear encabezados en la primera fila
+	sheetNameTotals := "Stock Deficit"
+
+	f.NewSheet(sheetNameTotals)
+	//f.SetCellValue(sheetNameTotals, "A1", "Name")
+	f.SetCellValue(sheetNameTotals, "A1", "MainSku")
+	f.SetCellValue(sheetNameTotals, "B1", "Ean")
+	f.SetCellValue(sheetNameTotals, "C1", "Nombre")
+	f.SetCellValue(sheetNameTotals, "D1", "RefProveedor")
+	f.SetCellValue(sheetNameTotals, "E1", "Proveedor")
+	f.SetCellValue(sheetNameTotals, "F1", "Total")
+	f.SetCellValue(sheetNameTotals, "G1", "Procesado")
+	f.SetCellValue(sheetNameTotals, "H1", "Responsable")
+	f.SetCellValue(sheetNameTotals, "I1", "Ubicaciones")
+
+	for totalIndex, datum := range data.Lines {
+		totalRow := totalIndex + 2
+		f.SetCellValue(sheetNameTotals, "A"+strconv.Itoa(totalRow), datum.MainSku)
+		f.SetCellValue(sheetNameTotals, "B"+strconv.Itoa(totalRow), datum.Ean)
+		f.SetCellValue(sheetNameTotals, "C"+strconv.Itoa(totalRow), datum.Name)
+		f.SetCellValue(sheetNameTotals, "D"+strconv.Itoa(totalRow), datum.SupplierRef)
+		f.SetCellValue(sheetNameTotals, "E"+strconv.Itoa(totalRow), datum.SupplierName)
+		f.SetCellValue(sheetNameTotals, "F"+strconv.Itoa(totalRow), datum.Quantity)
+		f.SetCellValue(sheetNameTotals, "G"+strconv.Itoa(totalRow), datum.RecivedQuantity)
+		f.SetCellValue(sheetNameTotals, "H"+strconv.Itoa(totalRow), datum.AssignedUser.UserName)
+		f.SetCellValue(sheetNameTotals, "I"+strconv.Itoa(totalRow), datum.Location)
+
+	}
+	f.DeleteSheet("Sheet1")
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+
+		return ""
+	}
+
+	// Codificar el contenido del buffer en Base64
+	base64String := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	return base64String
+
 }
