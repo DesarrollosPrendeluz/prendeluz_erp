@@ -1,14 +1,19 @@
 package services
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+	"strconv"
 
 	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type ParentItemResult struct {
@@ -151,5 +156,51 @@ func returnParentItemById(id uint64) (parent ParentItemResult) {
 	}
 
 	return result
+
+}
+
+func (s *StockDeficitServiceImpl) ReturnDownloadStockDeficitExcel(store_id int) string {
+	//s.stockRepo.FindByStore(store_id);
+	stockDeficits, _ := s.stockDeficitRepo.GetallByStore(2, -1, -1)
+	f := excelize.NewFile()
+
+	// Inicia en la fila 2 para Locations
+
+	// Crear encabezados en la primera fila
+	sheetNameTotals := "Stock Deficit"
+
+	f.NewSheet(sheetNameTotals)
+	//f.SetCellValue(sheetNameTotals, "A1", "Name")
+	f.SetCellValue(sheetNameTotals, "A1", "MainSku")
+	f.SetCellValue(sheetNameTotals, "B1", "Ean")
+	f.SetCellValue(sheetNameTotals, "C1", "Total")
+	f.SetCellValue(sheetNameTotals, "D1", "ToRecive")
+	f.SetCellValue(sheetNameTotals, "E1", "ToOrder")
+
+	for totalIndex, deficit := range stockDeficits {
+		totalRow := totalIndex + 2
+		toOrder := deficit.Amount - deficit.PendingAmount
+		if toOrder < 0 {
+			toOrder = 0
+		}
+		//f.SetCellValue(sheetNameTotals, "A"+strconv.Itoa(totalRow), deficit.Item.Name)
+		f.SetCellValue(sheetNameTotals, "A"+strconv.Itoa(totalRow), deficit.Item.MainSKU)
+		f.SetCellValue(sheetNameTotals, "B"+strconv.Itoa(totalRow), deficit.Item.EAN)
+		f.SetCellValue(sheetNameTotals, "C"+strconv.Itoa(totalRow), deficit.Amount)
+		f.SetCellValue(sheetNameTotals, "D"+strconv.Itoa(totalRow), deficit.PendingAmount)
+		f.SetCellValue(sheetNameTotals, "E"+strconv.Itoa(totalRow), toOrder)
+
+	}
+	f.DeleteSheet("Sheet1")
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+
+		return ""
+	}
+
+	// Codificar el contenido del buffer en Base64
+	base64String := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	return base64String
 
 }

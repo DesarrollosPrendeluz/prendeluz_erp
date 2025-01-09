@@ -7,6 +7,7 @@ import (
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	services "prendeluz/erp/internal/services/stock_deficit"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,5 +36,16 @@ func GetStockDeficit(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stockDeficits, "recount": recount}})
+
+}
+
+func DownloadStockDeficitExcel(c *gin.Context) {
+	data := services.NewStockDeficitService().ReturnDownloadStockDeficitExcel(2)
+	fechaActual := time.Now().Format("2006-01-02 15:04:05")
+	code := "stock_deficit_" + fechaActual + ".xlsx"
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{
+		"file":     data,
+		"filename": code,
+	}})
 
 }
