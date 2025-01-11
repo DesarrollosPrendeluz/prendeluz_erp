@@ -36,9 +36,9 @@ func AddOrder(c *gin.Context) {
 	}
 
 	serviceOrder.UploadOrderExcel(file, header.Filename)
-	if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
-		log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
-	}
+	// if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
+	// 	log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+	// }
 
 	// Llamada al segundo procedimiento almacenado
 	if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {

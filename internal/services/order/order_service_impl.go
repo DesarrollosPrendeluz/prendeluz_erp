@@ -14,6 +14,7 @@ import (
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	stockrepo "prendeluz/erp/internal/repositories/storestockrepo"
+	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
 	"strings"
 	"time"
@@ -99,6 +100,7 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 			})
 
 		}
+		stockDeficit.NewStockDeficitService().CalcStockDeficitByFatherOrder(fatherObject.ID)
 
 		if err != nil {
 			return err

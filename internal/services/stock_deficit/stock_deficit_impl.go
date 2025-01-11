@@ -85,6 +85,28 @@ func (s *StockDeficitServiceImpl) AddPendingStockByItem(child_item_id uint64, st
 
 }
 
+func (s *StockDeficitServiceImpl) CalcStockDeficitByFatherOrder(father_order_id uint64) {
+	fmt.Println("hola pasa por aqui")
+	data, err := s.stockDeficitRepo.StockDeficitByFatherOrder(father_order_id)
+	fmt.Println(len(data))
+	if data != nil && err == nil {
+		for _, datum := range data {
+			result := returnParentItemById(datum.ItemID)
+			existing, err3 := s.stockDeficitRepo.FindOrCreateByFatherAndStore(result.MainSKU, 2)
+			if err3 != nil {
+				fmt.Errorf("error al buscar registro existente: %w", err3)
+				//return
+			}
+			// El registro ya existe, realizar una actualización
+			existing.Amount = existing.Amount + int64(datum.Deficit)
+			s.stockDeficitRepo.Update(&existing)
+
+		}
+	} else {
+		fmt.Printf("Error al ejecutar la consulta: %v", err)
+	}
+}
+
 func (s *StockDeficitServiceImpl) CalcStockDeficitByItem(child_item_id uint64, store_id int64) {
 	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
 	var existing models.StockDeficit

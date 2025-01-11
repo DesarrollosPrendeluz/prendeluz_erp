@@ -1,6 +1,7 @@
 package stockdeficitrepo
 
 import (
+	"fmt"
 	"log"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
@@ -46,9 +47,9 @@ func (repo *StockDeficitImpl) FindOrCreateByFatherAndStore(fatherSku string, sto
 	err := repo.DB.
 		Where("parent_main_sku = ?", fatherSku).
 		Where("store_id = ?", store).
-		First(&modelsData).Error
+		First(&modelsData)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if err.Error == gorm.ErrRecordNotFound {
 			modelCreate := models.StockDeficit{
 				SKU_Parent:    fatherSku,
 				StoreID:       uint64(store),
@@ -61,7 +62,7 @@ func (repo *StockDeficitImpl) FindOrCreateByFatherAndStore(fatherSku string, sto
 		}
 	}
 
-	return modelsData, err
+	return modelsData, err.Error
 
 }
 func (repo *StockDeficitImpl) GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error) {
@@ -110,6 +111,30 @@ func (repo *StockDeficitImpl) CountConditional(storeId int) (int64, error) {
 	var count int64
 	err := repo.DB.Table("stock_deficits").Count(&count).Where("store_id = ?", storeId).Error
 	return count, err
+}
+
+type StockDeficitResult struct {
+	ItemID  uint64  `gorm:"column:item_id"`
+	Deficit float64 `gorm:"column:to_order"`
+}
+
+func (repo *StockDeficitImpl) StockDeficitByFatherOrder(father_id uint64) ([]StockDeficitResult, error) {
+	var deficit []StockDeficitResult
+	err1 := repo.DB.Debug().
+		Table("order_lines AS ol").
+		Select("ol.item_id , (ol.quantity  - IFNULL(ol2.quantity, 0) ) to_order ").
+		Joins("LEFT join order_lines ol2 on ol2.item_id = ol.item_id and ol2.order_id = ol.order_id and ol2.store_id = 1").
+		Where("ol.order_id in (select id from orders where father_order_id = ? )", father_id).
+		Where("ol.store_id = 2").
+		Where("(ol.quantity  - IFNULL(ol2.quantity, 0)) >0").
+		Find(&deficit).Error
+
+	if err1 != nil {
+		fmt.Errorf("error al buscar registro existente: %w", err1)
+		return nil, err1
+	}
+	return deficit, nil
+
 }
 
 func (repo *StockDeficitImpl) CallStockDefProc() {
