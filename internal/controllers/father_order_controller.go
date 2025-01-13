@@ -20,8 +20,9 @@ func GetFatherOrdersData(c *gin.Context) {
 	orderStatus, _ := strconv.Atoi(c.DefaultQuery("status_id", "0"))
 	orderType, _ := strconv.Atoi(c.DefaultQuery("type_id", "0"))
 	fatherCode := c.Query("father_order_code")
+	calcPage := pageSize * page
 
-	results, recount, err := repo.FindAllWithAssocData(pageSize, page, fatherCode, orderType, orderStatus)
+	results, recount, err := repo.FindAllWithAssocData(pageSize, calcPage, fatherCode, orderType, orderStatus)
 
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas
@@ -40,8 +41,9 @@ func GetOrderLinesByFatherId(c *gin.Context) {
 	fatherCode := c.Query("father_order_code")
 	ean := c.Query("ean")
 	supplierSku := c.Query("ref_prov")
+	calcPage := page * pageSize
 
-	results, recount, err := service.NewFatherOrderService().FindLinesByFatherOrderCode(pageSize, page, fatherCode, ean, supplierSku, store_id)
+	results, recount, err := service.NewFatherOrderService().FindLinesByFatherOrderCode(pageSize, calcPage, fatherCode, ean, supplierSku, store_id)
 
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas
