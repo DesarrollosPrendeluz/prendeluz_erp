@@ -12,6 +12,7 @@ import (
 	"prendeluz/erp/internal/repositories/itemlocationrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
+	"prendeluz/erp/internal/repositories/orderlinelocationviewrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
@@ -19,6 +20,7 @@ import (
 	"prendeluz/erp/internal/repositories/supplieritemrepo"
 	"prendeluz/erp/internal/repositories/supplierorderrepo"
 	stockservices "prendeluz/erp/internal/services/stock_deficit"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -37,15 +39,16 @@ type ExcelExportation struct {
 }
 
 type FatherOrderImpl struct {
-	supplierorderrepo supplierorderrepo.SupplierOrderImpl
-	fatherorderrepo   fatherorderrepo.FatherOrderImpl
-	orderrepo         orderrepo.OrderRepoImpl
-	itemsRepo         itemsrepo.ItemRepoImpl
-	orderitemrepo     orderitemrepo.OrderItemRepoImpl
-	storestockrepo    storestockrepo.StoreStockRepoImpl
-	itemlocationrepo  itemlocationrepo.ItemLocationImpl
-	stockdeficitrepo  stockdeficitrepo.StockDeficitImpl
-	asinrepo          asinrepo.AsinRepoImpl
+	orderlinelocationviewrepo orderlinelocationviewrepo.OrderLineLocationViewImpl
+	supplierorderrepo         supplierorderrepo.SupplierOrderImpl
+	fatherorderrepo           fatherorderrepo.FatherOrderImpl
+	orderrepo                 orderrepo.OrderRepoImpl
+	itemsRepo                 itemsrepo.ItemRepoImpl
+	orderitemrepo             orderitemrepo.OrderItemRepoImpl
+	storestockrepo            storestockrepo.StoreStockRepoImpl
+	itemlocationrepo          itemlocationrepo.ItemLocationImpl
+	stockdeficitrepo          stockdeficitrepo.StockDeficitImpl
+	asinrepo                  asinrepo.AsinRepoImpl
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
@@ -58,19 +61,21 @@ func NewFatherOrderService() *FatherOrderImpl {
 	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	asinrepo := *asinrepo.NewAsinRepository(db.DB)
 	supplierorderrepo := *supplierorderrepo.NewSupplierOrderRepository(db.DB)
+	orderlinelocationviewrepo := *orderlinelocationviewrepo.NewOrderLineLocationViewRepository(db.DB)
 	return &FatherOrderImpl{
-		fatherorderrepo:   fatherorderrepo,
-		itemsRepo:         itemsRepo,
-		orderitemrepo:     orderitemrepo,
-		orderrepo:         orderrepo,
-		storestockrepo:    storestockrepo,
-		itemlocationrepo:  itemlocationrepo,
-		stockdeficitrepo:  stockdeficitrepo,
-		asinrepo:          asinrepo,
-		supplierorderrepo: supplierorderrepo}
+		fatherorderrepo:           fatherorderrepo,
+		itemsRepo:                 itemsRepo,
+		orderitemrepo:             orderitemrepo,
+		orderrepo:                 orderrepo,
+		storestockrepo:            storestockrepo,
+		itemlocationrepo:          itemlocationrepo,
+		stockdeficitrepo:          stockdeficitrepo,
+		asinrepo:                  asinrepo,
+		supplierorderrepo:         supplierorderrepo,
+		orderlinelocationviewrepo: orderlinelocationviewrepo}
 }
 
-func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int) (dtos.FatherOrderOrdersAndLines, int64, error) {
+func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int, searchByEan string, searchByLoc string) (dtos.FatherOrderOrdersAndLines, int64, error) {
 	var result dtos.FatherOrderOrdersAndLines
 	var items []models.OrderItem
 	var totalRecords int64
@@ -81,8 +86,13 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 	parentData, orderIds, _ := s.fatherorderrepo.FindParentAndOrders(fatherOrderCode)
 
 	itemIds, _ = s.itemsRepo.FindByEanAndSupplierSku(ean, supplier_sku)
+	if searchByEan != "" && searchByLoc != "" {
+		list, order, _ := s.orderlinelocationviewrepo.FindByFatherAndStoreWithOrder(parentData.ID, storeId, searchByLoc, searchByEan)
+		items, totalRecords = s.orderitemrepo.FindByLineIDWithOrder(list, order, calcPage, pageSize)
 
-	items, totalRecords = s.orderitemrepo.FindByOrderAndItem(orderIds, storeId, itemIds, calcPage, pageSize)
+	} else {
+		items, totalRecords = s.orderitemrepo.FindByOrderAndItem(orderIds, storeId, itemIds, calcPage, pageSize)
+	}
 
 	//procesado de datos de la query de lineas
 
@@ -211,8 +221,12 @@ func returnLocations(item models.OrderItem) []string {
 
 	// Recorrer y agregar ubicaciones si existen
 	if locations != nil && len(*locations) > 0 {
+		sort.Slice(*locations, func(i, j int) bool {
+			return (*locations)[i].Stock > (*locations)[j].Stock
+		})
+
 		for _, location := range *locations {
-			locs = append(locs, location.StoreLocations.Name)
+			locs = append(locs, location.StoreLocations.Code)
 		}
 	} else {
 		locs = append(locs, "")
