@@ -76,12 +76,13 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 	var totalRecords int64
 	var lines []dtos.LinesInfo
 	var itemIds []uint64
+	calcPage := offset * pageSize
 
 	parentData, orderIds, _ := s.fatherorderrepo.FindParentAndOrders(fatherOrderCode)
 
 	itemIds, _ = s.itemsRepo.FindByEanAndSupplierSku(ean, supplier_sku)
 
-	items, totalRecords = s.orderitemrepo.FindByOrderAndItem(orderIds, storeId, itemIds, offset, pageSize)
+	items, totalRecords = s.orderitemrepo.FindByOrderAndItem(orderIds, storeId, itemIds, calcPage, pageSize)
 
 	//procesado de datos de la query de lineas
 
@@ -376,6 +377,12 @@ func (s *FatherOrderImpl) CreateOrder(requestBody dtos.OrderWithLinesRequest) bo
 
 	}
 	return true
+
+}
+
+func (s *FatherOrderImpl) FindAllWithAssocData(fatherOrderCode string, typeId int, statusId int, pageSize int, offset int) ([]dtos.FatherOrderWithRecount, int64, error) {
+	calcPage := pageSize * offset
+	return s.fatherorderrepo.FindAllWithAssocData(pageSize, calcPage, fatherOrderCode, typeId, statusId)
 
 }
 
