@@ -41,24 +41,29 @@ func NewStockDeficitService() *StockDeficitServiceImpl {
 		itemsRepo:        itemsRepo}
 }
 
-func (s *StockDeficitServiceImpl) SearchBySkuAndEan(filter string, store int, page int, pageSize int) ([]models.StockDeficit, []error) {
+func (s *StockDeficitServiceImpl) SearchBySkuAndEan(filter string, store int, page int, pageSize int) ([]models.StockDeficit, int, []error) {
 
 	var fatherSkus []string
 	var errArray []error
 	//subQuery := s.stockDeficitRepo.
+	calcPage := -1
+	if pageSize > 0 && page > 0 {
+		calcPage = page * pageSize
+
+	}
 	items, err1 := s.itemsRepo.FindByFathersMainSkuOrEan(filter)
 	for _, item := range items {
 		fatherSkus = append(fatherSkus, item.MainSKU)
 	}
 
-	stockDef, err2 := s.stockDeficitRepo.GetByRegsitersByFatherSkuIn(fatherSkus, store, page, pageSize)
+	stockDef, err2 := s.stockDeficitRepo.GetByRegsitersByFatherSkuIn(fatherSkus, store, calcPage, pageSize)
 
 	if err1 != nil || err2 != nil {
 		errArray = append(errArray, err1)
 		errArray = append(errArray, err2)
-		return nil, errArray
+		return nil, 0, errArray
 	}
-	return stockDef, errArray
+	return stockDef, 1, errArray
 
 }
 
@@ -154,6 +159,27 @@ func (s *StockDeficitServiceImpl) CalcStockDeficitByItem(child_item_id uint64, s
 	existing.Amount = int64(deficit.Deficit)
 	existing.PendingAmount = int64(pending.Deficit)
 	s.stockDeficitRepo.Update(&existing)
+
+}
+
+func (s *StockDeficitServiceImpl) ConditionalSearch(store int, supplier int, page int, pageSize int) ([]models.StockDeficit, int) {
+	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
+	var result []models.StockDeficit
+	calcPage := -1
+	if pageSize > 0 && page > 0 {
+		calcPage = page * pageSize
+
+	}
+
+	if supplier == 0 {
+		result, _ = s.stockDeficitRepo.GetallByStore(store, pageSize, calcPage)
+	} else {
+		result, _ = s.stockDeficitRepo.GetallByStoreAndSupplier(store, supplier, pageSize, calcPage)
+
+	}
+	recount, _ := s.stockDeficitRepo.CountConditional(store)
+
+	return result, int(recount)
 
 }
 

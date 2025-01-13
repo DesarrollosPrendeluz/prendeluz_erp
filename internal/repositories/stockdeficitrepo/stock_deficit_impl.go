@@ -19,7 +19,7 @@ func NewStockDeficitRepository(db *gorm.DB) *StockDeficitImpl {
 
 func (repo *StockDeficitImpl) GetallByStore(storeId int, pageSize int, offset int) ([]models.StockDeficit, error) {
 	var models []models.StockDeficit
-	repo.DB.
+	repo.DB.Debug().
 		Preload("Item.SupplierItems.Supplier").
 		Where("store_id = ?", storeId).
 		Where("quantity != 0 OR pending_stock != 0").
