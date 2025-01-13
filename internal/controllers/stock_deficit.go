@@ -49,3 +49,7 @@ func DownloadStockDeficitExcel(c *gin.Context) {
 	}})
 
 }
+
+func CalcStockDeficitByOrder(c *gin.Context) {
+	services.NewStockDeficitService().CalcStockDeficitByFatherOrder(7)
+}

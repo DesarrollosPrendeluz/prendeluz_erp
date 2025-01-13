@@ -91,6 +91,7 @@ func RegisterRoutes(router *gin.Engine) {
 	stockDeficit := router.Group("/stock_deficit").Use(middlewares.Auth)
 	{
 		stockDeficit.GET("", controllers.GetStockDeficit)
+		stockDeficit.GET("calc", controllers.CalcStockDeficitByOrder)
 		stockDeficit.GET("/download", controllers.DownloadStockDeficitExcel)
 	}
 	//stock
