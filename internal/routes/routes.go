@@ -76,6 +76,7 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersFatherOrderRoutes.GET("/orderLines", controllers.GetOrderLinesByFatherId)
 		allUsersFatherOrderRoutes.GET("/orderLines/downloadPicking", controllers.DownloadPickingExcelByFatherId)
 		allUsersFatherOrderRoutes.GET("/amazonExcel", controllers.DownLoadExcelForAmazon)
+		allUsersFatherOrderRoutes.POST("/closePicking", controllers.ClosePickingOrder)
 		allUsersFatherOrderRoutes.PATCH("/close", controllers.CloseOrderLines)
 
 	}
@@ -85,6 +86,7 @@ func RegisterRoutes(router *gin.Engine) {
 		storeRoutes.PATCH("/:order_code", controllers.UpdateStore)
 		storeRoutes.GET("/:store_name", controllers.GetStoreStock)
 		storeRoutes.GET("", controllers.GetStores)
+		storeRoutes.PATCH("/excel", controllers.UpdateStockByExcel)
 
 	}
 	//stock deficit
