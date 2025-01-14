@@ -1,27 +1,33 @@
 package services
 
 import (
+	"io"
 	"log"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
+	"prendeluz/erp/internal/repositories/itemlocationrepo"
 	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	"prendeluz/erp/internal/repositories/storelocationrepo"
 	"prendeluz/erp/internal/repositories/storerepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
+	"prendeluz/erp/internal/utils"
 
 	"gorm.io/gorm"
 )
 
 type StoreServiceImpl struct {
-	orderRepo        *orderrepo.OrderRepoImpl
-	orderItemsRepo   *orderitemrepo.OrderItemRepoImpl
-	itemsRepo        *itemsrepo.ItemRepoImpl
-	storeStockRepo   *storestockrepo.StoreStockRepoImpl
-	itemsParentsRepo *itemsparentsrepo.ItemsParentsRepoImpl
-	storeRepo        *storerepo.StoreRepoImpl
+	orderRepo         *orderrepo.OrderRepoImpl
+	orderItemsRepo    *orderitemrepo.OrderItemRepoImpl
+	itemsRepo         *itemsrepo.ItemRepoImpl
+	storeStockRepo    *storestockrepo.StoreStockRepoImpl
+	itemsParentsRepo  *itemsparentsrepo.ItemsParentsRepoImpl
+	storeRepo         *storerepo.StoreRepoImpl
+	itemlocationrepo  *itemlocationrepo.ItemLocationImpl
+	storelocationrepo *storelocationrepo.StoreLocationImpl
 }
 
 func NewStoreService() *StoreServiceImpl {
@@ -31,8 +37,10 @@ func NewStoreService() *StoreServiceImpl {
 	storeStockRepo := storestockrepo.NewStoreStockRepository(db.DB)
 	itemsParentsRepo := itemsparentsrepo.NewItemParentRepository(db.DB)
 	storeRepo := storerepo.NewStoreRepository(db.DB)
+	itemlocationrepo := itemlocationrepo.NewInItemLocationRepository(db.DB)
+	storelocationrepo := storelocationrepo.NewStoreLocationRepository(db.DB)
 
-	return &StoreServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo, itemsRepo: itemsRepo, storeStockRepo: storeStockRepo, itemsParentsRepo: itemsParentsRepo, storeRepo: storeRepo}
+	return &StoreServiceImpl{orderRepo: orderRepo, orderItemsRepo: orderItemRepo, itemsRepo: itemsRepo, storeStockRepo: storeStockRepo, itemsParentsRepo: itemsParentsRepo, storeRepo: storeRepo, itemlocationrepo: itemlocationrepo, storelocationrepo: storelocationrepo}
 }
 
 // Obtiene un registro padre en base a uno de sus hijos
@@ -104,6 +112,87 @@ func getChilds(items []models.ItemsParents) []models.Item {
 		results = append(results, *child.Child)
 	}
 	return results
+}
+
+type StockUpdateError struct {
+	FatherSku string
+	Loc       string
+	Error     string
+}
+
+func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) ([]StockUpdateError, error) {
+
+	//fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
+	var stockErr []StockUpdateError
+	addError := func(errorData error, errArr *[]StockUpdateError, sku string, loc string, err string) bool {
+		if errorData != nil {
+			errReturn := StockUpdateError{
+				FatherSku: sku,
+				Loc:       loc,
+				Error:     err,
+			}
+			*errArr = append(*errArr, errReturn)
+			return false
+
+		}
+		return true
+
+	}
+
+	data, err := utils.ExcelToJsonUpdateStocks(file)
+
+	if addError(err, &stockErr, "", "", "No se ha conseguido leer el archivo") {
+		for _, datum := range data {
+			fatherItem, err2 := returnFatherData(datum.Sku)
+
+			if addError(err2, &stockErr, datum.Sku, datum.Loc, "No se ha encontrado el articulo padre") {
+				loc, err3 := s.storelocationrepo.FindStoreLocationByCode(datum.Loc)
+
+				if addError(err3, &stockErr, datum.Sku, datum.Loc, "Error la ubicación no ha sido encontrada") {
+					loc, err4 := s.itemlocationrepo.FindByItemAndLocation(fatherItem.FatherSku, loc.ID)
+
+					if addError(err4, &stockErr, datum.Sku, datum.Loc, "Erroren enctorar el articulo en la ubicación o su creación") {
+						loc.Stock = int(datum.Quantity)
+						s.itemlocationrepo.Update(&loc)
+					}
+				}
+			}
+		}
+	}
+	return stockErr, nil
+}
+
+type FatherData struct {
+	FatherSku string
+	FatherId  uint64
+}
+
+func returnFatherData(sku string) (FatherData, error) {
+	var father FatherData
+	var item2 models.Item
+	var item *models.Item
+	var err error
+	itemRepo := itemsrepo.NewItemRepository(db.DB)
+	parentRepo := itemsparentsrepo.NewItemParentRepository(db.DB)
+	item2, err = itemRepo.FindByMainSku(sku)
+	if err != nil {
+		return father, err
+	}
+	if item.ItemType == "son" {
+		rel, err2 := parentRepo.FindByChild(item.ID)
+		if err2 != nil {
+			return father, err2
+		} else {
+			item, err = itemRepo.FindByID(rel.ParentItemID)
+		}
+
+	} else {
+		item = &item2
+	}
+	father.FatherSku = item.MainSKU
+	father.FatherId = item.ID
+	return father, nil
+
 }
 
 // Obtiene los stock de un alamcén en base a su nombre
