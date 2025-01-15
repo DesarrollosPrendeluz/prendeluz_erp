@@ -76,6 +76,7 @@ func (repo *ItemLocationImpl) FindByItemAndLocation(mainSku string, locationId u
 				Stock:           0,
 			}
 			repo.DB.Create(&modelCreate)
+			item = modelCreate
 
 		}
 	}

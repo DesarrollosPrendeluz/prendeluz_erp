@@ -149,12 +149,12 @@ func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) ([]Stoc
 				loc, err3 := s.storelocationrepo.FindStoreLocationByCode(datum.Loc)
 
 				if addError(err3, &stockErr, datum.Sku, datum.Loc, "Error la ubicación no ha sido encontrada") {
-					loc, err4 := s.itemlocationrepo.FindByItemAndLocation(fatherItem.FatherSku, loc.ID)
+					loc, _ := s.itemlocationrepo.FindByItemAndLocation(fatherItem.FatherSku, loc.ID)
 
-					if addError(err4, &stockErr, datum.Sku, datum.Loc, "Erroren enctorar el articulo en la ubicación o su creación") {
-						loc.Stock = int(datum.Quantity)
-						s.itemlocationrepo.Update(&loc)
-					}
+					//if addError(err4, &stockErr, datum.Sku, datum.Loc, "Erroren encontrar el articulo en la ubicación o su creación") {
+					loc.Stock = int(datum.Quantity)
+					s.itemlocationrepo.Update(&loc)
+					//}
 				}
 			}
 		}
@@ -178,12 +178,12 @@ func returnFatherData(sku string) (FatherData, error) {
 	if err != nil {
 		return father, err
 	}
-	if item.ItemType == "son" {
-		rel, err2 := parentRepo.FindByChild(item.ID)
+	if item2.ItemType == "son" {
+		rel, err2 := parentRepo.FindByChild(item2.ID)
 		if err2 != nil {
 			return father, err2
 		} else {
-			item, err = itemRepo.FindByID(rel.ParentItemID)
+			item, _ = itemRepo.FindByID(rel.ParentItemID)
 		}
 
 	} else {

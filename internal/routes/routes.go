@@ -86,7 +86,7 @@ func RegisterRoutes(router *gin.Engine) {
 		storeRoutes.PATCH("/:order_code", controllers.UpdateStore)
 		storeRoutes.GET("/:store_name", controllers.GetStoreStock)
 		storeRoutes.GET("", controllers.GetStores)
-		storeRoutes.PATCH("/excel", controllers.UpdateStockByExcel)
+		storeRoutes.POST("/excel", controllers.UpdateStockByExcel)
 
 	}
 	//stock deficit
