@@ -5,6 +5,7 @@ import (
 	"net/http"
 	stockService "prendeluz/erp/internal/services/stock"
 	storeService "prendeluz/erp/internal/services/store"
+	"prendeluz/erp/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -31,5 +32,12 @@ func UpdateStockByExcel(c *gin.Context) {
 	fileData, fileName, _ := storeService.NewStoreService().UploadStocks(file, header.Filename)
 
 	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"File": fileData, "FileName": fileName}})
+
+}
+
+func DownloadUpdateStockByExcelFrame(c *gin.Context) {
+	data, name := utils.FrameGenerator(utils.UploadStockSheetName, utils.UploadStock, "stockChanges")
+
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 
 }

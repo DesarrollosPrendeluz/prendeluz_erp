@@ -8,6 +8,7 @@ import (
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	services "prendeluz/erp/internal/services/order"
+	"prendeluz/erp/internal/utils"
 	"strconv"
 
 	"github.com/xuri/excelize/v2"
@@ -113,5 +114,12 @@ func UpdateOrderByExcel(c *gin.Context) {
 	if serviceOrder.UploadOrdersByExcel(file, fatherOrder) == nil {
 		c.JSON(http.StatusAccepted, gin.H{"Ok": "ok"})
 	}
+
+}
+
+func DownloadUpdateOrderByExcelFrame(c *gin.Context) {
+	data, name := utils.FrameGenerator(utils.ModifyOrderSheetName, utils.ModifyOrder, "modifyOrderFrame")
+
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 
 }

@@ -41,7 +41,7 @@ func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 
 	defer f.Close()
 	orders := make(map[string][]OrderInfo)
-	rows, err := f.GetRows("OC SQL")
+	rows, err := f.GetRows(NewOrderSheetName)
 
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
 	}
 
 	defer f.Close()
-	rows, err := f.GetRows("OC SQL")
+	rows, err := f.GetRows(ModifyOrderSheetName)
 
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func ExcelToJsonUpdateStocks(file io.Reader) ([]ExcelUpdateStocks, error) {
 	}
 
 	defer f.Close()
-	rows, err := f.GetRows("STOCK")
+	rows, err := f.GetRows(UploadStockSheetName)
 
 	if err != nil {
 		return nil, err
