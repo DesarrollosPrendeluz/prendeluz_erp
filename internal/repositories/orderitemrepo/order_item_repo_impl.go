@@ -82,7 +82,8 @@ func (repo *OrderItemRepoImpl) FindByOrderAndItem(orderIds []uint64, storeId int
 
 	}
 
-	query.Offset(offset).
+	query.Order("CASE WHEN quantity = recived_quantity THEN 1 ELSE 0 END").
+		Offset(offset).
 		Limit(pageSize).
 		Find(&items)
 
