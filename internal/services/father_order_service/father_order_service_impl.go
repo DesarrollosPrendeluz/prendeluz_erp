@@ -100,7 +100,7 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 		// Obtener el nombre del proveedor
 
 		supplierName, supplierRef := returnSupplierData(item, parentData.GenericSupplier)
-		locations := returnLocations(item)
+		locations := returnLocations(item, uint64(storeId))
 		var fatherSku string
 
 		if item.Item.ItemType == models.Father {
@@ -208,7 +208,7 @@ func (s *FatherOrderImpl) CloseOrderByFather(fatherOrderId uint64) error {
 
 }
 
-func returnLocations(item models.OrderItem) []string {
+func returnLocations(item models.OrderItem, store_id uint64) []string {
 	var locs []string
 	var locations *[]models.ItemLocation
 
@@ -226,7 +226,10 @@ func returnLocations(item models.OrderItem) []string {
 		})
 
 		for _, location := range *locations {
-			locs = append(locs, location.StoreLocations.Code)
+			if location.StoreLocations.StoreID == store_id {
+				locs = append(locs, location.StoreLocations.Code)
+			}
+
 		}
 	} else {
 		locs = append(locs, "")
