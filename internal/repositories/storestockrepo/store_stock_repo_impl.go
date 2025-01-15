@@ -57,10 +57,18 @@ func (repo *StoreStockRepoImpl) FindByStore(idStore uint64, pageSize int, offset
 
 func (repo *StoreStockRepoImpl) FindByStoreWithLocations(idStore uint64) ([]models.StoreStock, error) {
 	var storeStocks []models.StoreStock
+	var storeStock []models.StoreStock
+	batchSize := 1000
+	data := repo.DB.Debug().
+		Preload("Item").
+		Preload("Locations.StoreLocations").
+		Where("store_stocks.store_id = ?", idStore).
+		FindInBatches(&storeStock, batchSize, func(tx *gorm.DB, batch int) error {
+			storeStocks = append(storeStocks, storeStock...)
+			return nil // Continuar con el siguiente lote
+		})
 
-	results := repo.DB.Preload("Item").Preload("Locations.StoreLocations").Where("store_stocks.store_id = ?", idStore).Find(&storeStocks)
-
-	return storeStocks, results.Error
+	return storeStocks, data.Error
 
 }
 
