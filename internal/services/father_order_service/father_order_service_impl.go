@@ -328,9 +328,9 @@ func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 		fmt.Println(fatherError.Error())
 	}
 	for _, father := range fatherData {
-		orderItems, orderItemError := s.orderitemrepo.FindByOrder(father.ID)
+		orderItems, orderItemError := s.orderitemrepo.FindByOrderAndStore(father.ID, 2)
 		if orderItemError != nil {
-			fmt.Println(fatherError.Error())
+			fmt.Println(orderItemError.Error())
 		}
 		for _, orderItem := range orderItems {
 			asin, asinError := s.asinrepo.FindByItemId(orderItem.ItemID)
