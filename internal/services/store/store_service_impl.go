@@ -153,16 +153,21 @@ func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) (string
 				loc, err3 := s.storelocationrepo.FindStoreLocationByCode(datum.Loc)
 
 				if addError(err3, &stockErr, datum.Sku, datum.Loc, "Error la ubicación no ha sido encontrada") {
-					loc, _ := s.itemlocationrepo.FindByItemAndLocation(fatherItem.FatherSku, loc.ID)
-
+					itemLoc, _ := s.itemlocationrepo.FindByItemAndLocation(fatherItem.FatherSku, loc.ID)
+					stock, _ := s.storeStockRepo.FindByItemAndStore(fatherItem.FatherSku, strconv.FormatUint(loc.StoreID, 10))
+					stock.Amount = (stock.Amount - int64(itemLoc.Stock)) + datum.Quantity
 					//if addError(err4, &stockErr, datum.Sku, datum.Loc, "Erroren encontrar el articulo en la ubicación o su creación") {
-					loc.Stock = int(datum.Quantity)
-					s.itemlocationrepo.Update(&loc)
+					itemLoc.Stock = int(datum.Quantity)
+					s.storeStockRepo.Update(&stock)
+					s.itemlocationrepo.Update(&itemLoc)
 					//}
 				}
 			}
 		}
 	}
+	// if err := s.storeRepo.DB.Exec("CALL ProcesarProductosAgrupados();").Error; err != nil {
+	// 	log.Printf("Error ejecutando ProcesarProductosAgrupados: %v", err)
+	// }
 	return returnUpdateErrorsExcel(stockErr), "ErrorsOnUpdate.xlsx", nil
 }
 
