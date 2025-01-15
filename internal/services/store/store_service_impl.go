@@ -1,6 +1,8 @@
 package services
 
 import (
+	"bytes"
+	"encoding/base64"
 	"io"
 	"log"
 	"prendeluz/erp/internal/db"
@@ -15,7 +17,9 @@ import (
 	"prendeluz/erp/internal/repositories/storerepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
 	"prendeluz/erp/internal/utils"
+	"strconv"
 
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -120,7 +124,7 @@ type StockUpdateError struct {
 	Error     string
 }
 
-func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) ([]StockUpdateError, error) {
+func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) (string, string, error) {
 
 	//fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
 	var stockErr []StockUpdateError
@@ -159,7 +163,42 @@ func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) ([]Stoc
 			}
 		}
 	}
-	return stockErr, nil
+	return returnUpdateErrorsExcel(stockErr), "ErrorsOnUpdate.xlsx", nil
+}
+
+func returnUpdateErrorsExcel(data []StockUpdateError) string {
+	//s.stockRepo.FindByStore(store_id);
+	f := excelize.NewFile()
+
+	// Inicia en la fila 2 para Locations
+
+	// Crear encabezados en la primera fila
+	sheetNameTotals := "Update Errors"
+
+	f.NewSheet(sheetNameTotals)
+	f.SetCellValue(sheetNameTotals, "A1", "Sku padre")
+	f.SetCellValue(sheetNameTotals, "B1", "Codigo localización")
+	f.SetCellValue(sheetNameTotals, "C1", "Error")
+
+	for totalIndex, datum := range data {
+		totalRow := totalIndex + 2
+		f.SetCellValue(sheetNameTotals, "A"+strconv.Itoa(totalRow), datum.FatherSku)
+		f.SetCellValue(sheetNameTotals, "B"+strconv.Itoa(totalRow), datum.Loc)
+		f.SetCellValue(sheetNameTotals, "C"+strconv.Itoa(totalRow), datum.Error)
+
+	}
+	f.DeleteSheet("Sheet1")
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+
+		return ""
+	}
+
+	// Codificar el contenido del buffer en Base64
+	base64String := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	return base64String
+
 }
 
 type FatherData struct {

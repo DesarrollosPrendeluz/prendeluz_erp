@@ -28,8 +28,8 @@ func UpdateStockByExcel(c *gin.Context) {
 		return
 
 	}
-	errArray, _ := storeService.NewStoreService().UploadStocks(file, header.Filename)
+	fileData, fileName, _ := storeService.NewStoreService().UploadStocks(file, header.Filename)
 
-	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"Ok": "Upload succesfully", "Err": errArray}})
+	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"File": fileData, "FileName": fileName}})
 
 }
