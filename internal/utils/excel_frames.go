@@ -9,12 +9,13 @@ import (
 
 var NewOrderSheetName = "OC SQL"
 var NewOrder = map[string]string{
-	"A1": "Asin",
-	"B1": "Sku",
-	"C1": "Amount",
-	"D1": "Parent sku",
-	"F1": "Store",
-	"G1": "Client",
+	"A1": "Orden de compra",
+	"B1": "Asin",
+	"C1": "Sku",
+	"D1": "Amount",
+	"E1": "Parent sku",
+	"G1": "Store",
+	"H1": "Client",
 }
 var UploadStockSheetName = "Stock Modify"
 var UploadStock = map[string]string{
