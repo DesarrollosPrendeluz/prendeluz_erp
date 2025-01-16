@@ -36,6 +36,7 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderRoutes.GET("/supplierOrders", controllers.GetSupplierOrders)
 		allUsersOrderRoutes.PATCH("/closeOrders", controllers.CloseOrderLines)
 		allUsersOrderRoutes.POST("/editOrders", controllers.UpdateOrderByExcel)
+		allUsersOrderRoutes.GET("/editOrders/frame", controllers.DownloadUpdateOrderByExcelFrame)
 
 		allUsersOrderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
 
@@ -43,6 +44,7 @@ func RegisterRoutes(router *gin.Engine) {
 	adminUsersOrderRoutes := router.Group("/order").Use(middlewares.Auth, middlewares.AdminStoreUsers)
 	{
 		adminUsersOrderRoutes.POST("/add", controllers.AddOrder)
+		adminUsersOrderRoutes.GET("/add/frame", controllers.DownloadAddOrderFrame)
 		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
 		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
 	}
@@ -76,6 +78,7 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersFatherOrderRoutes.GET("/orderLines", controllers.GetOrderLinesByFatherId)
 		allUsersFatherOrderRoutes.GET("/orderLines/downloadPicking", controllers.DownloadPickingExcelByFatherId)
 		allUsersFatherOrderRoutes.GET("/amazonExcel", controllers.DownLoadExcelForAmazon)
+		allUsersFatherOrderRoutes.POST("/closePicking", controllers.ClosePickingOrder)
 		allUsersFatherOrderRoutes.PATCH("/close", controllers.CloseOrderLines)
 
 	}
@@ -85,6 +88,8 @@ func RegisterRoutes(router *gin.Engine) {
 		storeRoutes.PATCH("/:order_code", controllers.UpdateStore)
 		storeRoutes.GET("/:store_name", controllers.GetStoreStock)
 		storeRoutes.GET("", controllers.GetStores)
+		storeRoutes.POST("/excel", controllers.UpdateStockByExcel)
+		storeRoutes.GET("/excel/frame", controllers.DownloadUpdateStockByExcelFrame)
 
 	}
 	//stock deficit

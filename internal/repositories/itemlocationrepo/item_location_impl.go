@@ -58,3 +58,27 @@ func (repo *ItemLocationImpl) FindByItem(mainSku string, pageSize int, offset in
 		Limit(pageSize)
 	return item, result.Error
 }
+
+// Busca un producto hijo en base a su aparición en la tabla parent_items
+func (repo *ItemLocationImpl) FindByItemAndLocation(mainSku string, locationId uint64) (models.ItemLocation, error) {
+	var item models.ItemLocation
+
+	err := repo.DB.
+		Where("item_main_sku = ? ", mainSku).
+		Where("store_location_id = ?", locationId).
+		First(&item).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			modelCreate := models.ItemLocation{
+				ItemMainSku:     mainSku,
+				StoreLocationID: locationId,
+				Stock:           0,
+			}
+			repo.DB.Create(&modelCreate)
+			item = modelCreate
+
+		}
+	}
+	return item, err
+}

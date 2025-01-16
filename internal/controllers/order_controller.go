@@ -17,6 +17,7 @@ import (
 	fatherOrderServices "prendeluz/erp/internal/services/father_order_service"
 	services "prendeluz/erp/internal/services/order"
 	stockservices "prendeluz/erp/internal/services/stock_deficit"
+	"prendeluz/erp/internal/utils"
 
 	"strconv"
 	"time"
@@ -46,6 +47,13 @@ func AddOrder(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"Ok": "Upload succesfully"}})
+
+}
+
+func DownloadAddOrderFrame(c *gin.Context) {
+	data, name := utils.FrameGenerator(utils.NewOrderSheetName, utils.NewOrder, "newOC")
+
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 
 }
 

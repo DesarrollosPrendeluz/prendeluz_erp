@@ -10,6 +10,7 @@ import (
 	"prendeluz/erp/internal/repositories/asinrepo"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemlocationrepo"
+	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderlinelocationviewrepo"
@@ -39,6 +40,7 @@ type ExcelExportation struct {
 }
 
 type FatherOrderImpl struct {
+
 	orderlinelocationviewrepo orderlinelocationviewrepo.OrderLineLocationViewImpl
 	supplierorderrepo         supplierorderrepo.SupplierOrderImpl
 	fatherorderrepo           fatherorderrepo.FatherOrderImpl
@@ -49,6 +51,8 @@ type FatherOrderImpl struct {
 	itemlocationrepo          itemlocationrepo.ItemLocationImpl
 	stockdeficitrepo          stockdeficitrepo.StockDeficitImpl
 	asinrepo                  asinrepo.AsinRepoImpl
+  	itemsparentsrepo  itemsparentsrepo.ItemsParentsRepoImpl
+
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
@@ -61,6 +65,8 @@ func NewFatherOrderService() *FatherOrderImpl {
 	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	asinrepo := *asinrepo.NewAsinRepository(db.DB)
 	supplierorderrepo := *supplierorderrepo.NewSupplierOrderRepository(db.DB)
+	itemsparentsrepo := *itemsparentsrepo.NewItemParentRepository(db.DB)
+
 	orderlinelocationviewrepo := *orderlinelocationviewrepo.NewOrderLineLocationViewRepository(db.DB)
 	return &FatherOrderImpl{
 		fatherorderrepo:           fatherorderrepo,
@@ -72,7 +78,9 @@ func NewFatherOrderService() *FatherOrderImpl {
 		stockdeficitrepo:          stockdeficitrepo,
 		asinrepo:                  asinrepo,
 		supplierorderrepo:         supplierorderrepo,
-		orderlinelocationviewrepo: orderlinelocationviewrepo}
+		orderlinelocationviewrepo: orderlinelocationviewrepo,
+    itemsparentsrepo:  itemsparentsrepo}
+
 }
 
 func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int, searchByEan string, searchByLoc string) (dtos.FatherOrderOrdersAndLines, int64, error) {
@@ -139,6 +147,56 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 	result.Lines = lines
 
 	return result, totalRecords, nil
+}
+func (s *FatherOrderImpl) ClosePickingOrders(fatherOrderId uint64) error {
+	orders, error := s.orderrepo.FindByFatherId(fatherOrderId)
+	if error == nil {
+		for _, order := range orders {
+			orderLines, errl := s.orderitemrepo.FindByOrder(order.ID)
+			if errl == nil {
+				for _, orderLine := range orderLines {
+					if orderLine.StoreID == 1 {
+						item, _ := s.itemsRepo.FindByID(orderLine.ItemID)
+						if item.ItemType == "son" {
+							fatherRel, _ := s.itemsparentsrepo.FindByChild(item.ID)
+							item, _ = s.itemsRepo.FindByID(fatherRel.ParentItemID)
+						}
+						locations, _ := s.itemlocationrepo.FindByItemsAndStore(item.MainSKU, 1, -1, -1)
+						stockToRest := orderLine.Amount
+						for _, location := range locations {
+							if stockToRest > 0 && location.Stock > 0 {
+								if stockToRest <= int64(location.Stock) {
+									location.Stock = (location.Stock - int(stockToRest))
+									stockToRest = 0
+
+								} else {
+									location.Stock = 0
+									stockToRest = (stockToRest - int64(location.Stock))
+
+								}
+								s.itemlocationrepo.Update(&location)
+							}
+
+						}
+
+						stock, _ := s.storestockrepo.FindByItemAndStore(item.MainSKU, "1")
+						stock.Amount = (stock.Amount - orderLine.Amount)
+						s.storestockrepo.Update(&stock)
+
+						orderLine.RecivedAmount = orderLine.Amount
+						s.orderitemrepo.Update(&orderLine)
+
+					}
+
+				}
+			}
+
+		}
+
+	}
+
+	return nil
+
 }
 
 func (s *FatherOrderImpl) CloseOrderByFather(fatherOrderId uint64) error {
@@ -291,9 +349,9 @@ func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 		fmt.Println(fatherError.Error())
 	}
 	for _, father := range fatherData {
-		orderItems, orderItemError := s.orderitemrepo.FindByOrder(father.ID)
+		orderItems, orderItemError := s.orderitemrepo.FindByOrderAndStore(father.ID, 2)
 		if orderItemError != nil {
-			fmt.Println(fatherError.Error())
+			fmt.Println(orderItemError.Error())
 		}
 		for _, orderItem := range orderItems {
 			asin, asinError := s.asinrepo.FindByItemId(orderItem.ItemID)

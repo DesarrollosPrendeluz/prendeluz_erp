@@ -31,6 +31,21 @@ func GetFatherOrdersData(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": results, "recount": recount}})
 
 }
+
+func ClosePickingOrder(c *gin.Context) {
+
+	fatherOrder, _ := strconv.Atoi(c.DefaultQuery("father_order", "0"))
+
+	err := service.NewFatherOrderService().ClosePickingOrders(uint64(fatherOrder))
+	if err != nil {
+		// Manejo del error si las credenciales no son correctas
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": "ok"}})
+
+}
 func GetOrderLinesByFatherId(c *gin.Context) {
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))

@@ -27,6 +27,12 @@ type ExcelModifyOrder struct {
 	Quantity int64
 }
 
+type ExcelUpdateStocks struct {
+	Sku      string
+	Loc      string
+	Quantity int64
+}
+
 func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 	f, err := excelize.OpenReader(file)
 	if err != nil {
@@ -35,7 +41,7 @@ func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 
 	defer f.Close()
 	orders := make(map[string][]OrderInfo)
-	rows, err := f.GetRows("OC SQL")
+	rows, err := f.GetRows(NewOrderSheetName)
 
 	if err != nil {
 		return nil, err
@@ -83,7 +89,7 @@ func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
 	}
 
 	defer f.Close()
-	rows, err := f.GetRows("OC SQL")
+	rows, err := f.GetRows(ModifyOrderSheetName)
 
 	if err != nil {
 		return nil, err
@@ -95,6 +101,38 @@ func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
 
 		item := ExcelModifyOrder{
 			Sku:      strings.Trim(row[0], " "),
+			Quantity: amount}
+
+		result = append(result, item)
+
+	}
+
+	return result, nil
+
+}
+
+func ExcelToJsonUpdateStocks(file io.Reader) ([]ExcelUpdateStocks, error) {
+	var result []ExcelUpdateStocks
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+	rows, err := f.GetRows(UploadStockSheetName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows[1:] {
+
+		amount, _ := strconv.ParseInt(row[2], 10, 64)
+
+		item := ExcelUpdateStocks{
+			Sku:      strings.Trim(row[0], " "),
+			Loc:      strings.Trim(row[1], " "),
 			Quantity: amount}
 
 		result = append(result, item)

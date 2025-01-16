@@ -189,7 +189,7 @@ func StockMovements(c *gin.Context) {
 
 		stock.Amount = (stock.Amount + stockVariant)
 		model.Stock = model.Stock + int(stockVariant)
-		if model.Stock <= 0 {
+		if model.Stock < 0 {
 			return errors.New("Stock can't be negative")
 
 		}
