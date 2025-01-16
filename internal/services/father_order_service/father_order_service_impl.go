@@ -40,7 +40,6 @@ type ExcelExportation struct {
 }
 
 type FatherOrderImpl struct {
-
 	orderlinelocationviewrepo orderlinelocationviewrepo.OrderLineLocationViewImpl
 	supplierorderrepo         supplierorderrepo.SupplierOrderImpl
 	fatherorderrepo           fatherorderrepo.FatherOrderImpl
@@ -51,8 +50,7 @@ type FatherOrderImpl struct {
 	itemlocationrepo          itemlocationrepo.ItemLocationImpl
 	stockdeficitrepo          stockdeficitrepo.StockDeficitImpl
 	asinrepo                  asinrepo.AsinRepoImpl
-  	itemsparentsrepo  itemsparentsrepo.ItemsParentsRepoImpl
-
+	itemsparentsrepo          itemsparentsrepo.ItemsParentsRepoImpl
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
@@ -79,7 +77,7 @@ func NewFatherOrderService() *FatherOrderImpl {
 		asinrepo:                  asinrepo,
 		supplierorderrepo:         supplierorderrepo,
 		orderlinelocationviewrepo: orderlinelocationviewrepo,
-    itemsparentsrepo:  itemsparentsrepo}
+		itemsparentsrepo:          itemsparentsrepo}
 
 }
 
@@ -364,11 +362,11 @@ func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 			numberOfBoxes := len(boxSubStrings) * len(palletSubStrings)
 			for _, pallet := range palletSubStrings {
 				for _, boxIndv := range boxSubStrings {
-					partials := float64(orderItem.Amount) / float64(numberOfBoxes)
+					partials := float64(orderItem.RecivedAmount) / float64(numberOfBoxes)
 					data := ExcelExportation{
 						OC_code: father.Code,
 						Asin:    asin.Code,
-						Total:   int(orderItem.Amount),
+						Total:   int(orderItem.RecivedAmount),
 						Per_box: partials,
 						Box:     boxIndv,
 						Pallet:  pallet,
