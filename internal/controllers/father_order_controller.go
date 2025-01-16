@@ -52,10 +52,12 @@ func GetOrderLinesByFatherId(c *gin.Context) {
 	store_id, _ := strconv.Atoi(c.DefaultQuery("store_id", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 	fatherCode := c.Query("father_order_code")
+	eanOrder := c.Query("ean_order")
+	locOrder := c.Query("loc_order")
 	ean := c.Query("ean")
 	supplierSku := c.Query("ref_prov")
 
-	results, recount, err := service.NewFatherOrderService().FindLinesByFatherOrderCode(pageSize, page, fatherCode, ean, supplierSku, store_id)
+	results, recount, err := service.NewFatherOrderService().FindLinesByFatherOrderCode(pageSize, page, fatherCode, ean, supplierSku, store_id, eanOrder, locOrder)
 
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas
@@ -70,7 +72,7 @@ func DownloadPickingExcelByFatherId(c *gin.Context) {
 
 	fatherCode := c.Query("father_order_code")
 
-	results, _, err := service.NewFatherOrderService().FindLinesByFatherOrderCode(-1, -1, fatherCode, "", "", 1)
+	results, _, err := service.NewFatherOrderService().FindLinesByFatherOrderCode(-1, 1, fatherCode, "", "", 1, "ASC", "ASC")
 
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas

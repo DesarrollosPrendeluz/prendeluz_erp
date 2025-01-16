@@ -91,3 +91,26 @@ func (repo *OrderItemRepoImpl) FindByOrderAndItem(orderIds []uint64, storeId int
 
 	return items, totalRecords
 }
+
+func (repo *OrderItemRepoImpl) FindByLineIDWithOrder(lineId []uint64, order string, offset int, pageSize int) ([]models.OrderItem, int64) {
+	var items []models.OrderItem
+	var totalRecords int64
+
+	repo.DB.
+		Model(&models.OrderItem{}).
+		Preload("AssignedRel.UserRel").
+		Preload("Item.FatherRel.Parent.SupplierItems.Supplier").
+		Preload("Item.FatherRel.Parent.ItemLocations.StoreLocations").
+		Preload("Item.SupplierItems.Supplier").
+		Preload("Item.ItemLocations.StoreLocations").
+		Where("id in ?", lineId).
+		Order(order).Offset(offset).
+		Limit(pageSize).
+		Find(&items)
+
+	repo.DB.
+		Model(&models.OrderItem{}).
+		Where("id in ?", lineId).Count(&totalRecords)
+
+	return items, totalRecords
+}
