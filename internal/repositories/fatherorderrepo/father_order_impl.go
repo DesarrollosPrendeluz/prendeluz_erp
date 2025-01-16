@@ -17,6 +17,13 @@ func NewFatherOrderRepository(db *gorm.DB) *FatherOrderImpl {
 	return &FatherOrderImpl{repositories.NewGORMRepository(db, models.FatherOrder{})}
 }
 
+func (repo *FatherOrderImpl) FindByCode(code string) (models.FatherOrder, error) {
+	var fatherOrder models.FatherOrder
+	results := repo.DB.Where("code = ?", code).First(&fatherOrder)
+
+	return fatherOrder, results.Error
+}
+
 func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fatherOrderCode string, typeId int, statusId int) ([]dtos.FatherOrderWithRecount, int64, error) {
 	var data []dtos.FatherOrderWithRecount
 	var results *gorm.DB
