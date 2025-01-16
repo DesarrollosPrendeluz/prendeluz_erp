@@ -210,18 +210,13 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 	return nil
 }
 
-type UpdateOrderError struct {
-	FatherSku string
-	Error     string
-}
-
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
-func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string) error {
+func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string) (string, string) {
 	var orderIdArr []uint64
-	var addErrData []UpdateOrderError
-	addError := func(errorData error, errArr *[]UpdateOrderError, sku string, err string) bool {
+	var addErrData []utils.UpdateOrderError
+	addError := func(errorData error, errArr *[]utils.UpdateOrderError, sku string, err string) bool {
 		if errorData != nil {
-			errReturn := UpdateOrderError{
+			errReturn := utils.UpdateOrderError{
 				FatherSku: sku,
 				Error:     err,
 			}
@@ -266,12 +261,14 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 				//update father order status
 				fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
 				s.fatherOrderRepo.Update(&fatherOrder)
-				return nil
 			}
 		}
 
+	} else {
+		addError(fmt.Errorf("no se ha enviado orden padre"), &addErrData, "", "No se ha pasado la orden padre por parámetro")
+
 	}
-	return fmt.Errorf("no se ha enviado orden padre")
+	return utils.ReturnUpdateOrdersErrorsExcel(addErrData), "update_errors.xlsx"
 
 }
 

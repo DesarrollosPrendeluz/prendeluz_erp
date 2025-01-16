@@ -111,9 +111,8 @@ func UpdateOrderByExcel(c *gin.Context) {
 
 	}
 
-	if serviceOrder.UploadOrdersByExcel(file, fatherOrder) == nil {
-		c.JSON(http.StatusAccepted, gin.H{"Ok": "ok"})
-	}
+	fileContent, filename := serviceOrder.UploadOrdersByExcel(file, fatherOrder)
+	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"File": fileContent, "FileName": filename}})
 
 }
 
