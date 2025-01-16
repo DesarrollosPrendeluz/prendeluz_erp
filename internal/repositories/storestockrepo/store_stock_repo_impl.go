@@ -82,8 +82,8 @@ func (repo *StoreStockRepoImpl) FindByStoreAndSearchParams(idStore uint64, searc
 		Select("IF(items.item_type = 'father', items.main_sku, items_parent_ref.main_sku) AS father_skus").
 		Limit(pageSize).
 		Offset(offset).
-		Joins("JOIN asins ON asins.item_id = items.id").
-		Joins("JOIN supplier_items ON supplier_items.item_id = items.id").
+		Joins("left JOIN asins ON asins.item_id = items.id").
+		Joins("left JOIN supplier_items ON supplier_items.item_id = items.id").
 		Joins("Left JOIN item_parents ON item_parents.child_item_id = items.id").
 		Joins("Left JOIN items as items_parent_ref ON item_parents.parent_item_id = items_parent_ref.id").
 		Where("items.main_sku LIKE ? OR items.ean LIKE ? OR asins.code LIKE ? OR asins.ean LIKE ? OR supplier_items.supplier_sku LIKE ?",
