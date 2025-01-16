@@ -1,8 +1,6 @@
 package services
 
 import (
-	"bytes"
-	"encoding/base64"
 	"io"
 	"log"
 	"prendeluz/erp/internal/db"
@@ -19,7 +17,6 @@ import (
 	"prendeluz/erp/internal/utils"
 	"strconv"
 
-	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -118,19 +115,13 @@ func getChilds(items []models.ItemsParents) []models.Item {
 	return results
 }
 
-type StockUpdateError struct {
-	FatherSku string
-	Loc       string
-	Error     string
-}
-
 func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) (string, string, error) {
 
 	//fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
-	var stockErr []StockUpdateError
-	addError := func(errorData error, errArr *[]StockUpdateError, sku string, loc string, err string) bool {
+	var stockErr []utils.StockUpdateError
+	addError := func(errorData error, errArr *[]utils.StockUpdateError, sku string, loc string, err string) bool {
 		if errorData != nil {
-			errReturn := StockUpdateError{
+			errReturn := utils.StockUpdateError{
 				FatherSku: sku,
 				Loc:       loc,
 				Error:     err,
@@ -168,42 +159,7 @@ func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) (string
 	// if err := s.storeRepo.DB.Exec("CALL ProcesarProductosAgrupados();").Error; err != nil {
 	// 	log.Printf("Error ejecutando ProcesarProductosAgrupados: %v", err)
 	// }
-	return returnUpdateErrorsExcel(stockErr), "ErrorsOnUpdate.xlsx", nil
-}
-
-func returnUpdateErrorsExcel(data []StockUpdateError) string {
-	//s.stockRepo.FindByStore(store_id);
-	f := excelize.NewFile()
-
-	// Inicia en la fila 2 para Locations
-
-	// Crear encabezados en la primera fila
-	sheetNameTotals := "Update Errors"
-
-	f.NewSheet(sheetNameTotals)
-	f.SetCellValue(sheetNameTotals, "A1", "Sku padre")
-	f.SetCellValue(sheetNameTotals, "B1", "Codigo localización")
-	f.SetCellValue(sheetNameTotals, "C1", "Error")
-
-	for totalIndex, datum := range data {
-		totalRow := totalIndex + 2
-		f.SetCellValue(sheetNameTotals, "A"+strconv.Itoa(totalRow), datum.FatherSku)
-		f.SetCellValue(sheetNameTotals, "B"+strconv.Itoa(totalRow), datum.Loc)
-		f.SetCellValue(sheetNameTotals, "C"+strconv.Itoa(totalRow), datum.Error)
-
-	}
-	f.DeleteSheet("Sheet1")
-	var buf bytes.Buffer
-	if err := f.Write(&buf); err != nil {
-
-		return ""
-	}
-
-	// Codificar el contenido del buffer en Base64
-	base64String := base64.StdEncoding.EncodeToString(buf.Bytes())
-
-	return base64String
-
+	return utils.ReturnUpdateErrorsExcel(stockErr), "ErrorsOnUpdate.xlsx", nil
 }
 
 type FatherData struct {
