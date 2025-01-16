@@ -8,11 +8,13 @@ import (
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
+	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/ordererrorrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
+	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	stockrepo "prendeluz/erp/internal/repositories/storestockrepo"
 	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
@@ -20,12 +22,18 @@ import (
 	"time"
 )
 
+type ParentItemResult struct {
+	ParentItemID int    `gorm:"column:parent_item_id"`
+	MainSKU      string `gorm:"column:main_sku"`
+}
+
 type OrderServiceImpl struct {
-	orderRepo       orderrepo.OrderRepoImpl
-	orderItemsRepo  orderitemrepo.OrderItemRepoImpl
-	fatherOrderRepo fatherorderrepo.FatherOrderImpl
-	orderErrorRepo  repositories.GORMRepository[models.ErrorOrder]
-	itemsRepo       itemsrepo.ItemRepoImpl
+	orderRepo        orderrepo.OrderRepoImpl
+	orderItemsRepo   orderitemrepo.OrderItemRepoImpl
+	fatherOrderRepo  fatherorderrepo.FatherOrderImpl
+	orderErrorRepo   repositories.GORMRepository[models.ErrorOrder]
+	itemsRepo        itemsrepo.ItemRepoImpl
+	stockdeficitrepo stockdeficitrepo.StockDeficitImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
@@ -34,13 +42,15 @@ func NewOrderService() *OrderServiceImpl {
 	orderItemRepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
 	fatherOrderRepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
+	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
 
 	return &OrderServiceImpl{
-		orderRepo:       orderRepo,
-		orderItemsRepo:  orderItemRepo,
-		orderErrorRepo:  errorOrderRepo,
-		itemsRepo:       itemsRepo,
-		fatherOrderRepo: fatherOrderRepo}
+		orderRepo:        orderRepo,
+		orderItemsRepo:   orderItemRepo,
+		orderErrorRepo:   errorOrderRepo,
+		itemsRepo:        itemsRepo,
+		fatherOrderRepo:  fatherOrderRepo,
+		stockdeficitrepo: stockdeficitrepo}
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
@@ -200,45 +210,94 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 	return nil
 }
 
+type UpdateOrderError struct {
+	FatherSku string
+	Error     string
+}
+
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
 func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string) error {
+	var orderIdArr []uint64
+	var addErrData []UpdateOrderError
+	addError := func(errorData error, errArr *[]UpdateOrderError, sku string, err string) bool {
+		if errorData != nil {
+			errReturn := UpdateOrderError{
+				FatherSku: sku,
+				Error:     err,
+			}
+			*errArr = append(*errArr, errReturn)
+			return false
 
-	var order *models.Order
-	orderId := uint64(0)
+		}
+		return true
+
+	}
 	//asiganmos el padre de la orden si lo hay y el order id
 	if requestFatherOrderCode != "" {
-		father, _, _ := s.fatherOrderRepo.FindParentAndOrders(requestFatherOrderCode)
-		if len(father.Childs) > 0 {
-			orderId = father.Childs[0].ID
+		fatherOrder, fatherError := s.fatherOrderRepo.FindByCode(requestFatherOrderCode)
+		if addError(fatherError, &addErrData, "", "No se ha encontrado la order padre") {
+			orders, orderError := s.orderRepo.FindByFatherId(fatherOrder.ID)
+			excelOrderList, _ := utils.ExcelToJSONOrder(file)
+			if addError(orderError, &addErrData, "", "No se han  encontrado las ordenes hijas") {
+
+				for _, order := range orders {
+					orderIdArr = append(orderIdArr, order.ID)
+				}
+
+				for _, line := range excelOrderList {
+					sku := line.Sku
+					sku = strings.ReplaceAll(strings.ReplaceAll(sku, " ", ""), "\n", "") // Quitar espacios y saltos de línea
+					items, _ := s.itemsRepo.FindByMainSku(sku)
+					orderLine, orderLineError := s.orderItemsRepo.FindByItemAndOrders(orderIdArr, items.ID, 2)
+					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
+						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
+						orderLine.Amount = line.Quantity
+						s.orderItemsRepo.Update(&orderLine)
+					}
+					//proveedor
+
+				}
+				//update order status
+				for _, order := range orders {
+					order.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+					s.orderRepo.Update(&order)
+				}
+
+				//update father order status
+				fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+				s.fatherOrderRepo.Update(&fatherOrder)
+				return nil
+			}
 		}
 
 	}
-	excelOrderList, _ := utils.ExcelToJSONOrder(file)
+	return fmt.Errorf("no se ha enviado orden padre")
 
-	for _, line := range excelOrderList {
-		sku := line.Sku
-		sku = strings.ReplaceAll(sku, " ", "")  // Quitar espacios
-		sku = strings.ReplaceAll(sku, "\n", "") // Quitar saltos de línea
-		items, _ := s.itemsRepo.FindByMainSku(line.Sku)
-		// var ids []uint64
-		// for _, v := range items {
-		// 	ids = append(ids, v.ID)
-		// }
-		//orderLine, _ := s.orderItemsRepo.FindByItemsAndOrder(ids, orderId)
-		orderLine, _ := s.orderItemsRepo.FindByItemAndOrder(items.ID, orderId)
-		orderLine.Amount = line.Quantity
-		s.orderItemsRepo.Update(&orderLine)
+}
+
+func updatesDeficitsByLine(itemId uint64, fatherOrderType uint64, orderId uint64, updateLineQuantity int64, orderLineQuantity int64) {
+	parent := returnParentItemById(itemId)
+	deficitRepo := stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	deficit, _ := deficitRepo.FindOrCreateByFatherAndStore(parent.MainSKU, 2)
+	//proveedor
+	if fatherOrderType == 1 {
+		deficit.PendingAmount = (deficit.PendingAmount - orderLineQuantity) + updateLineQuantity
+
+	} else if fatherOrderType == 2 {
+		out := 0
+		in := 0
+		orderLines, _ := orderitemrepo.NewOrderItemRepository(db.DB).FindByItemOrderStore(itemId, orderId, 1)
+		in = int(orderLines.Amount)
+		orderLines, _ = orderitemrepo.NewOrderItemRepository(db.DB).FindByItemOrderStore(itemId, orderId, 2)
+		out = int(orderLines.Amount)
+
+		actualDiff := out - in
+		futureDiff := int(updateLineQuantity) - in
+
+		deficit.Amount = (deficit.Amount - int64(actualDiff)) + int64(futureDiff)
 
 	}
-	//update order status
-	order, _ = s.orderRepo.FindByID(orderId)
-	order.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
-	s.orderRepo.Update(order)
-	//update father order status
-	fatherOrder, _ := s.fatherOrderRepo.FindByID(order.FatherOrderID)
-	fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
-	s.fatherOrderRepo.Update(fatherOrder)
-	return nil
+	deficitRepo.Update(&deficit)
 
 }
 
@@ -353,4 +412,27 @@ func quitarExtension(nombreArchivo string) string {
 
 	// Retorna el nombre sin la extensión
 	return nombreArchivo[:indiceUltimoPunto]
+}
+func returnParentItemById(id uint64) (parent ParentItemResult) {
+	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
+	var result ParentItemResult
+
+	item, _ := itemsrepo.NewItemRepository(db.DB).FindByID(id)
+
+	if item.ItemType == "father" {
+		result.MainSKU = item.MainSKU
+		result.ParentItemID = int(item.ID)
+
+	} else {
+		parent, err := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(id)
+		if err != nil {
+			fmt.Printf("Error al ejecutar la consulta: %v", err)
+		}
+		result.MainSKU = parent.Parent.MainSKU
+		result.ParentItemID = int(parent.Parent.ID)
+
+	}
+
+	return result
+
 }
