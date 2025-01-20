@@ -73,7 +73,7 @@ func (repo *OrderItemRepoImpl) FindByOrderAndItem(orderIds []uint64, storeId int
 	var items []models.OrderItem
 	var totalRecords int64
 
-	query := repo.DB.
+	query := repo.DB.Debug().
 		Model(&models.OrderItem{}).
 		Preload("AssignedRel.UserRel").
 		Preload("Item.FatherRel.Parent.SupplierItems.Supplier").
@@ -111,7 +111,7 @@ func (repo *OrderItemRepoImpl) FindByLineIDWithOrder(lineId []uint64, order stri
 	var items []models.OrderItem
 	var totalRecords int64
 
-	repo.DB.
+	repo.DB.Debug().
 		Model(&models.OrderItem{}).
 		Preload("AssignedRel.UserRel").
 		Preload("Item.FatherRel.Parent.SupplierItems.Supplier").
@@ -119,6 +119,7 @@ func (repo *OrderItemRepoImpl) FindByLineIDWithOrder(lineId []uint64, order stri
 		Preload("Item.SupplierItems.Supplier").
 		Preload("Item.ItemLocations.StoreLocations").
 		Where("id in ?", lineId).
+		Order("CASE WHEN quantity = recived_quantity THEN 1 ELSE 0 END").
 		Order(order).Offset(offset).
 		Limit(pageSize).
 		Find(&items)

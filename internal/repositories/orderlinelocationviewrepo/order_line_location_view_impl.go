@@ -22,7 +22,7 @@ func (repo *OrderLineLocationViewImpl) FindByFatherAndStoreWithOrder(father_id u
 	var data []models.OrderLineLocationView
 
 	query := repo.DB.
-		Where("father_order_id= ?", father_id).Where("store_id = ?", idStore).Find(&data)
+		Where("father_order_id= ?", father_id).Where("store_id = ?", idStore) //.Find(&data)
 
 	if orderByLocation != "" {
 		query = query.Order("store_location_code " + orderByLocation) // Se espera que `orderByLocation` sea algo como "location ASC" o "location DESC"
