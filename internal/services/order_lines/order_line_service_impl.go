@@ -10,8 +10,12 @@ import (
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	"prendeluz/erp/internal/repositories/tokenrepo"
+	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
+
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -124,5 +128,61 @@ func (s *OrderLineServiceImpl) ReturnDownloadPickingExcel(data dtos.FatherOrderO
 	base64String := base64.StdEncoding.EncodeToString(buf.Bytes())
 
 	return base64String
+
+}
+func (s *OrderLineServiceImpl) UpdateOrderLineHandler(
+
+	c *gin.Context,
+	requestBody dtos.OrdersLinesToUpdatePartially,
+	token string,
+	failedIds *[]int,
+	errorList *[]error,
+	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error),
+	admin bool) {
+
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		*errorList = append(*errorList, err)
+		return
+	}
+
+	// Acceder a los valores del cuerpo
+	for _, dataItem := range requestBody.Data {
+		var assign dtos.Assign
+		repo := tokenrepo.NewTokenRepository(db.DB)
+		user, _ := repo.ReturnDataByToken(token)
+		query := `SELECT id FROM assigned_lines WHERE  order_line_id = ? and user_id = ? LIMIT 1`
+
+		err := db.DB.Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
+
+		if (err != nil || assign.ID == 0) && !admin {
+			*failedIds = append(*failedIds, int(dataItem.Id))
+
+		} else {
+
+			updateOrderLine(c, dataItem, errorList, callback)
+		}
+
+	}
+
+}
+
+func updateOrderLine(
+	c *gin.Context,
+	dataItem dtos.LineToUpdate,
+	errorList *[]error,
+	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
+	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
+	stockService := stockDeficit.NewStockDeficitService()
+	model, err := orderLines.FindByID(dataItem.Id)
+
+	callback(c, dataItem, model, err, errorList)
+	error := orderLines.Update(model)
+	if model.StoreID == 1 {
+		stockService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+
+	}
+	if error != nil {
+		*errorList = append(*errorList, error)
+	}
 
 }
