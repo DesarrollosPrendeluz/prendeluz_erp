@@ -7,6 +7,7 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+	"prendeluz/erp/internal/repositories/erpupdateorderlinehistoryrepo"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
@@ -16,6 +17,7 @@ import (
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	stockrepo "prendeluz/erp/internal/repositories/storestockrepo"
+	"prendeluz/erp/internal/repositories/tokenrepo"
 	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
 	"strings"
@@ -28,12 +30,13 @@ type ParentItemResult struct {
 }
 
 type OrderServiceImpl struct {
-	orderRepo        orderrepo.OrderRepoImpl
-	orderItemsRepo   orderitemrepo.OrderItemRepoImpl
-	fatherOrderRepo  fatherorderrepo.FatherOrderImpl
-	orderErrorRepo   repositories.GORMRepository[models.ErrorOrder]
-	itemsRepo        itemsrepo.ItemRepoImpl
-	stockdeficitrepo stockdeficitrepo.StockDeficitImpl
+	orderRepo                     orderrepo.OrderRepoImpl
+	orderItemsRepo                orderitemrepo.OrderItemRepoImpl
+	fatherOrderRepo               fatherorderrepo.FatherOrderImpl
+	orderErrorRepo                repositories.GORMRepository[models.ErrorOrder]
+	itemsRepo                     itemsrepo.ItemRepoImpl
+	stockdeficitrepo              stockdeficitrepo.StockDeficitImpl
+	erpupdateorderlinehistoryrepo erpupdateorderlinehistoryrepo.ErpUpdateOrderLineHistoryImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
@@ -43,14 +46,16 @@ func NewOrderService() *OrderServiceImpl {
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
 	fatherOrderRepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
 	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	erpupdateorderlinehistoryrepo := *erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 
 	return &OrderServiceImpl{
-		orderRepo:        orderRepo,
-		orderItemsRepo:   orderItemRepo,
-		orderErrorRepo:   errorOrderRepo,
-		itemsRepo:        itemsRepo,
-		fatherOrderRepo:  fatherOrderRepo,
-		stockdeficitrepo: stockdeficitrepo}
+		orderRepo:                     orderRepo,
+		orderItemsRepo:                orderItemRepo,
+		orderErrorRepo:                errorOrderRepo,
+		itemsRepo:                     itemsRepo,
+		fatherOrderRepo:               fatherOrderRepo,
+		stockdeficitrepo:              stockdeficitrepo,
+		erpupdateorderlinehistoryrepo: erpupdateorderlinehistoryrepo}
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
@@ -211,7 +216,7 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
-func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string) (string, string) {
+func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string, token string) (string, string) {
 	var orderIdArr []uint64
 	var addErrData []utils.UpdateOrderError
 	addError := func(errorData error, errArr *[]utils.UpdateOrderError, sku string, err string) bool {
@@ -247,6 +252,9 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
 						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
 						orderLine.Amount = line.Quantity
+						repo := tokenrepo.NewTokenRepository(db.DB)
+						user, _ := repo.ReturnDataByToken(token)
+						s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(orderLine, user.UserId, line.Type)
 						s.orderItemsRepo.Update(&orderLine)
 					}
 					//proveedor
