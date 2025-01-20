@@ -91,12 +91,12 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 
 	parentData, orderIds, _ := s.fatherorderrepo.FindParentAndOrders(fatherOrderCode)
 
-	itemIds, _ = s.itemsRepo.FindByEanAndSupplierSku(ean, supplier_sku)
 	if searchByEan != "" && searchByLoc != "" && ean == "" {
 		list, order, _ := s.orderlinelocationviewrepo.FindByFatherAndStoreWithOrder(parentData.ID, storeId, searchByLoc, searchByEan)
 		items, totalRecords = s.orderitemrepo.FindByLineIDWithOrder(list, order, calcPage, pageSize)
 
 	} else {
+		itemIds, _ = s.itemsRepo.FindByEanAndSupplierSku(ean, supplier_sku)
 		items, totalRecords = s.orderitemrepo.FindByOrderAndItem(orderIds, storeId, itemIds, calcPage, pageSize)
 	}
 
