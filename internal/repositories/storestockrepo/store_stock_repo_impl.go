@@ -59,7 +59,7 @@ func (repo *StoreStockRepoImpl) FindByStoreWithLocations(idStore uint64) ([]mode
 	var storeStocks []models.StoreStock
 	var storeStock []models.StoreStock
 	batchSize := 1000
-	data := repo.DB.Debug().
+	data := repo.DB.
 		Preload("Item").
 		Preload("Locations.StoreLocations").
 		Where("store_stocks.store_id = ?", idStore).
