@@ -309,3 +309,21 @@ func RemoveQuantityToOrdersLines(c *gin.Context) {
 	}
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": list, "Not_permited_lines_ids": failedIds}})
 }
+
+func CloseOrderLines(c *gin.Context) {
+	var requestBody dtos.FatherOrderId
+	//var errorList []error
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := fatherOrderServices.NewFatherOrderService().CloseOrderByFather(uint64(requestBody.FatherOrderId))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"err": "err"})
+	}
+	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
+}
