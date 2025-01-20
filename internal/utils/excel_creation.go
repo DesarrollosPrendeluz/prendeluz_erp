@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
+	"prendeluz/erp/internal/models"
 	"strconv"
 
 	"github.com/xuri/excelize/v2"
@@ -28,6 +29,33 @@ var UpdateStockErr = map[string]string{
 var UpdateOrderErr = map[string]string{
 	"A1": "Sku",
 	"B1": "Err",
+}
+
+var TypesOfUpdateOL = map[string]string{
+	"A1": "Id",
+	"B1": "Name",
+}
+
+func ReturnOrderLineUploadSheet(sheet string, fields map[string]string, name string, types []models.UpdateErpType) (string, string) {
+	//s.stockRepo.FindByStore(store_id);
+	fileName := name + ".xlsx"
+	f := excelize.NewFile()
+	callback := func(f *excelize.File, sheetName string) *excelize.File {
+		return f
+	}
+	callback2 := func(f *excelize.File, sheetName string) *excelize.File {
+		for totalIndex, datum := range types {
+			totalRow := totalIndex + 2
+			f.SetCellValue(sheetName, "A"+strconv.Itoa(totalRow), datum.ID)
+			f.SetCellValue(sheetName, "B"+strconv.Itoa(totalRow), datum.Name)
+		}
+		return f
+	}
+	genericSheetCreator(f, sheet, fields, callback)
+
+	genericSheetCreator(f, "Update Reasons", TypesOfUpdateOL, callback2)
+
+	return base64ExcelEncoder(f), fileName
 }
 
 func ReturnUpdateErrorsExcel(data []StockUpdateError) string {

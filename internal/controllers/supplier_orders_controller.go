@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	erpUpdateTypesService "prendeluz/erp/internal/services/erp_update_types"
 	services "prendeluz/erp/internal/services/order"
 	"prendeluz/erp/internal/utils"
 	"strconv"
@@ -117,7 +118,8 @@ func UpdateOrderByExcel(c *gin.Context) {
 }
 
 func DownloadUpdateOrderByExcelFrame(c *gin.Context) {
-	data, name := utils.FrameGenerator(utils.ModifyOrderSheetName, utils.ModifyOrder, "modifyOrderFrame")
+	types := erpUpdateTypesService.NewErpUpdateTypeService().GetAll()
+	data, name := utils.ReturnOrderLineUploadSheet(utils.ModifyOrderSheetName, utils.ModifyOrder, "modifyOrderFrame", types)
 
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 
