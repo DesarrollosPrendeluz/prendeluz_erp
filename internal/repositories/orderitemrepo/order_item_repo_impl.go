@@ -56,7 +56,7 @@ func (repo *OrderItemRepoImpl) FindByItemOrderStore(itemId uint64, orderId uint6
 // Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
 func (repo *OrderItemRepoImpl) FindByItemAndOrders(orderIds []uint64, itemId uint64, storeId uint64) (models.OrderItem, error) {
 	var orderItems models.OrderItem
-	results := repo.DB.Debug().Where("item_id = ? and order_id in ? and store_id = ?", itemId, orderIds, storeId).First(&orderItems)
+	results := repo.DB.Where("item_id = ? and order_id in ? and store_id = ?", itemId, orderIds, storeId).First(&orderItems)
 
 	return orderItems, results.Error
 }
@@ -64,7 +64,7 @@ func (repo *OrderItemRepoImpl) FindByItemAndOrders(orderIds []uint64, itemId uin
 // Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
 func (repo *OrderItemRepoImpl) FindByItemsAndOrder(itemIds []uint64, orderId uint64) (models.OrderItem, error) {
 	var orderItems models.OrderItem
-	results := repo.DB.Debug().Where("item_id in ? and order_id = ?", itemIds, orderId).First(&orderItems)
+	results := repo.DB.Where("item_id in ? and order_id = ?", itemIds, orderId).First(&orderItems)
 
 	return orderItems, results.Error
 }
@@ -119,6 +119,7 @@ func (repo *OrderItemRepoImpl) FindByLineIDWithOrder(lineId []uint64, order stri
 		Preload("Item.SupplierItems.Supplier").
 		Preload("Item.ItemLocations.StoreLocations").
 		Where("id in ?", lineId).
+		Order("CASE WHEN quantity = recived_quantity THEN 1 ELSE 0 END").
 		Order(order).Offset(offset).
 		Limit(pageSize).
 		Find(&items)
