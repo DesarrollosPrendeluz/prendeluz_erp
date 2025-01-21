@@ -327,3 +327,21 @@ func CloseOrderLines(c *gin.Context) {
 	}
 	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
 }
+
+func OpenOrderLines(c *gin.Context) {
+	var requestBody dtos.FatherOrderId
+	//var errorList []error
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := fatherOrderServices.NewFatherOrderService().OpenOrderByFather(uint64(requestBody.FatherOrderId))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"err": "err"})
+	}
+	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
+}
