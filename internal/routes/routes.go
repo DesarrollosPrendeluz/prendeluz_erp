@@ -35,6 +35,7 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderRoutes.GET("/type", controllers.GetOrderTypes)
 		allUsersOrderRoutes.GET("/supplierOrders", controllers.GetSupplierOrders)
 		allUsersOrderRoutes.PATCH("/closeOrders", controllers.CloseOrderLines)
+		allUsersOrderRoutes.PATCH("/openOrders", controllers.OpenOrderLines)
 		allUsersOrderRoutes.POST("/editOrders", controllers.UpdateOrderByExcel)
 		allUsersOrderRoutes.GET("/editOrders/frame", controllers.DownloadUpdateOrderByExcelFrame)
 
@@ -81,6 +82,7 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersFatherOrderRoutes.GET("/amazonExcel", controllers.DownLoadExcelForAmazon)
 		allUsersFatherOrderRoutes.POST("/closePicking", controllers.ClosePickingOrder)
 		allUsersFatherOrderRoutes.PATCH("/close", controllers.CloseOrderLines)
+		allUsersFatherOrderRoutes.PATCH("/open", controllers.OpenOrderLines)
 
 	}
 	//Store
