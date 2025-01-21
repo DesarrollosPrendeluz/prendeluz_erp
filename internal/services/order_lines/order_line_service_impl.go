@@ -163,7 +163,13 @@ func (s *OrderLineServiceImpl) UpdateOrderLineHandler(
 
 		} else {
 			orderLine, _ := s.orderItemsRepo.FindByID(dataItem.Id)
-			s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(*orderLine, user.UserId, 1)
+			var updateId uint64
+			updateId = 1
+			if orderLine.StoreID == 2 {
+				updateId = 4
+
+			}
+			s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(*orderLine, user.UserId, updateId)
 
 			updateOrderLine(c, dataItem, errorList, callback)
 		}
