@@ -50,10 +50,10 @@ func RegisterRoutes(router *gin.Engine) {
 	}
 
 	//Order lines
-	adminUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AdminStoreUsers)
-	{
-		adminUsersOrderLineRoutes.PATCH("", controllers.EditOrdersLines)
-	}
+	// adminUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AdminStoreUsers)
+	// {
+
+	// }
 
 	allUsersOrderLineRoutes := router.Group("/order/orderLines").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
@@ -62,6 +62,7 @@ func RegisterRoutes(router *gin.Engine) {
 		//allUsersOrderLineRoutes.POST("", controllers.GetOrderStatus)
 		allUsersOrderLineRoutes.PATCH("/add", controllers.AddQuantityToOrdersLines)
 		allUsersOrderLineRoutes.PATCH("/remove", controllers.RemoveQuantityToOrdersLines)
+		allUsersOrderLineRoutes.PATCH("", controllers.EditOrdersLines)
 	}
 
 	allUsersOrderLineAssignRoutes := router.Group("/order/orderLines/asignation").Use(middlewares.Auth, middlewares.AllStoreUsers)
