@@ -25,6 +25,7 @@ type ExcelOrder struct {
 type ExcelModifyOrder struct {
 	Sku      string
 	Quantity int64
+	Type     uint64
 }
 
 type ExcelUpdateStocks struct {
@@ -98,10 +99,12 @@ func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
 	for _, row := range rows[1:] {
 
 		amount, _ := strconv.ParseInt(row[1], 10, 64)
+		updateType, _ := strconv.ParseUint(row[2], 10, 64)
 
 		item := ExcelModifyOrder{
 			Sku:      strings.Trim(row[0], " "),
-			Quantity: amount}
+			Quantity: amount,
+			Type:     updateType}
 
 		result = append(result, item)
 

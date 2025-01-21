@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	erpUpdateTypesService "prendeluz/erp/internal/services/erp_update_types"
 	services "prendeluz/erp/internal/services/order"
 	"prendeluz/erp/internal/utils"
 	"strconv"
@@ -102,6 +103,7 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 func UpdateOrderByExcel(c *gin.Context) {
 	file, _, err := c.Request.FormFile("file")
 	fatherOrder := c.DefaultPostForm("father_order", "")
+	token := c.GetHeader("Authorization")
 
 	serviceOrder := services.NewOrderService()
 	if err != nil {
@@ -111,13 +113,14 @@ func UpdateOrderByExcel(c *gin.Context) {
 
 	}
 
-	fileContent, filename := serviceOrder.UploadOrdersByExcel(file, fatherOrder)
+	fileContent, filename := serviceOrder.UploadOrdersByExcel(file, fatherOrder, token)
 	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"File": fileContent, "FileName": filename}})
 
 }
 
 func DownloadUpdateOrderByExcelFrame(c *gin.Context) {
-	data, name := utils.FrameGenerator(utils.ModifyOrderSheetName, utils.ModifyOrder, "modifyOrderFrame")
+	types := erpUpdateTypesService.NewErpUpdateTypeService().GetAll()
+	data, name := utils.ReturnOrderLineUploadSheet(utils.ModifyOrderSheetName, utils.ModifyOrder, "modifyOrderFrame", types)
 
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 

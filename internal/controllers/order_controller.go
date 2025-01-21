@@ -13,9 +13,9 @@ import (
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
 	"prendeluz/erp/internal/repositories/ordertyperepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
-	"prendeluz/erp/internal/repositories/tokenrepo"
 	fatherOrderServices "prendeluz/erp/internal/services/father_order_service"
 	services "prendeluz/erp/internal/services/order"
+	orderLineService "prendeluz/erp/internal/services/order_lines"
 	stockservices "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
 
@@ -230,7 +230,7 @@ func EditOrdersLines(c *gin.Context) {
 		}
 
 	}
-	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
+	orderLineService.NewOrderLineServiceImpl().UpdateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
 
@@ -265,7 +265,7 @@ func AddQuantityToOrdersLines(c *gin.Context) {
 		}
 
 	}
-	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
+	orderLineService.NewOrderLineServiceImpl().UpdateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
 	if len(errorList) != 0 {
 		list = "Se ha intenado aumentar la cantidad mas allá del máximo"
@@ -302,7 +302,7 @@ func RemoveQuantityToOrdersLines(c *gin.Context) {
 		}
 
 	}
-	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
+	orderLineService.NewOrderLineServiceImpl().UpdateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
 	if len(errorList) != 0 {
 		list = "Se ha intenado reducir la cantidad por debajo de 0"
@@ -310,62 +310,6 @@ func RemoveQuantityToOrdersLines(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": list, "Not_permited_lines_ids": failedIds}})
 }
 
-func updateOrderLineHandler(
-
-	c *gin.Context,
-	requestBody dtos.OrdersLinesToUpdatePartially,
-	token string,
-	failedIds *[]int,
-	errorList *[]error,
-	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error),
-	admin bool) {
-
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		*errorList = append(*errorList, err)
-		return
-	}
-
-	// Acceder a los valores del cuerpo
-	for _, dataItem := range requestBody.Data {
-		var assign dtos.Assign
-		repo := tokenrepo.NewTokenRepository(db.DB)
-		user, _ := repo.ReturnDataByToken(token)
-		query := `SELECT id FROM assigned_lines WHERE  order_line_id = ? and user_id = ? LIMIT 1`
-
-		err := db.DB.Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
-
-		if (err != nil || assign.ID == 0) && !admin {
-			*failedIds = append(*failedIds, int(dataItem.Id))
-
-		} else {
-
-			updateOrderLine(c, dataItem, errorList, callback)
-		}
-
-	}
-
-}
-
-func updateOrderLine(
-	c *gin.Context,
-	dataItem dtos.LineToUpdate,
-	errorList *[]error,
-	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
-	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
-	stockService := stockservices.NewStockDeficitService()
-	model, err := orderLines.FindByID(dataItem.Id)
-
-	callback(c, dataItem, model, err, errorList)
-	error := orderLines.Update(model)
-	if model.StoreID == 1 {
-		stockService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
-
-	}
-	if error != nil {
-		*errorList = append(*errorList, error)
-	}
-
-}
 func CloseOrderLines(c *gin.Context) {
 	var requestBody dtos.FatherOrderId
 	//var errorList []error
