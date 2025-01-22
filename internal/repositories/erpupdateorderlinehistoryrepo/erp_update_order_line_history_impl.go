@@ -34,3 +34,21 @@ func (repo *ErpUpdateOrderLineHistoryImpl) GenerateOrderLineHistory(orderLine mo
 
 	return model, err
 }
+
+type OriginalOrderLine struct {
+	OrderLineID uint64
+	Quantity    int64
+}
+
+func (repo *ErpUpdateOrderLineHistoryImpl) FindByOrders(orders []uint64) ([]OriginalOrderLine, error) {
+	var original []OriginalOrderLine
+	results := repo.DB.
+		Table("erp_update_order_line_histories").
+		Select("order_line_id, MAX(quantity) as quantity").
+		Where("order_id in ?", orders).
+		Group("order_line_id").
+		Order("order_line_id DESC").
+		Find(&original)
+
+	return original, results.Error
+}
