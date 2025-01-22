@@ -39,6 +39,32 @@ func (repo *OrderItemRepoImpl) FindByItem(idPedido uint64) ([]models.OrderItem, 
 }
 
 // Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
+func (repo *OrderItemRepoImpl) FindIdWhereIn(idPedido []uint64) ([]models.OrderItem, error) {
+	var orderItems []models.OrderItem
+	results := repo.DB.
+		Where("id in ?", idPedido).
+		Order("id DESC").
+		Find(&orderItems)
+
+	return orderItems, results.Error
+}
+
+// // Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
+// func (repo *OrderItemRepoImpl) FindWhereIdNotIn(idPedido uint64) ([]models.OrderItem, error) {
+// 	var orderItems []models.OrderItem
+// 	results := repo.DB.Where("item_id = ?", idPedido).Find(&orderItems)
+
+// 	return orderItems, results.Error
+// }
+
+func (repo *OrderItemRepoImpl) FindByOrderExludingIds(ids []uint64, orderId []uint64) ([]models.OrderItem, error) {
+	var orderItems []models.OrderItem
+	results := repo.DB.Where("id not in ? and order_id in ?", ids, orderId).Find(&orderItems)
+
+	return orderItems, results.Error
+}
+
+// Se retornan las lineas de pedidos las en las cuales el id de los items coincidan
 func (repo *OrderItemRepoImpl) FindByItemAndOrder(itemId uint64, orderId uint64) (models.OrderItem, error) {
 	var orderItems models.OrderItem
 	results := repo.DB.Where("item_id = ? and order_id = ?", itemId, orderId).First(&orderItems)
