@@ -267,6 +267,73 @@ func (s *FatherOrderImpl) CloseOrderByFather(fatherOrderId uint64) error {
 
 }
 
+func (s *FatherOrderImpl) OpenOrderByFather(fatherOrderId uint64) error {
+	fatherData, _ := s.fatherorderrepo.FindByID(fatherOrderId)
+	orderData, _ := s.orderrepo.FindByFatherId(fatherData.ID)
+	for _, order := range orderData {
+		linesData, _ := s.orderitemrepo.FindByOrder(order.ID)
+		for _, line := range linesData {
+			if line.RecivedAmount == line.Amount {
+				var fatherSku string
+				var location uint64
+				diffAmount := line.Amount
+				item, _ := s.itemsRepo.FindByIdWithFatherPreload(line.ItemID)
+
+				if item.ItemType == "father" {
+					fatherSku = item.MainSKU
+				} else {
+					fatherSku = item.FatherRel.Parent.MainSKU
+				}
+
+				switch line.StoreID {
+				case 1:
+					location = 1
+				case 2:
+					location = 86
+
+				}
+
+				line.RecivedAmount = 0
+				s.orderitemrepo.Update(&line)
+				/*Quitamos el stock del total*/
+				itemStock, _ := s.storestockrepo.FindByItemAndStore(fatherSku, strconv.FormatInt(line.StoreID, 10))
+				itemStock.Amount = itemStock.Amount - diffAmount
+				s.storestockrepo.Update(&itemStock)
+				/*Quitamos el stock de la ubicación por defecto*/
+				itemStockLocation, _ := s.itemlocationrepo.FindByItemsAndLocation(fatherSku, location)
+				itemStockLocation.Stock = itemStockLocation.Stock - int(diffAmount)
+				s.itemlocationrepo.Update(&itemStockLocation)
+				/*Actualizamos el stock deficit*/
+				stockDef, _ := s.stockdeficitrepo.GetByFatherAndStore(fatherSku, line.StoreID)
+
+				stockDef.Amount = stockDef.Amount + diffAmount
+				stockDef.PendingAmount = stockDef.PendingAmount + diffAmount
+				if stockDef.Amount < 0 {
+					stockDef.Amount = 0
+				}
+				if stockDef.PendingAmount < 0 {
+					stockDef.Amount = 0
+				}
+				s.stockdeficitrepo.Update(&stockDef)
+
+			}
+		}
+
+		order.OrderStatusID = 1
+		s.orderrepo.Update(&order)
+
+	}
+
+	fatherData.OrderStatusID = 1
+	s.fatherorderrepo.Update(fatherData)
+
+	//s.stockdeficitrepo.CallStockDefProc()
+	//s.stockdeficitrepo.CallPendingStockProc()
+
+	return nil
+
+}
+
 func returnLocations(item models.OrderItem, store_id uint64) []string {
 	var locs []string
 	var locations *[]models.ItemLocation
