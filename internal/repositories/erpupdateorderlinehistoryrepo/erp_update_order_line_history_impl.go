@@ -15,17 +15,22 @@ func NewErpUpdateOrderLineHistoryRepository(db *gorm.DB) *ErpUpdateOrderLineHist
 	return &ErpUpdateOrderLineHistoryImpl{repositories.NewGORMRepository(db, models.ErpUpdateOrderLineHistory{})}
 }
 
-func (repo *ErpUpdateOrderLineHistoryImpl) GenerateOrderLineHistory(orderLine models.OrderItem, userId uint64, updateType uint64) (models.ErpUpdateOrderLineHistory, error) {
+func (repo *ErpUpdateOrderLineHistoryImpl) GenerateOrderLineHistory(orderLine models.OrderItem, ModOrderLine models.OrderItem, userId uint64, updateType uint64, code string) (models.ErpUpdateOrderLineHistory, error) {
+
 	model := models.ErpUpdateOrderLineHistory{
-		UpdateErpTypeID: uint(updateType),
-		OrderLineID:     uint(orderLine.ID),
-		OrderID:         uint(orderLine.OrderID),
-		ItemID:          uint(orderLine.ItemID),
-		UserID:          uint(userId),
-		StoreID:         uint(orderLine.StoreID),
-		Quantity:        int(orderLine.Order.Quantity),
-		RecivedQuantity: int(orderLine.RecivedAmount),
+		UpdateErpTypeID:    uint(updateType),
+		UpdateGroupCode:    code,
+		OrderLineID:        uint(orderLine.ID),
+		OrderID:            uint(orderLine.OrderID),
+		ItemID:             uint(orderLine.ItemID),
+		UserID:             uint(userId),
+		StoreID:            uint(orderLine.StoreID),
+		Quantity:           int(orderLine.Amount),
+		NewQuantity:        int(ModOrderLine.Amount),
+		RecivedQuantity:    int(orderLine.RecivedAmount),
+		NewRecivedQuantity: int(ModOrderLine.RecivedAmount),
 	}
 	err := repo.DB.Create(&model).Error
+
 	return model, err
 }

@@ -13,6 +13,8 @@ import (
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/tokenrepo"
 	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
+	"prendeluz/erp/internal/utils"
+	"time"
 
 	"strconv"
 
@@ -148,6 +150,8 @@ func (s *OrderLineServiceImpl) UpdateOrderLineHandler(
 		*errorList = append(*errorList, err)
 		return
 	}
+	currentDate := time.Now().Format("20060102")
+	code := utils.GenerateRandomString(10) + "-" + currentDate
 
 	// Acceder a los valores del cuerpo
 	for _, dataItem := range requestBody.Data {
@@ -162,16 +166,8 @@ func (s *OrderLineServiceImpl) UpdateOrderLineHandler(
 			*failedIds = append(*failedIds, int(dataItem.Id))
 
 		} else {
-			orderLine, _ := s.orderItemsRepo.FindByID(dataItem.Id)
-			var updateId uint64
-			updateId = 1
-			if orderLine.StoreID == 2 {
-				updateId = 4
 
-			}
-			s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(*orderLine, user.UserId, updateId)
-
-			updateOrderLine(c, dataItem, errorList, callback)
+			updateOrderLine(c, dataItem, errorList, callback, user, code)
 		}
 
 	}
@@ -182,12 +178,23 @@ func updateOrderLine(
 	c *gin.Context,
 	dataItem dtos.LineToUpdate,
 	errorList *[]error,
-	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
+	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error),
+	user models.AccesTokens,
+	code string) {
+	repoHistory := erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
 	stockService := stockDeficit.NewStockDeficitService()
 	model, err := orderLines.FindByID(dataItem.Id)
+	firstModel := *model
+
+	var updateId uint64
+	updateId = 1
+	if model.StoreID == 2 {
+		updateId = 4
+	}
 
 	callback(c, dataItem, model, err, errorList)
+	repoHistory.GenerateOrderLineHistory(firstModel, *model, user.UserId, updateId, code)
 	error := orderLines.Update(model)
 	if model.StoreID == 1 {
 		stockService.CalcStockDeficitByItem(model.ItemID, model.StoreID)

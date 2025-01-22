@@ -243,6 +243,8 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 				for _, order := range orders {
 					orderIdArr = append(orderIdArr, order.ID)
 				}
+				currentDate := time.Now().Format("20060102")
+				code := utils.GenerateRandomString(10) + "-" + currentDate
 
 				for _, line := range excelOrderList {
 					sku := line.Sku
@@ -251,10 +253,11 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 					orderLine, orderLineError := s.orderItemsRepo.FindByItemAndOrders(orderIdArr, items.ID, 2)
 					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
 						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
+						ol := orderLine
 						orderLine.Amount = line.Quantity
 						repo := tokenrepo.NewTokenRepository(db.DB)
 						user, _ := repo.ReturnDataByToken(token)
-						s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(orderLine, user.UserId, line.Type)
+						s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(ol, orderLine, user.UserId, line.Type, code)
 						s.orderItemsRepo.Update(&orderLine)
 					}
 					//proveedor
