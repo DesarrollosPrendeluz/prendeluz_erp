@@ -157,4 +157,9 @@ func RegisterRoutes(router *gin.Engine) {
 		suppliers.GET("", controllers.GetSuppliers)
 	}
 
+	stadistics := router.Group("/stadistics").Use(middlewares.Auth, middlewares.AllStoreUsers)
+	{
+		stadistics.GET("", controllers.GetOrderHisotric)
+	}
+
 }
