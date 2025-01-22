@@ -81,7 +81,7 @@ func NewFatherOrderService() *FatherOrderImpl {
 
 }
 
-func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int, searchByEan string, searchByLoc string) (dtos.FatherOrderOrdersAndLines, int64, error) {
+func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string, storeId int, searchByEan string, searchByLoc string, locFilter string) (dtos.FatherOrderOrdersAndLines, int64, error) {
 	var result dtos.FatherOrderOrdersAndLines
 	var items []models.OrderItem
 	var totalRecords int64
@@ -90,8 +90,11 @@ func (s *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, f
 	calcPage := offset * pageSize
 
 	parentData, orderIds, _ := s.fatherorderrepo.FindParentAndOrders(fatherOrderCode)
+	if locFilter != "" {
+		list, _ := s.orderlinelocationviewrepo.FindLineArrayByFatherAndLocation(parentData.ID, storeId, locFilter)
+		items, totalRecords = s.orderitemrepo.FindByLineID(list, calcPage, pageSize)
 
-	if searchByEan != "" && searchByLoc != "" && ean == "" {
+	} else if searchByEan != "" && searchByLoc != "" && ean == "" {
 		list, order, _ := s.orderlinelocationviewrepo.FindByFatherAndStoreWithOrder(parentData.ID, storeId, searchByLoc, searchByEan)
 		items, totalRecords = s.orderitemrepo.FindByLineIDWithOrder(list, order, calcPage, pageSize)
 

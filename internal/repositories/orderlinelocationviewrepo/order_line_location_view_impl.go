@@ -49,3 +49,19 @@ func (repo *OrderLineLocationViewImpl) FindByFatherAndStoreWithOrder(father_id u
 	orderQuery := fmt.Sprintf("FIELD(%s, %s)", "id", strings.Join(idStrings, ", "))
 	return lineIds, orderQuery, nil
 }
+
+func (repo *OrderLineLocationViewImpl) FindLineArrayByFatherAndLocation(father_id uint64, idStore int, locations string) ([]uint64, error) {
+	var lineIds []uint64
+	locArr := strings.Split(locations, ",")
+	err := repo.DB.Debug().
+		Table("order_lines_locations").
+		Joins("left join item_stock_locations on item_stock_locations.item_main_sku = order_lines_locations.father_sku").
+		Select("distinct order_lines_locations.order_line_id").
+		Where("order_lines_locations.father_order_id= ?", father_id).
+		Where("order_lines_locations.store_id = ?", idStore).
+		Where("item_stock_locations.stock != 0").
+		Where("item_stock_locations.store_location_id in ?", locArr).
+		Find(&lineIds) //.Error
+	//fmt.Println("lineIds", lineIds)
+	return lineIds, err.Error
+}
