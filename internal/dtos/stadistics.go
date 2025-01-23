@@ -1,5 +1,14 @@
 package dtos
 
+type HistoricStats struct {
+	Results []OrderLinesStats `json:"results"`
+}
+
+type OrderLinesStats struct {
+	TotaOrder int             `json:"totalOrder"`
+	Lines     []OrderLineStat `json:"lines"`
+}
+
 type OrderLineStat struct {
 	Line            uint64 `json:"lineId"`
 	OrderID         uint64 `json:"orderId"`

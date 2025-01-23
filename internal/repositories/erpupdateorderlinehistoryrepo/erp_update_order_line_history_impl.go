@@ -52,3 +52,34 @@ func (repo *ErpUpdateOrderLineHistoryImpl) FindByOrders(orders []uint64) ([]Orig
 
 	return original, results.Error
 }
+
+type Code struct {
+	Code string
+}
+
+func (repo *ErpUpdateOrderLineHistoryImpl) FindUpdateCodesByOrders(orders []uint64) ([]Code, error) {
+	var codes []Code
+	results := repo.DB.
+		Table("erp_update_order_line_histories").
+		Select("update_group_code as Code").
+		Where("order_id in ?", orders).
+		Group("update_group_code").
+		Order("MIN(created_at) ASC").
+		Find(&codes)
+
+	return codes, results.Error
+}
+
+func (repo *ErpUpdateOrderLineHistoryImpl) FindHistoryLinesByCode(code string, codes []int) (map[uint64]models.ErpUpdateOrderLineHistory, error) {
+	var data []models.ErpUpdateOrderLineHistory
+	orderLineMap := make(map[uint64]models.ErpUpdateOrderLineHistory)
+	results := repo.DB.
+		Where("update_group_code = ?", code).
+		Where("update_erp_type_id in ?", codes).
+		Find(&data)
+	for _, datum := range data {
+		orderLineMap[uint64(datum.OrderLineID)] = datum
+	}
+
+	return orderLineMap, results.Error
+}

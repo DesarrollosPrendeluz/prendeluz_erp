@@ -31,28 +31,40 @@ func NewStadisitcService() *StadisitcsImpl {
 	}
 }
 
-func (s *StadisitcsImpl) GetChangeStadistics(fatherId uint64) []dtos.OrderLineStat {
+func (s *StadisitcsImpl) GetChangeStadistics(fatherId uint64) dtos.HistoricStats {
 	orderIdList := []uint64{}
+	var returnData dtos.HistoricStats
+	var data *dtos.OrderLinesStats
 
 	orders, _ := s.orderrepo.FindByFatherId(fatherId)
 	for _, order := range orders {
 		orderIdList = append(orderIdList, order.ID)
 	}
-	fmt.Println(orderIdList)
 
-	data, _ := getFirstStateOrderLines(orderIdList, fatherId)
-	return data
+	firstData, _ := getFirstStateOrderLines(orderIdList, fatherId, &returnData)
+	data = &firstData
+	codes, _ := s.erpupdateorderlinehistoryrepo.FindUpdateCodesByOrders(orderIdList)
+	for _, v := range codes {
+		historicData, _ := getHistoricLines(data, v.Code, &returnData)
+		data = &historicData
+
+	}
+	//fmt.Printf("Data: %v", data)
+	fmt.Printf("Codes: %v", codes)
+
+	return returnData
 
 }
 
-func getFirstStateOrderLines(orderId []uint64, fatherId uint64) ([]dtos.OrderLineStat, error) {
+func getFirstStateOrderLines(orderId []uint64, fatherId uint64, list *dtos.HistoricStats) (dtos.OrderLinesStats, error) {
 	var linedata []dtos.OrderLineStat
 	var orderIdList []uint64
+	var total int = 0
 	hisotricLineRepo := erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
 	orderLineMap := make(map[uint64]OriginalOrderLine)
-
 	linesBase, _ := hisotricLineRepo.FindByOrders(orderId)
+
 	for _, line := range linesBase {
 		orderLineMap[line.OrderLineID] = OriginalOrderLine{
 			OrderLineID: line.OrderLineID,
@@ -73,6 +85,7 @@ func getFirstStateOrderLines(orderId []uint64, fatherId uint64) ([]dtos.OrderLin
 			RecivedQuantity: int(0),
 		}
 		linedata = append(linedata, retrive)
+		total += int(orderLineMap[orderItem.ID].Quantity)
 
 	}
 	for _, orderItem := range orderData {
@@ -84,9 +97,46 @@ func getFirstStateOrderLines(orderId []uint64, fatherId uint64) ([]dtos.OrderLin
 			RecivedQuantity: int(orderItem.RecivedAmount),
 		}
 		linedata = append(linedata, retrive)
+		total += int(orderItem.Amount)
 
 	}
+	returnData := dtos.OrderLinesStats{
+		TotaOrder: total,
+		Lines:     linedata,
+	}
+	list.Results = append(list.Results, returnData)
 
-	return linedata, nil
+	return returnData, nil
 
+}
+
+func getHistoricLines(data *dtos.OrderLinesStats, code string, list *dtos.HistoricStats) (dtos.OrderLinesStats, error) {
+	var newData dtos.OrderLinesStats
+	var total int = 0
+	hisotricLineRepo := erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
+	modLines, _ := hisotricLineRepo.FindHistoryLinesByCode(code, []int{4, 2})
+	for _, datum := range data.Lines {
+		var orderLineStat dtos.OrderLineStat
+		if value, exists := modLines[datum.Line]; exists {
+			orderLineStat = dtos.OrderLineStat{
+				FatherId: datum.FatherId,
+				Line:     datum.Line,
+				OrderID:  datum.OrderID,
+				Quantity: value.NewQuantity}
+			total += value.NewQuantity
+
+		} else {
+			orderLineStat = dtos.OrderLineStat{
+				FatherId: datum.FatherId,
+				Line:     datum.Line,
+				OrderID:  datum.OrderID,
+				Quantity: datum.Quantity}
+			total += datum.Quantity
+		}
+		newData.Lines = append(newData.Lines, orderLineStat)
+
+	}
+	newData.TotaOrder = total
+	list.Results = append(list.Results, newData)
+	return newData, nil
 }

@@ -159,7 +159,7 @@ func RegisterRoutes(router *gin.Engine) {
 
 	stadistics := router.Group("/stadistics").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
-		stadistics.GET("", controllers.GetOrderHisotric)
+		stadistics.GET("olHisotricByFatherOrder", controllers.GetOrderHisotric)
 	}
 
 }
