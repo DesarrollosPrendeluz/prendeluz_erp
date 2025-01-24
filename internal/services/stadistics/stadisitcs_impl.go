@@ -1,15 +1,16 @@
 package services
 
 import (
-	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/repositories/erpupdateorderlinehistoryrepo"
+	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 )
 
 type StadisitcsImpl struct {
+	fatherorderrepo               fatherorderrepo.FatherOrderImpl
 	orderrepo                     orderrepo.OrderRepoImpl
 	erpupdateorderlinehistoryrepo erpupdateorderlinehistoryrepo.ErpUpdateOrderLineHistoryImpl
 	orderitemrepo                 orderitemrepo.OrderItemRepoImpl
@@ -20,37 +21,42 @@ type OriginalOrderLine struct {
 }
 
 func NewStadisitcService() *StadisitcsImpl {
+	fatherorderrepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
 	erpupdateorderlinehistoryrepo := *erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 	orderitemrepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	orderrepo := *orderrepo.NewOrderRepository(db.DB)
 
 	return &StadisitcsImpl{
+		fatherorderrepo:               fatherorderrepo,
 		erpupdateorderlinehistoryrepo: erpupdateorderlinehistoryrepo,
 		orderitemrepo:                 orderitemrepo,
 		orderrepo:                     orderrepo,
 	}
 }
 
-func (s *StadisitcsImpl) GetChangeStadistics(fatherId uint64) dtos.HistoricStats {
+func (s *StadisitcsImpl) GetChangeStadistics(fatherCode string) dtos.HistoricStats {
 	orderIdList := []uint64{}
+	var fatherId uint64
 	var returnData dtos.HistoricStats
 	var data *dtos.OrderLinesStats
+	if fatherCode != "" {
+		fatherData, _ := s.fatherorderrepo.FindByCode(fatherCode)
+		fatherId = fatherData.ID
+		orders, _ := s.orderrepo.FindByFatherId(fatherId)
+		for _, order := range orders {
+			orderIdList = append(orderIdList, order.ID)
+		}
 
-	orders, _ := s.orderrepo.FindByFatherId(fatherId)
-	for _, order := range orders {
-		orderIdList = append(orderIdList, order.ID)
+		firstData, _ := getFirstStateOrderLines(orderIdList, fatherId, &returnData)
+		data = &firstData
+		codes, _ := s.erpupdateorderlinehistoryrepo.FindUpdateCodesByOrders(orderIdList)
+		for _, v := range codes {
+			historicData, _ := getHistoricLines(data, v.Code, &returnData)
+			data = &historicData
+
+		}
+
 	}
-
-	firstData, _ := getFirstStateOrderLines(orderIdList, fatherId, &returnData)
-	data = &firstData
-	codes, _ := s.erpupdateorderlinehistoryrepo.FindUpdateCodesByOrders(orderIdList)
-	for _, v := range codes {
-		historicData, _ := getHistoricLines(data, v.Code, &returnData)
-		data = &historicData
-
-	}
-	//fmt.Printf("Data: %v", data)
-	fmt.Printf("Codes: %v", codes)
 
 	return returnData
 
