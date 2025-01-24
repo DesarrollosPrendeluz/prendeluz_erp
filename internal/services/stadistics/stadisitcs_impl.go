@@ -108,6 +108,7 @@ func getFirstStateOrderLines(orderId []uint64, fatherId uint64, list *dtos.Histo
 	}
 	returnData := dtos.OrderLinesStats{
 		TotaOrder: total,
+		Code:      "Base",
 		Lines:     linedata,
 	}
 	list.Results = append(list.Results, returnData)
@@ -143,6 +144,7 @@ func getHistoricLines(data *dtos.OrderLinesStats, code string, list *dtos.Histor
 
 	}
 	newData.TotaOrder = total
+	newData.Code = code
 	list.Results = append(list.Results, newData)
 	return newData, nil
 }

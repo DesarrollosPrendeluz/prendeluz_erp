@@ -6,6 +6,7 @@ type HistoricStats struct {
 
 type OrderLinesStats struct {
 	TotaOrder int             `json:"totalOrder"`
+	Code      string          `json:"code"`
 	Lines     []OrderLineStat `json:"lines"`
 }
 
