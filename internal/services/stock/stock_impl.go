@@ -50,7 +50,7 @@ func (s *StockServiceImpl) ReturnDownloadStockExcel(store_id int) string {
 	f.SetCellValue(sheetNamePartials, "B1", "Ean Proveedor")
 	f.SetCellValue(sheetNamePartials, "C1", "Codigo Localización")
 	f.SetCellValue(sheetNamePartials, "D1", "Stock Localización")
-
+	currentRow := 2
 	for totalIndex, stock := range stocks {
 		totalRow := totalIndex + 2
 		f.SetCellValue(sheetNameTotals, "A"+strconv.Itoa(totalRow), stock.SKU_Parent)
@@ -58,7 +58,7 @@ func (s *StockServiceImpl) ReturnDownloadStockExcel(store_id int) string {
 		f.SetCellValue(sheetNameTotals, "C"+strconv.Itoa(totalRow), stock.ReservedAmount)
 		f.SetCellValue(sheetNameTotals, "D"+strconv.Itoa(totalRow), stock.Amount)
 		if stock.Locations != nil {
-			for locIndex, location := range *stock.Locations {
+			for _, location := range *stock.Locations {
 				locationCode := "Error en codigo de localización"
 				locStoreCode := uint64(0)
 				if location.StoreLocations != nil {
@@ -69,15 +69,15 @@ func (s *StockServiceImpl) ReturnDownloadStockExcel(store_id int) string {
 					fmt.Println("Location error:", location.ID, location.StoreLocationID, stock.SKU_Parent, stock.ID, location.Stock)
 				}
 				if locStoreCode == uint64(store_id) || store_id == 0 {
-					locRow := totalRow + locIndex
 
+					//locRow := totalRow + locIndex
 					//fmt.Printf("Location: %+v\n", location)
-					f.SetCellValue(sheetNamePartials, "A"+strconv.Itoa(locRow), stock.SKU_Parent)
-					f.SetCellValue(sheetNamePartials, "B"+strconv.Itoa(locRow), stock.Item.EAN)
+					f.SetCellValue(sheetNamePartials, "A"+strconv.Itoa(currentRow), stock.SKU_Parent)
+					f.SetCellValue(sheetNamePartials, "B"+strconv.Itoa(currentRow), stock.Item.EAN)
 
-					f.SetCellValue(sheetNamePartials, "C"+strconv.Itoa(locRow), locationCode)
-					f.SetCellValue(sheetNamePartials, "D"+strconv.Itoa(locRow), location.Stock)
-
+					f.SetCellValue(sheetNamePartials, "C"+strconv.Itoa(currentRow), locationCode)
+					f.SetCellValue(sheetNamePartials, "D"+strconv.Itoa(currentRow), location.Stock)
+					currentRow++
 				}
 
 			}
