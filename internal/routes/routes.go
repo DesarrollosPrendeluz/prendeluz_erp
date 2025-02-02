@@ -144,6 +144,7 @@ func RegisterRoutes(router *gin.Engine) {
 	itemStockLocations := router.Group("/item_stock_location").Use(middlewares.Auth)
 	{
 		itemStockLocations.GET("", controllers.GetItemStockLocation)
+		itemStockLocations.DELETE("", controllers.DropItemStockLocation)
 		itemStockLocations.POST("", controllers.PostItemStockLocation)
 		itemStockLocations.PATCH("", controllers.PatchItemStockLocation)
 		itemStockLocations.PATCH("/stockChanges", controllers.StockChanges)

@@ -11,6 +11,7 @@ import (
 	"prendeluz/erp/internal/repositories/itemlocationrepo"
 	"prendeluz/erp/internal/repositories/storelocationrepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
+	ItemStockLocationService "prendeluz/erp/internal/services/item_stock_locations"
 
 	"github.com/gin-gonic/gin"
 )
@@ -53,6 +54,23 @@ func GetItemStockLocation(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": data, "recount": recount}})
+
+}
+
+func DropItemStockLocation(c *gin.Context) {
+	location_id, _ := strconv.Atoi(c.DefaultQuery("location_id", "0"))
+	var error error
+	error = errors.New("Se ha enviado id = 0")
+	if location_id != 0 {
+		error = ItemStockLocationService.NewItemStockLocationService().DropItemLocation(uint64(location_id))
+	}
+	if error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": error.Error()}})
+
+	} else {
+		c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Se ha eliminado el registro de id ": location_id}})
+
+	}
 
 }
 
