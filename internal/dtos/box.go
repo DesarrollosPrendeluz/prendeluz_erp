@@ -16,6 +16,7 @@ type BoxToUpdate struct {
 	Number   *uint64 `json:"number"`
 	Label    *string `json:"label"`
 	Quantity *int    `json:"quantity"`
+	IsClose  *bool   `json:"is_close"`
 }
 type BoxUpdateReq struct {
 	Data []BoxToUpdate `json:"data"`

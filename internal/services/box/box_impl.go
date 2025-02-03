@@ -83,6 +83,15 @@ func (s *BoxImpl) UpdateBox(data dtos.BoxUpdateReq) []error {
 			model.Quantity = *dataItem.Quantity
 		}
 
+		if dataItem.IsClose != nil {
+			if *dataItem.IsClose {
+				model.IsClose = 1
+			} else {
+				model.IsClose = 0
+			}
+
+		}
+
 		error := s.boxRepo.Update(model)
 		if error != nil {
 			errorList = append(errorList, error)

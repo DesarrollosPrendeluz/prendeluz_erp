@@ -10,6 +10,7 @@ type Box struct {
 	Number   int    `json:"number" gorm:"column:number"`
 	Label    string `json:"label" gorm:"column:label"`
 	Quantity int    `json:"quantity" gorm:"column:quantity"`
+	IsClose  int    `gorm:"column:is_close;not null;default:0"`
 
 	Pallet     *Pallet         `gorm:"foreignKey:ID;references:PalletID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	BoxContent *[]OrderLineBox `gorm:"foreignKey:BoxID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
