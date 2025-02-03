@@ -7,9 +7,11 @@ import (
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	"prendeluz/erp/internal/repositories/userrepo"
 )
 
 type StadisitcsImpl struct {
+	userrepo                      userrepo.UserImpl
 	fatherorderrepo               fatherorderrepo.FatherOrderImpl
 	orderrepo                     orderrepo.OrderRepoImpl
 	erpupdateorderlinehistoryrepo erpupdateorderlinehistoryrepo.ErpUpdateOrderLineHistoryImpl
@@ -21,6 +23,7 @@ type OriginalOrderLine struct {
 }
 
 func NewStadisitcService() *StadisitcsImpl {
+	userrepo := *userrepo.NewUsersRepository(db.DB)
 	fatherorderrepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
 	erpupdateorderlinehistoryrepo := *erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 	orderitemrepo := *orderitemrepo.NewOrderItemRepository(db.DB)
@@ -31,6 +34,7 @@ func NewStadisitcService() *StadisitcsImpl {
 		erpupdateorderlinehistoryrepo: erpupdateorderlinehistoryrepo,
 		orderitemrepo:                 orderitemrepo,
 		orderrepo:                     orderrepo,
+		userrepo:                      userrepo,
 	}
 }
 
@@ -62,11 +66,10 @@ func (s *StadisitcsImpl) GetChangeStadistics(fatherCode string) dtos.HistoricSta
 
 }
 
-func (s *StadisitcsImpl) GetRecivedStadistics(fatherCode string) dtos.HistoricStats {
+func (s *StadisitcsImpl) GetRecivedStadistics(fatherCode string) dtos.RecivedHistory {
 	orderIdList := []uint64{}
 	var fatherId uint64
-	var returnData dtos.HistoricStats
-	var data *dtos.OrderLinesStats
+	var returnData dtos.RecivedHistory
 	if fatherCode != "" {
 		fatherData, _ := s.fatherorderrepo.FindByCode(fatherCode)
 		fatherId = fatherData.ID
@@ -74,18 +77,39 @@ func (s *StadisitcsImpl) GetRecivedStadistics(fatherCode string) dtos.HistoricSt
 		for _, order := range orders {
 			orderIdList = append(orderIdList, order.ID)
 		}
-
-		// pickingData, _ := s.erpupdateorderlinehistoryrepo.FindDonePrecentByCode("1", orderIdList)
-		// satggingData, _ := s.erpupdateorderlinehistoryrepo.FindDonePrecentByCode("4", orderIdList)
-		codes, _ := s.erpupdateorderlinehistoryrepo.FindUpdateCodesByOrders(orderIdList)
-		for _, v := range codes {
-			historicData, _ := getHistoricLines(data, v.Code, &returnData)
-			data = &historicData
-
+		fatherDataComplete, _, _ := s.fatherorderrepo.FindAllWithAssocData(1, 0, fatherCode, 0, 0)
+		returnData.PickingProcess = dtos.ProcessTotalsAndPartials{
+			TotalToProcess: int(fatherDataComplete[0].TotalPickingStock),
+			NotProcessed:   int(fatherDataComplete[0].TotalPickingStock) - int(fatherDataComplete[0].TotalRecivedPickingQuantity),
 		}
+		returnData.StaggingProcess = dtos.ProcessTotalsAndPartials{
+			TotalToProcess: int(fatherDataComplete[0].TotalStock),
+			NotProcessed:   int(fatherDataComplete[0].TotalStock) - int(fatherDataComplete[0].PendingStock),
+		}
+
+		pickingData, _ := s.erpupdateorderlinehistoryrepo.FindDonePrecentByCode("1", orderIdList)
+		returnData.UserPickingProcessed = returnRecivedWithUser(pickingData)
+		satggingData, _ := s.erpupdateorderlinehistoryrepo.FindDonePrecentByCode("4", orderIdList)
+		returnData.UserStaggingProcessed = returnRecivedWithUser(satggingData)
 
 	}
 
+	return returnData
+
+}
+
+func returnRecivedWithUser(data []erpupdateorderlinehistoryrepo.Result) []dtos.UserProcessed {
+	var returnData []dtos.UserProcessed
+	for _, datum := range data {
+		user, _ := userrepo.NewUsersRepository(db.DB).FindByID(datum.UserID)
+		returns := dtos.UserProcessed{
+			UserId:        datum.UserID,
+			UserName:      user.Name,
+			UserProcessed: datum.ModificationDif,
+		}
+		returnData = append(returnData, returns)
+
+	}
 	return returnData
 
 }

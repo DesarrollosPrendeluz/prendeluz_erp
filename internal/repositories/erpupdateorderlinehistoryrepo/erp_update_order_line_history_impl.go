@@ -85,7 +85,7 @@ func (repo *ErpUpdateOrderLineHistoryImpl) FindHistoryLinesByCode(code string, c
 }
 
 type Result struct {
-	ModificationDif int64  `json:"modification_dif"`
+	ModificationDif int    `json:"modification_dif"`
 	UserID          uint64 `json:"user_id"`
 }
 
