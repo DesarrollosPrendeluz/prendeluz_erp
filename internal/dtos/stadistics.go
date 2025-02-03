@@ -17,3 +17,19 @@ type OrderLineStat struct {
 	Quantity        int    `json:"quantity"`
 	RecivedQuantity int    `json:"recivedQuantity"`
 }
+
+type RecivedHistory struct {
+	PickingProcess        ProcessTotalsAndPartials
+	StaggingProcess       ProcessTotalsAndPartials
+	UserPickingProcessed  []UserProcessed
+	UserStaggingProcessed []UserProcessed
+}
+type UserProcessed struct {
+	UserId        uint64
+	UserName      string
+	UserProcessed int
+}
+type ProcessTotalsAndPartials struct {
+	TotalToProcess int
+	NotProcessed   int
+}

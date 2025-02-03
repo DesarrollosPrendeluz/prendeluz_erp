@@ -83,3 +83,22 @@ func (repo *ErpUpdateOrderLineHistoryImpl) FindHistoryLinesByCode(code string, c
 
 	return orderLineMap, results.Error
 }
+
+type Result struct {
+	ModificationDif int64  `json:"modification_dif"`
+	UserID          uint64 `json:"user_id"`
+}
+
+func (repo *ErpUpdateOrderLineHistoryImpl) FindDonePrecentByCode(code string, codes []uint64) ([]Result, error) {
+
+	var results []Result
+	err := repo.DB.
+		Table("erp_update_order_line_histories").
+		Select("SUM(recived_quantity) - SUM(new_recived_quantity) as modification_dif, user_id").
+		Where("update_group_code = ?", code).
+		Where("update_erp_type_id in ?", codes).
+		Group("user_id").
+		Find(&results)
+
+	return results, err.Error
+}

@@ -62,6 +62,34 @@ func (s *StadisitcsImpl) GetChangeStadistics(fatherCode string) dtos.HistoricSta
 
 }
 
+func (s *StadisitcsImpl) GetRecivedStadistics(fatherCode string) dtos.HistoricStats {
+	orderIdList := []uint64{}
+	var fatherId uint64
+	var returnData dtos.HistoricStats
+	var data *dtos.OrderLinesStats
+	if fatherCode != "" {
+		fatherData, _ := s.fatherorderrepo.FindByCode(fatherCode)
+		fatherId = fatherData.ID
+		orders, _ := s.orderrepo.FindByFatherId(fatherId)
+		for _, order := range orders {
+			orderIdList = append(orderIdList, order.ID)
+		}
+
+		// pickingData, _ := s.erpupdateorderlinehistoryrepo.FindDonePrecentByCode("1", orderIdList)
+		// satggingData, _ := s.erpupdateorderlinehistoryrepo.FindDonePrecentByCode("4", orderIdList)
+		codes, _ := s.erpupdateorderlinehistoryrepo.FindUpdateCodesByOrders(orderIdList)
+		for _, v := range codes {
+			historicData, _ := getHistoricLines(data, v.Code, &returnData)
+			data = &historicData
+
+		}
+
+	}
+
+	return returnData
+
+}
+
 func getFirstStateOrderLines(orderId []uint64, fatherId uint64, list *dtos.HistoricStats) (dtos.OrderLinesStats, error) {
 	var linedata []dtos.OrderLineStat
 	var orderIdList []uint64

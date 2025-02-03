@@ -1,7 +1,10 @@
 package services
 
-import "prendeluz/erp/internal/models"
+import (
+	"prendeluz/erp/internal/dtos"
+)
 
 type StadisitcsService interface {
-	GetChangeStadistics(fatherId uint64) []models.OrderItem
+	GetChangeStadistics(fatherId uint64) dtos.HistoricStats
+	GetRecivedStadistics(fatherId uint64) dtos.RecivedHistory
 }
