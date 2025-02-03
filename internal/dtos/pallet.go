@@ -14,6 +14,7 @@ type PalletToUpdate struct {
 	OrderID *uint64 `json:"orderId"`
 	Number  *int    `json:"number"`
 	Label   *string `json:"label"`
+	IsClose *bool   `json:"is_close"`
 }
 type PalletUpdateReq struct {
 	Data []PalletToUpdate `json:"data"`
