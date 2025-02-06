@@ -144,6 +144,7 @@ func RegisterRoutes(router *gin.Engine) {
 	itemStockLocations := router.Group("/item_stock_location").Use(middlewares.Auth)
 	{
 		itemStockLocations.GET("", controllers.GetItemStockLocation)
+		itemStockLocations.DELETE("", controllers.DropItemStockLocation)
 		itemStockLocations.POST("", controllers.PostItemStockLocation)
 		itemStockLocations.PATCH("", controllers.PatchItemStockLocation)
 		itemStockLocations.PATCH("/stockChanges", controllers.StockChanges)
@@ -155,6 +156,11 @@ func RegisterRoutes(router *gin.Engine) {
 	suppliers := router.Group("/supplier").Use(middlewares.Auth, middlewares.AllStoreUsers)
 	{
 		suppliers.GET("", controllers.GetSuppliers)
+	}
+
+	stadistics := router.Group("/stadistics").Use(middlewares.Auth, middlewares.AllStoreUsers)
+	{
+		stadistics.GET("olHisotricByFatherOrder", controllers.GetOrderHisotric)
 	}
 
 }
