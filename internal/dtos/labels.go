@@ -6,4 +6,5 @@ type OrderLineLable struct {
 	BrandEmail   string  `json:"brand_email"`
 	Ean          string  `json:"ean"`
 	Asin         *string `json:"asin"`
+	Company      string  `json:"company"`
 }

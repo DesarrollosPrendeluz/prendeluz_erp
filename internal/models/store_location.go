@@ -9,6 +9,8 @@ type StoreLocation struct {
 	Name      string
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
+
+	Store Store `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (StoreLocation) TableName() string {

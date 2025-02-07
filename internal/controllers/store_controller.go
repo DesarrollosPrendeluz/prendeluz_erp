@@ -24,10 +24,11 @@ func GetStoreStock(c *gin.Context) {
 	storeId, _ := strconv.Atoi(c.DefaultQuery("store_id", "1"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	calcPage := page * pageSize
 
 	service := services.NewStoreService()
 	repo := storerepo.NewStoreRepository(db.DB)
-	stock := service.GetStoreStock(storeName, pageSize, page, search)
+	stock := service.GetStoreStock(storeName, pageSize, calcPage, search)
 	recount, _ := repo.CountConditional(storeId)
 	c.IndentedJSON(http.StatusOK, gin.H{"Results": gin.H{"data": stock, "recount": recount}})
 }

@@ -7,22 +7,36 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
-	"time"
-
+	"prendeluz/erp/internal/repositories/erpupdateorderlinehistoryrepo"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
+	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/ordererrorrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
+	"prendeluz/erp/internal/repositories/stockdeficitrepo"
+	stockrepo "prendeluz/erp/internal/repositories/storestockrepo"
+	"prendeluz/erp/internal/repositories/tokenrepo"
+	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
+	"strings"
+	"time"
 )
 
+type ParentItemResult struct {
+	ParentItemID int    `gorm:"column:parent_item_id"`
+	MainSKU      string `gorm:"column:main_sku"`
+}
+
 type OrderServiceImpl struct {
-	orderRepo      orderrepo.OrderRepoImpl
-	orderItemsRepo orderitemrepo.OrderItemRepoImpl
-	orderErrorRepo repositories.GORMRepository[models.ErrorOrder]
-	itemsRepo      itemsrepo.ItemRepoImpl
+	orderRepo                     orderrepo.OrderRepoImpl
+	orderItemsRepo                orderitemrepo.OrderItemRepoImpl
+	fatherOrderRepo               fatherorderrepo.FatherOrderImpl
+	orderErrorRepo                repositories.GORMRepository[models.ErrorOrder]
+	itemsRepo                     itemsrepo.ItemRepoImpl
+	stockdeficitrepo              stockdeficitrepo.StockDeficitImpl
+	erpupdateorderlinehistoryrepo erpupdateorderlinehistoryrepo.ErpUpdateOrderLineHistoryImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
@@ -30,69 +44,24 @@ func NewOrderService() *OrderServiceImpl {
 	errorOrderRepo := *repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
 	orderItemRepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
+	fatherOrderRepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
+	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	erpupdateorderlinehistoryrepo := *erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 
 	return &OrderServiceImpl{
-		orderRepo:      orderRepo,
-		orderItemsRepo: orderItemRepo,
-		orderErrorRepo: errorOrderRepo,
-		itemsRepo:      itemsRepo}
-}
-
-// retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
-func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, fatherOrderId uint64) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
-	itemsRepo := itemsrepo.NewItemRepository(db.DB)
-
-	var errorOrdersList []models.ErrorOrder
-	var ordersList []models.Order
-	orderItemsOk := make(map[string][]models.OrderItem)
-
-	for _, orderCode := range rawOrders {
-		var mainSkus []string
-		for _, orderInfo := range orderCode.Info {
-			mainSkus = append(mainSkus, orderInfo.MainSku)
-		}
-		itemsMap, _ := itemsRepo.FindByMainSkus(mainSkus)
-
-		for _, orderInfo := range orderCode.Info {
-			item, exists := itemsMap[orderInfo.MainSku]
-
-			if !exists {
-				fmt.Println("error en el sku " + orderInfo.MainSku)
-				errorOrder := models.ErrorOrder{
-					Main_Sku: orderInfo.MainSku,
-					Error:    "Item with sku " + orderInfo.MainSku + " not found",
-					Order:    orderCode.OrderCode,
-				}
-
-				errorOrdersList = append(errorOrdersList, errorOrder)
-			} else {
-				orderItem := models.OrderItem{
-					ItemID:        item.ID,
-					Amount:        orderInfo.Amount,
-					RecivedAmount: 0,
-					StoreID:       int64(orderInfo.Store),
-					ClientID:      orderInfo.Client,
-				}
-				orderItemsOk[orderCode.OrderCode] = append(orderItemsOk[orderCode.OrderCode], orderItem)
-			}
-		}
-
-		order := models.Order{
-			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
-			Code:          orderCode.OrderCode,
-			FatherOrderID: fatherOrderId,
-		}
-		ordersList = append(ordersList, order)
-
-	}
-	return ordersList, orderItemsOk, errorOrdersList
+		orderRepo:                     orderRepo,
+		orderItemsRepo:                orderItemRepo,
+		orderErrorRepo:                errorOrderRepo,
+		itemsRepo:                     itemsRepo,
+		fatherOrderRepo:               fatherOrderRepo,
+		stockdeficitrepo:              stockdeficitrepo,
+		erpupdateorderlinehistoryrepo: erpupdateorderlinehistoryrepo}
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
 func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) error {
 
 	fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
-	fechaActual := time.Now().Format("2006-01-02 15:04:05")
 
 	excelOrderList, err := utils.ExceltoJSON(file)
 
@@ -104,10 +73,10 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 	// }
 	//pendiente de crear la father order
 	fatherObject := models.FatherOrder{
-		OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
+		OrderStatusID: uint64(orderrepo.Order_Status["pediente"]),
 		OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
-		Code:          "OC-" + fechaActual,
-		Filename:      "request",
+		Code:          quitarExtension(filename),
+		Filename:      filename,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -146,6 +115,7 @@ func (s *OrderServiceImpl) UploadOrderExcel(file io.Reader, filename string) err
 			})
 
 		}
+		stockDeficit.NewStockDeficitService().CalcStockDeficitByFatherOrder(fatherObject.ID)
 
 		if err != nil {
 			return err
@@ -198,6 +168,9 @@ func (s *OrderServiceImpl) GetOrders(page int, pageSize int, startDate string, e
 			itemInfo.Ean = item.EAN
 			itemInfo.Amount = orderItem.Amount
 			itemInfo.RecivedAmount = orderItem.RecivedAmount
+			//FIXME: quitar una vez se haya externalizado
+			itemInfo.Box = *orderItem.Box
+			itemInfo.Pallet = *orderItem.Pallet
 			if item.SupplierItems != nil && len(*item.SupplierItems) > 0 && (*item.SupplierItems)[0].Supplier != nil {
 				itemInfo.Supplier = (*item.SupplierItems)[0].Supplier.Name
 			} else {
@@ -240,4 +213,234 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 	s.orderRepo.UpdateStatus(orderrepo.Order_Status["finalizada"], order.ID)
 
 	return nil
+}
+
+// Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
+func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string, token string) (string, string) {
+	var orderIdArr []uint64
+	var addErrData []utils.UpdateOrderError
+	addError := func(errorData error, errArr *[]utils.UpdateOrderError, sku string, err string) bool {
+		if errorData != nil {
+			errReturn := utils.UpdateOrderError{
+				FatherSku: sku,
+				Error:     err,
+			}
+			*errArr = append(*errArr, errReturn)
+			return false
+
+		}
+		return true
+
+	}
+	//asiganmos el padre de la orden si lo hay y el order id
+	if requestFatherOrderCode != "" {
+		fatherOrder, fatherError := s.fatherOrderRepo.FindByCode(requestFatherOrderCode)
+		if addError(fatherError, &addErrData, "", "No se ha encontrado la order padre") {
+			orders, orderError := s.orderRepo.FindByFatherId(fatherOrder.ID)
+			excelOrderList, _ := utils.ExcelToJSONOrder(file)
+			if addError(orderError, &addErrData, "", "No se han  encontrado las ordenes hijas") {
+
+				for _, order := range orders {
+					orderIdArr = append(orderIdArr, order.ID)
+				}
+				currentDate := time.Now().Format("20060102")
+				code := utils.GenerateRandomString(10) + "-" + currentDate
+
+				for _, line := range excelOrderList {
+					sku := line.Sku
+					sku = strings.ReplaceAll(strings.ReplaceAll(sku, " ", ""), "\n", "") // Quitar espacios y saltos de línea
+					items, _ := s.itemsRepo.FindByMainSku(sku)
+					orderLine, orderLineError := s.orderItemsRepo.FindByItemAndOrders(orderIdArr, items.ID, 2)
+					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
+						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
+						ol := orderLine
+						orderLine.Amount = line.Quantity
+						repo := tokenrepo.NewTokenRepository(db.DB)
+						user, _ := repo.ReturnDataByToken(token)
+						s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(ol, orderLine, user.UserId, line.Type, code)
+						s.orderItemsRepo.Update(&orderLine)
+					}
+					//proveedor
+
+				}
+				//update order status
+				for _, order := range orders {
+					order.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+					s.orderRepo.Update(&order)
+				}
+
+				//update father order status
+				fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+				s.fatherOrderRepo.Update(&fatherOrder)
+			}
+		}
+
+	} else {
+		addError(fmt.Errorf("no se ha enviado orden padre"), &addErrData, "", "No se ha pasado la orden padre por parámetro")
+
+	}
+	return utils.ReturnUpdateOrdersErrorsExcel(addErrData), "update_errors.xlsx"
+
+}
+
+func updatesDeficitsByLine(itemId uint64, fatherOrderType uint64, orderId uint64, updateLineQuantity int64, orderLineQuantity int64) {
+	parent := returnParentItemById(itemId)
+	deficitRepo := stockdeficitrepo.NewStockDeficitRepository(db.DB)
+	deficit, _ := deficitRepo.FindOrCreateByFatherAndStore(parent.MainSKU, 2)
+	//proveedor
+	if fatherOrderType == 1 {
+		deficit.PendingAmount = (deficit.PendingAmount - orderLineQuantity) + updateLineQuantity
+
+	} else if fatherOrderType == 2 {
+		out := 0
+		in := 0
+		orderLines, _ := orderitemrepo.NewOrderItemRepository(db.DB).FindByItemOrderStore(itemId, orderId, 1)
+		in = int(orderLines.Amount)
+		orderLines, _ = orderitemrepo.NewOrderItemRepository(db.DB).FindByItemOrderStore(itemId, orderId, 2)
+		out = int(orderLines.Amount)
+
+		actualDiff := out - in
+		futureDiff := int(updateLineQuantity) - in
+
+		deficit.Amount = (deficit.Amount - int64(actualDiff)) + int64(futureDiff)
+
+	}
+	deficitRepo.Update(&deficit)
+
+}
+
+// retorna datos para crear ordenes las línea de las ordenes y los errores correspondientes
+func generateOrdersAndOrderLines(rawOrders []utils.ExcelOrder, fatherOrderId uint64) ([]models.Order, map[string][]models.OrderItem, []models.ErrorOrder) {
+	itemsRepo := itemsrepo.NewItemRepository(db.DB)
+
+	var errorOrdersList []models.ErrorOrder
+	var ordersList []models.Order
+	orderItemsOk := make(map[string][]models.OrderItem)
+
+	for _, orderCode := range rawOrders {
+		var mainSkus []string
+		for _, orderInfo := range orderCode.Info {
+			mainSkus = append(mainSkus, orderInfo.MainSku)
+		}
+		itemsMap, _ := itemsRepo.FindByMainSkus(mainSkus)
+
+		for _, orderInfo := range orderCode.Info {
+			processOrderItem(orderInfo, itemsMap, orderCode.OrderCode, orderItemsOk, &errorOrdersList)
+		}
+
+		order := models.Order{
+			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
+			Code:          orderCode.OrderCode,
+			FatherOrderID: fatherOrderId,
+		}
+		ordersList = append(ordersList, order)
+
+	}
+	return ordersList, orderItemsOk, errorOrdersList
+}
+
+func processOrderItem(orderInfo utils.OrderInfo, itemsMap map[string]models.Item, orderCode string, orderItemsOk map[string][]models.OrderItem, errorOrdersList *[]models.ErrorOrder) {
+	item, exists := itemsMap[orderInfo.MainSku]
+
+	if !exists {
+		fmt.Println("error en el sku " + orderInfo.MainSku)
+		errorOrder := models.ErrorOrder{
+			Main_Sku: orderInfo.MainSku,
+			Error:    "Item with sku " + orderInfo.MainSku + " not found",
+			Order:    orderCode,
+		}
+
+		*errorOrdersList = append(*errorOrdersList, errorOrder)
+	} else {
+		orderItem := models.OrderItem{
+			ItemID:        item.ID,
+			Amount:        orderInfo.Amount,
+			RecivedAmount: 0,
+			StoreID:       int64(orderInfo.Store),
+			ClientID:      orderInfo.Client,
+		}
+		orderItemsOk[orderCode] = append(orderItemsOk[orderCode], orderItem)
+		addPickingLines(orderInfo, orderCode, item.ID, orderItemsOk, errorOrdersList)
+	}
+}
+
+func addPickingLines(orderItemInfo utils.OrderInfo, orderCode string, itemId uint64, orderItemsOk map[string][]models.OrderItem, errorOrdersList *[]models.ErrorOrder) {
+	stockrepo := stockrepo.NewStoreStockRepository(db.DB)
+	parentStock, errorInParentStock := stockrepo.FindByItemAndStore(orderItemInfo.ParentSku, "1")
+
+	if errorInParentStock != nil {
+		fmt.Println("error en el sku " + orderItemInfo.ParentSku)
+		errorOrder := models.ErrorOrder{
+			Main_Sku: orderItemInfo.ParentSku,
+			Error:    "Item with sku " + orderItemInfo.ParentSku + " not found" + errorInParentStock.Error(),
+			Order:    orderCode,
+		}
+
+		*errorOrdersList = append(*errorOrdersList, errorOrder)
+	} else {
+		actualStock := parentStock.Amount - parentStock.ReservedAmount
+
+		if parentStock.Amount > 0 && actualStock > 0 {
+
+			orderItem := models.OrderItem{
+				ItemID:        itemId,
+				Amount:        parentStock.ReservedAmount,
+				RecivedAmount: 0,
+				StoreID:       1,
+				ClientID:      orderItemInfo.Client,
+			}
+			if actualStock > orderItemInfo.Amount {
+				parentStock.ReservedAmount += orderItemInfo.Amount
+				stockrepo.Update(&parentStock)
+				orderItem.Amount = orderItemInfo.Amount
+			} else {
+				parentStock.ReservedAmount += actualStock
+				stockrepo.Update(&parentStock)
+				orderItem.Amount = actualStock
+			}
+
+			if orderItem.Amount > 0 {
+				orderItemsOk[orderCode] = append(orderItemsOk[orderCode], orderItem)
+			}
+
+		}
+
+	}
+
+}
+
+func quitarExtension(nombreArchivo string) string {
+	// Busca la última aparición del punto en el nombre del archivo
+	indiceUltimoPunto := strings.LastIndex(nombreArchivo, ".")
+
+	// Si no hay punto, retorna el nombre completo
+	if indiceUltimoPunto == -1 {
+		return nombreArchivo
+	}
+
+	// Retorna el nombre sin la extensión
+	return nombreArchivo[:indiceUltimoPunto]
+}
+func returnParentItemById(id uint64) (parent ParentItemResult) {
+	//TODO: Refactorizar este método hay que separar la lógica de la consulta de la lógica de la actualización
+	var result ParentItemResult
+
+	item, _ := itemsrepo.NewItemRepository(db.DB).FindByID(id)
+
+	if item.ItemType == "father" {
+		result.MainSKU = item.MainSKU
+		result.ParentItemID = int(item.ID)
+
+	} else {
+		parent, err := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(id)
+		if err != nil {
+			fmt.Printf("Error al ejecutar la consulta: %v", err)
+		}
+		result.MainSKU = parent.Parent.MainSKU
+		result.ParentItemID = int(parent.Parent.ID)
+
+	}
+
+	return result
+
 }

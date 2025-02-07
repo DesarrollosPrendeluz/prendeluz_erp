@@ -17,24 +17,31 @@ func NewFatherOrderRepository(db *gorm.DB) *FatherOrderImpl {
 	return &FatherOrderImpl{repositories.NewGORMRepository(db, models.FatherOrder{})}
 }
 
+func (repo *FatherOrderImpl) FindByCode(code string) (models.FatherOrder, error) {
+	var fatherOrder models.FatherOrder
+	results := repo.DB.Where("code = ?", code).First(&fatherOrder)
+
+	return fatherOrder, results.Error
+}
+
 func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fatherOrderCode string, typeId int, statusId int) ([]dtos.FatherOrderWithRecount, int64, error) {
 	var data []dtos.FatherOrderWithRecount
 	var results *gorm.DB
 	var totalRecords int64
 
-	applyFilters := func(query *gorm.DB) *gorm.DB {
+	applyFilters := func(query *gorm.DB, prefix string) *gorm.DB {
 		// Filtros de tipo y estado
 		if typeId != 0 && statusId != 0 {
-			query = query.Where("fo.order_type_id = ? AND fo.order_status_id = ?", typeId, statusId)
+			query = query.Where(prefix+"order_type_id = ? AND "+prefix+"order_status_id = ?", typeId, statusId)
 		} else if typeId != 0 {
-			query = query.Where("fo.order_type_id = ?", typeId)
+			query = query.Where(prefix+"order_type_id = ?", typeId)
 		} else if statusId != 0 {
-			query = query.Where("fo.order_status_id = ?", statusId)
+			query = query.Where(prefix+"order_status_id = ?", statusId)
 		}
 
 		// Filtro de código de orden
 		if fatherOrderCode != "" {
-			query = query.Where("fo.code = ?", fatherOrderCode)
+			query = query.Where(prefix+"code = ?", fatherOrderCode)
 		}
 
 		return query
@@ -42,161 +49,35 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 
 	query := repo.DB.
 		Table("father_orders fo").
-		Select("fo.id, fo.code, fo.order_status_id, os.name as status, ot.name as type, fo.order_type_id, SUM(ol.quantity) as total_stock, SUM(ol.recived_quantity) as pending_stock").
+		Select("fo.id, fo.code, fo.order_status_id, fo.order_type_id, os.name as status, ot.name as type, " +
+			"SUM(CASE WHEN ol.store_id = 2 THEN ol.quantity ELSE 0 END) AS total_stock, " +
+			"SUM(CASE WHEN ol.store_id = 2 THEN ol.recived_quantity ELSE 0 END) AS pending_stock, " +
+			"SUM(CASE WHEN ol.store_id = 1 THEN ol.quantity ELSE 0 END) AS total_picking_stock, " +
+			"SUM(CASE WHEN ol.store_id = 1 THEN ol.recived_quantity ELSE 0 END) AS total_recived_picking_quantity").
 		Joins("LEFT JOIN orders o ON o.father_order_id = fo.id").
 		Joins("LEFT JOIN order_lines ol ON o.id = ol.order_id").
 		Joins("LEFT JOIN order_statuses os ON os.id = fo.order_status_id").
 		Joins("LEFT JOIN order_types ot ON ot.id = fo.order_type_id")
-	query = applyFilters(query)
+	query = applyFilters(query, "fo.")
 	query = query.Group("fo.id")
 	if offset >= 0 && pageSize > 0 {
-		query = query.Offset(offset * pageSize).Limit(pageSize)
-	}
+		query = query.Order("fo.id DESC").Offset(offset).Limit(pageSize)
+
 	results = query.Find(&data)
 
 	query2 := repo.DB.Model(&models.FatherOrder{})
-	query2 = applyFilters(query2)
+	query2 = applyFilters(query2, "")
 	query2.Count(&totalRecords)
 
 	return data, totalRecords, results.Error
 }
 
-func (repo *FatherOrderImpl) FindLinesByFatherOrderCode(pageSize int, offset int, fatherOrderCode string, ean string, supplier_sku string) (dtos.FatherOrderOrdersAndLines, int64, error) {
-	var result dtos.FatherOrderOrdersAndLines
-	var items []models.OrderItem
-	var totalRecords int64
-	var results []models.Item
-	var lines []dtos.LinesInfo
-	var itemIds []uint64
-
-	parentData, orderIds, _ := repo.findParentAndOrders(fatherOrderCode)
-
-	//query de obtención de datos de lineas
-
-	query := repo.DB.
-		Model(&models.OrderItem{}).
-		Preload("AssignedRel.UserRel").
-		Preload("Item.FatherRel.Parent.SupplierItems.Supplier").
-		Preload("Item.FatherRel.Parent.ItemLocations.StoreLocations").
-		Where("order_id in ?", orderIds)
-	countQuery := repo.DB.
-		Model(&models.OrderItem{}).
-		Where("order_id in ?", orderIds)
-
-	if ean != "" || supplier_sku != "" {
-		query := repo.DB.
-			Table("items AS i").
-			Select(" distinct i.id").
-			Joins("inner join supplier_items as si on si.item_id = i.id")
-
-		if ean != "" && supplier_sku != "" {
-			// Ambos, ean y supplier_sku, tienen valor
-			query = query.Where("i.ean = ? OR si.supplier_sku = ?", ean, supplier_sku)
-		} else if ean != "" {
-			// Solo ean tiene valor
-			query = query.Where("i.ean = ?", ean)
-		} else if supplier_sku != "" {
-			// Solo supplier_sku tiene valor
-			query = query.Where("si.supplier_sku = ?", supplier_sku)
-		}
-
-		errr := query.Find(&results).Error
-		if errr != nil {
-			fmt.Println(errr.Error())
-
-		}
-
-		itemIds = func() []uint64 {
-			var ids []uint64
-			for _, item := range results {
-				ids = append(ids, item.ID)
-
-			}
-			return ids
-
-		}()
-
-	}
-	if len(itemIds) > 0 {
-		query.Where("item_id in ?", itemIds)
-		countQuery.Where("item_id in ?", itemIds)
-
-	}
-
-	query.
-		Offset(offset).
-		Limit(pageSize).
-		Find(&items)
-
-	countQuery.
-		Count(&totalRecords)
-
-	//procesado de datos de la query de lineas
-
-	for _, item := range items {
-		// Obtener el nombre del proveedor
-		supplierName, supplierRef := func() (string, string) {
-			if item.Item.ItemType != models.Father &&
-				item.Item.FatherRel != nil &&
-				item.Item.FatherRel.Parent != nil &&
-				item.Item.FatherRel.Parent.SupplierItems != nil &&
-				len(*item.Item.FatherRel.Parent.SupplierItems) > 0 {
-
-				return (*item.Item.FatherRel.Parent.SupplierItems)[0].Supplier.Name, (*item.Item.FatherRel.Parent.SupplierItems)[0].SupplierSku
-			}
-			return "", ""
-		}()
-
-		// Obtener las ubicaciones
-		locations := func() []string {
-			var locs []string
-			if item.Item.FatherRel != nil &&
-				item.Item.FatherRel.Parent != nil &&
-				item.Item.FatherRel.Parent.ItemLocations != nil &&
-				len(*item.Item.FatherRel.Parent.ItemLocations) > 0 {
-				for _, location := range *item.Item.FatherRel.Parent.ItemLocations {
-					locs = append(locs, location.StoreLocations.Name)
-				}
-			} else {
-				locs = append(locs, "")
-			}
-			return locs
-		}()
-
-		// Crear la línea de información
-		lineInfo := dtos.LinesInfo{
-			LineID:          uint(item.ID),
-			OrderCode:       item.OrderID,
-			Name:            *item.Item.Name,
-			Quantity:        int(item.Amount),
-			RecivedQuantity: int(item.RecivedAmount),
-			MainSku:         item.Item.MainSKU,
-			Ean:             item.Item.EAN,
-			SupplierName:    supplierName,
-			SupplierRef:     supplierRef,
-			Location:        locations,
-			AssignedUser: dtos.AssignedUserToOrderItem{
-				AssignationId: item.AssignedRel.ID,
-				UserId:        item.AssignedRel.UserID,
-				UserName:      item.AssignedRel.UserRel.Name,
-			},
-		}
-
-		// Añadir la línea al resultado
-		lines = append(lines, lineInfo)
-	}
-	//Monatje de lineas
-	result.FatherOrder = parentData
-	result.Lines = lines
-
-	return result, totalRecords, nil
-}
-
-func (repo *FatherOrderImpl) findParentAndOrders(code string) (dtos.FatherOrder, []uint64, error) {
+func (repo *FatherOrderImpl) FindParentAndOrders(code string) (dtos.FatherOrder, []uint64, error) {
 	var data models.FatherOrder
 	var total uint64
 	var partial uint64
 	query := repo.DB.
+		Preload("SupplierOrder.Supplier").
 		Preload("ChildOrders.OrderStatus").
 		Preload("OrderStatus").
 		Preload("OrderType")
@@ -242,6 +123,7 @@ func (repo *FatherOrderImpl) findParentAndOrders(code string) (dtos.FatherOrder,
 		Status:          data.OrderStatus.Name,
 		OrderStatusID:   uint(data.OrderStatusID),
 		Quantity:        total,
+		GenericSupplier: &data.SupplierOrder,
 		RecivedQuantity: partial,
 		Childs:          orders,
 	}

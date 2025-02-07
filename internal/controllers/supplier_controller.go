@@ -10,7 +10,7 @@ import (
 
 func GetSuppliers(c *gin.Context) {
 	repo := supplierrepo.NewSupplierRepository(db.DB)
-	store, err := repo.FindAll(100, 0)
+	store, err := repo.FindAllOrdered(1000, 0)
 	if err != nil {
 		c.IndentedJSON(http.StatusOK, gin.H{"Error": gin.H{"err": err}})
 		return

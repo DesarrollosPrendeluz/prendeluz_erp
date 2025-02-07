@@ -18,7 +18,7 @@ func NewItemParentRepository(db *gorm.DB) *ItemsParentsRepoImpl {
 // Busca un producto hijo en base a su aparición en la tabla parent_items
 func (repo *ItemsParentsRepoImpl) FindByChild(child_id uint64) (models.ItemsParents, error) {
 	var item models.ItemsParents
-	result := repo.DB.Where("child_item_id = ?", child_id).First(&item)
+	result := repo.DB.Preload("Parent").Where("child_item_id = ?", child_id).First(&item)
 	return item, result.Error
 }
 

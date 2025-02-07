@@ -9,8 +9,11 @@ type OrderItem struct {
 	Amount        int64  `gorm:"column:quantity;not null"`
 	RecivedAmount int64  `gorm:"column:recived_quantity;not null"`
 	StoreID       int64  `gorm:"column:store_id;not null"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	//FIXME:hay que externaliza esto cuando se pueda
+	Pallet    *string `gorm:"column:pallet"` // Permite null
+	Box       *string `gorm:"column:box"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 	ClientID uint64 `gorm:"-"`
 
@@ -19,6 +22,8 @@ type OrderItem struct {
 	AssignedRel      AssignedLine     `gorm:"foreignKey:OrderLineID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	InOrderRelation  InOrderRelation  `gorm:"foreignKey:ID;references:OrderLineID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	OutOrderRelation OutOrderRelation `gorm:"foreignKey:ID;references:OrderLineID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+
+	OrderLineBoxes *[]OrderLineBox `gorm:"foreignKey:OrderLineID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (OrderItem) TableName() string {

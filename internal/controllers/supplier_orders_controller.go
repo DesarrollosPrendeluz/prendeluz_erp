@@ -3,9 +3,13 @@ package controllers
 import (
 	"bytes"
 	"encoding/base64"
+	"log"
 	"net/http"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/repositories/orderrepo"
+	erpUpdateTypesService "prendeluz/erp/internal/services/erp_update_types"
+	services "prendeluz/erp/internal/services/order"
+	"prendeluz/erp/internal/utils"
 	"strconv"
 
 	"github.com/xuri/excelize/v2"
@@ -62,6 +66,7 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 	f.SetCellValue(sheetName, "E1", "Código Proveedor")
 	f.SetCellValue(sheetName, "F1", "Precio Proveedor")
 	f.SetCellValue(sheetName, "G1", "Cantidad")
+	//f.SetCellValue(sheetName, "H1", "Cantidad")
 
 	// Escribir los datos en las filas siguientes
 	for i, datum := range data {
@@ -74,6 +79,7 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), datum.SupplierCode)
 		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), strconv.FormatFloat(datum.SupplierPrice, 'f', 2, 64))
 		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), datum.StockToBuy)
+		//f.SetCellValue(sheetName, "H"+strconv.Itoa(row), datum.ItemSKU)
 	}
 
 	// Escribir el archivo Excel en un buffer
@@ -91,5 +97,31 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 		"file":     base64String,
 		"filename": "supplier_orders.xlsx",
 	}})
+
+}
+
+func UpdateOrderByExcel(c *gin.Context) {
+	file, _, err := c.Request.FormFile("file")
+	fatherOrder := c.DefaultPostForm("father_order", "")
+	token := c.GetHeader("Authorization")
+
+	serviceOrder := services.NewOrderService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		log.Fatal(err)
+		return
+
+	}
+
+	fileContent, filename := serviceOrder.UploadOrdersByExcel(file, fatherOrder, token)
+	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"File": fileContent, "FileName": filename}})
+
+}
+
+func DownloadUpdateOrderByExcelFrame(c *gin.Context) {
+	types := erpUpdateTypesService.NewErpUpdateTypeService().GetAll()
+	data, name := utils.ReturnOrderLineUploadSheet(utils.ModifyOrderSheetName, utils.ModifyOrder, "modifyOrderFrame", types)
+
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 
 }
