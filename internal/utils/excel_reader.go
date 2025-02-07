@@ -3,6 +3,7 @@ package utils
 import (
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -21,6 +22,18 @@ type ExcelOrder struct {
 	Info      []OrderInfo
 }
 
+type ExcelModifyOrder struct {
+	Sku      string
+	Quantity int64
+	Type     uint64
+}
+
+type ExcelUpdateStocks struct {
+	Sku      string
+	Loc      string
+	Quantity int64
+}
+
 func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 	f, err := excelize.OpenReader(file)
 	if err != nil {
@@ -29,7 +42,7 @@ func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 
 	defer f.Close()
 	orders := make(map[string][]OrderInfo)
-	rows, err := f.GetRows("OC SQL")
+	rows, err := f.GetRows(NewOrderSheetName)
 
 	if err != nil {
 		return nil, err
@@ -62,6 +75,71 @@ func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 			OrderCode: code,
 			Info:      info,
 		})
+	}
+
+	return result, nil
+
+}
+
+func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
+	var result []ExcelModifyOrder
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+	rows, err := f.GetRows(ModifyOrderSheetName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows[1:] {
+
+		amount, _ := strconv.ParseInt(row[1], 10, 64)
+		updateType, _ := strconv.ParseUint(row[2], 10, 64)
+
+		item := ExcelModifyOrder{
+			Sku:      strings.Trim(row[0], " "),
+			Quantity: amount,
+			Type:     updateType}
+
+		result = append(result, item)
+
+	}
+
+	return result, nil
+
+}
+
+func ExcelToJsonUpdateStocks(file io.Reader) ([]ExcelUpdateStocks, error) {
+	var result []ExcelUpdateStocks
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+	rows, err := f.GetRows(UploadStockSheetName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows[1:] {
+
+		amount, _ := strconv.ParseInt(row[2], 10, 64)
+
+		item := ExcelUpdateStocks{
+			Sku:      strings.Trim(row[0], " "),
+			Loc:      strings.Trim(row[1], " "),
+			Quantity: amount}
+
+		result = append(result, item)
+
 	}
 
 	return result, nil

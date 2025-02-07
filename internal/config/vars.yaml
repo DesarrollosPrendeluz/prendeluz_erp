@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+database:
+  host: "70.35.197.24"
+  port: 32991
+  username: "root"
+  password: "dQaJN1448/#@"
+  dbname: "prend_items_luz"
+

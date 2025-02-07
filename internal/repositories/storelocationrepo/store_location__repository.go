@@ -7,4 +7,5 @@ import (
 
 type StoreLocationRepo interface {
 	repositories.Repository[models.StoreLocation]
+	FindStoreLocationByCode(code string) (models.StoreLocation, error)
 }

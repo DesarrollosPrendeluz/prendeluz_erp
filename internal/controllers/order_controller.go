@@ -8,16 +8,16 @@ import (
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
-	"prendeluz/erp/internal/repositories/fatherorderrepo"
-	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/orderstatusrepo"
 	"prendeluz/erp/internal/repositories/ordertyperepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
-	"prendeluz/erp/internal/repositories/stockdeficitrepo"
-	"prendeluz/erp/internal/repositories/tokenrepo"
+	fatherOrderServices "prendeluz/erp/internal/services/father_order_service"
 	services "prendeluz/erp/internal/services/order"
+	orderLineService "prendeluz/erp/internal/services/order_lines"
+	stockservices "prendeluz/erp/internal/services/stock_deficit"
+	"prendeluz/erp/internal/utils"
 
 	"strconv"
 	"time"
@@ -37,22 +37,23 @@ func AddOrder(c *gin.Context) {
 	}
 
 	serviceOrder.UploadOrderExcel(file, header.Filename)
-	if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
-		log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
-	} else {
-		fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
-
-	}
+	// if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
+	// 	log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
+	// }
 
 	// Llamada al segundo procedimiento almacenado
 	if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
 		log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
-	} else {
-		fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
-
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"Ok": "Upload succesfully"}})
+
+}
+
+func DownloadAddOrderFrame(c *gin.Context) {
+	data, name := utils.FrameGenerator(utils.NewOrderSheetName, utils.NewOrder, "newOC")
+
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 
 }
 
@@ -115,66 +116,25 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": err.Error()}})
 		return
 	}
-	fechaActual := time.Now().Format("2006-01-02 15:04:05")
-
-	// Acceder a los valores del cuerpo
-	for _, dataItem := range requestBody.Data {
-		order := dataItem.Order
-		lines := dataItem.Lines
-		fatherRepo := fatherorderrepo.NewFatherOrderRepository(db.DB)
-		repo := orderrepo.NewOrderRepository(db.DB)
-		fatherObject := models.FatherOrder{
-			OrderStatusID: order.Status,
-			OrderTypeID:   order.Type,
-			Code:          "request.generated." + fechaActual,
-			Filename:      "request",
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
-		}
-
-		if fatherRepo.Create(&fatherObject) == nil {
-			orderObject := models.Order{
-				OrderStatusID: order.Status,
-				FatherOrderID: fatherObject.ID,
-				Code:          "request.generated." + fechaActual,
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-			}
-			if repo.Create(&orderObject) == nil {
-				createOrderLines(fatherObject, orderObject, lines)
-
-			}
-
-		}
-
-		if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
-			log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
-		} else {
-			fmt.Println("en teoría se ha ejecutado: CALL UpdateStockDeficitByStore();")
-
-		}
-
-		// Llamada al segundo procedimiento almacenado
-		if err := db.DB.Exec("CALL UpdatePendingStocks();").Error; err != nil {
-			log.Printf("Error ejecutando UpdatePendingStocks: %v", err)
-		} else {
-			fmt.Println("en teoría se ha ejecutado: CALL UpdatePendingStocks()")
-
-		}
-
+	flag := fatherOrderServices.NewFatherOrderService().CreateOrder(requestBody)
+	if flag {
+		c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
+		return
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
+	c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"Err": "Orders are not created"}})
+
 }
 
 func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines []dtos.Line) error {
 	repo := orderitemrepo.NewOrderItemRepository(db.DB) // Asumiendo que tienes un repositorio para las líneas
-	itemRepo := itemsrepo.NewItemRepository(db.DB)
+	//itemRepo := itemsrepo.NewItemRepository(db.DB)
 
 	for _, line := range lines {
-		son, _ := itemRepo.FindSonId(line.ItemID)
+		//son, _ := itemRepo.FindSonId(line.ItemID)
+
 		orderLine := models.OrderItem{
 			OrderID:       order.ID,
-			ItemID:        son,
+			ItemID:        line.ItemID,
 			Amount:        line.Quantity,
 			RecivedAmount: line.RecivedQuantity,
 			StoreID:       line.StoreID,
@@ -195,6 +155,9 @@ func createOrderLines(fatherOrder models.FatherOrder, order models.Order, lines 
 			}
 			outRelRepo.Create(&outRel)
 
+		}
+		if fatherOrder.OrderTypeID == uint64(1) {
+			stockservices.NewStockDeficitService().AddPendingStockByItem(line.ItemID, line.StoreID, int(line.Quantity))
 		}
 	}
 	return nil
@@ -259,9 +222,15 @@ func EditOrdersLines(c *gin.Context) {
 		if dataItem.StoreID != nil {
 			model.Amount = *dataItem.StoreID
 		}
+		if dataItem.Pallet != nil {
+			model.Pallet = dataItem.Pallet
+		}
+		if dataItem.Box != nil {
+			model.Box = dataItem.Box
+		}
 
 	}
-	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
+	orderLineService.NewOrderLineServiceImpl().UpdateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": errorList, "Not_permited_lines_ids": failedIds}})
 
@@ -296,7 +265,7 @@ func AddQuantityToOrdersLines(c *gin.Context) {
 		}
 
 	}
-	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
+	orderLineService.NewOrderLineServiceImpl().UpdateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
 	if len(errorList) != 0 {
 		list = "Se ha intenado aumentar la cantidad mas allá del máximo"
@@ -333,7 +302,7 @@ func RemoveQuantityToOrdersLines(c *gin.Context) {
 		}
 
 	}
-	updateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, false)
+	orderLineService.NewOrderLineServiceImpl().UpdateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
 	if len(errorList) != 0 {
 		list = "Se ha intenado reducir la cantidad por debajo de 0"
@@ -341,57 +310,38 @@ func RemoveQuantityToOrdersLines(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders lines are updated", "Errors": list, "Not_permited_lines_ids": failedIds}})
 }
 
-func updateOrderLineHandler(
+func CloseOrderLines(c *gin.Context) {
+	var requestBody dtos.FatherOrderId
+	//var errorList []error
 
-	c *gin.Context,
-	requestBody dtos.OrdersLinesToUpdatePartially,
-	token string,
-	failedIds *[]int,
-	errorList *[]error,
-	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error),
-	admin bool) {
-
+	// Intentar bindear los datos del cuerpo de la request al struct
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		*errorList = append(*errorList, err)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	err := fatherOrderServices.NewFatherOrderService().CloseOrderByFather(uint64(requestBody.FatherOrderId))
 
-	// Acceder a los valores del cuerpo
-	for _, dataItem := range requestBody.Data {
-		var assign dtos.Assign
-		repo := tokenrepo.NewTokenRepository(db.DB)
-		user, _ := repo.ReturnDataByToken(token)
-		query := `SELECT id FROM assigned_lines WHERE  order_line_id = ? and user_id = ? LIMIT 1`
-
-		err := db.DB.Raw(query, dataItem.Id, user.UserId).Scan(&assign).Error
-
-		if (err != nil || assign.ID == 0) && !admin {
-			*failedIds = append(*failedIds, int(dataItem.Id))
-
-		} else {
-
-			updateOrderLine(c, dataItem, errorList, callback)
-		}
-
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"err": "err"})
 	}
-
+	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
 }
 
-func updateOrderLine(
-	c *gin.Context,
-	dataItem dtos.LineToUpdate,
-	errorList *[]error,
-	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error)) {
-	fmt.Println("fase final")
-	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
-	repoStockDef := stockdeficitrepo.NewStockDeficitRepository(db.DB)
-	model, err := orderLines.FindByID(dataItem.Id)
+func OpenOrderLines(c *gin.Context) {
+	var requestBody dtos.FatherOrderId
+	//var errorList []error
 
-	callback(c, dataItem, model, err, errorList)
-	error := orderLines.Update(model)
-	repoStockDef.CalcStockDeficitByItem(model.ItemID, model.StoreID)
-	if error != nil {
-		*errorList = append(*errorList, error)
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
+	err := fatherOrderServices.NewFatherOrderService().OpenOrderByFather(uint64(requestBody.FatherOrderId))
 
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"err": "err"})
+	}
+	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
 }

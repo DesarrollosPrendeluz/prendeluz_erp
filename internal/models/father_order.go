@@ -18,11 +18,12 @@ type FatherOrder struct {
 	Code          string `gorm:"primaryKey;size:255;not null"`
 	Filename      string `gorm:"column:file_name;size:255;notnull"`
 
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	ChildOrders *[]Order    `gorm:"foreignKey:FatherOrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	OrderStatus OrderStatus `gorm:"foreignKey:OrderStatusID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	OrderType   OrderType   `gorm:"foreignKey:OrderTypeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	ChildOrders   *[]Order      `gorm:"foreignKey:FatherOrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	OrderStatus   OrderStatus   `gorm:"foreignKey:OrderStatusID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	SupplierOrder SupplierOrder `gorm:"foreignKey:FatherOrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	OrderType     OrderType     `gorm:"foreignKey:OrderTypeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 
 	// Orden_compra string `gorm:"primaryKey;size:255;not null"`
 	// Filename     string      `gorm:"size:255; not null"`

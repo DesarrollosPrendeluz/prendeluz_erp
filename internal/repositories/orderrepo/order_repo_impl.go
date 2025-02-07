@@ -4,15 +4,16 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+	"strconv"
 
 	"gorm.io/gorm"
 )
 
 var Order_Status = map[string]int{
 	"iniciada":   1,
-	"finalizada": 2,
-	"en_proceso": 3,
-	"en_espera":  4,
+	"en_espera":  2,
+	"finalizada": 3,
+	"pediente":   4,
 }
 
 var Order_Types = map[string]int{
@@ -34,6 +35,14 @@ func (repo *OrderRepoImpl) FindByOrderCode(orderCode string) (models.Order, erro
 	var order models.Order
 
 	results := repo.DB.Where("code LIKE ?", "%"+orderCode+"%").First(&order)
+
+	return order, results.Error
+}
+
+func (repo *OrderRepoImpl) FindByFatherId(fatherId uint64) ([]models.Order, error) {
+	var order []models.Order
+
+	results := repo.DB.Where("father_order_id = ?", fatherId).Find(&order)
 
 	return order, results.Error
 }
@@ -117,6 +126,7 @@ func (repo *OrderRepoImpl) UpdateStatus(newStatus int, orderID uint64) error {
 
 func (repo *OrderRepoImpl) GetSupplierOrders(order_type *int) ([]dtos.SupplierOrders, error) {
 	var orders []dtos.SupplierOrders
+	//TODO: Refactorizar esta consulta orders no tiene campo type
 
 	// Consulta SQL manual con JOIN
 	query := `
@@ -125,7 +135,7 @@ func (repo *OrderRepoImpl) GetSupplierOrders(order_type *int) ([]dtos.SupplierOr
 			orl.quantity as stock_to_buy, 
 			it.main_sku as item_sku, 
 			it.id as item_id,
-			ip.parent_item_id as father_id,
+			IF(it.item_type = 'son',ip.parent_item_id , it.id) AS father_id,
 			it.name as name,
 			it.ean as ean,
 			sp.name as supplier_name,
@@ -135,16 +145,55 @@ func (repo *OrderRepoImpl) GetSupplierOrders(order_type *int) ([]dtos.SupplierOr
 		INNER JOIN order_lines as orl ON orl.order_id = o.id 
 		LEFT JOIN items as it ON it.id = orl.item_id
 		LEFT JOIN item_parents ip on ip.child_item_id = it.id
-		LEFT JOIN supplier_items as spi ON spi.item_id = ip.parent_item_id AND spi.order = 1
+		LEFT JOIN supplier_items as spi ON spi.item_id = IF(it.item_type = 'son',ip.parent_item_id , it.id) AND spi.order = 1
 		LEFT JOIN suppliers as sp ON sp.id = spi.supplier_id
-		WHERE o.order_type_id = 2
+		
 		
 	`
-	if order_type != nil {
-		query += " AND o.order_type_id = ?"
+	if order_type != nil && *order_type > 0 {
+		query += " AND o.order_type_id = " + string(*order_type)
 	}
 
 	query += " ORDER BY o.id"
+
+	// Ejecutamos la consulta con Raw y mapeamos los resultados al slice de `orders`
+	if err := repo.DB.Raw(query).Scan(&orders).Error; err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func (repo *OrderRepoImpl) GetSupplierOrdersByFatherSku(fatherOrderId int) ([]dtos.SupplierOrders, error) {
+	var orders []dtos.SupplierOrders
+
+	// Consulta SQL manual con JOIN
+	query := `
+				SELECT 
+			o.id as order_code, 
+			orl.quantity as stock_to_buy, 
+			it.main_sku as item_sku, 
+			it.id as item_id,
+			IF(it.item_type = 'son',ip.parent_item_id , it.id) AS father_id,
+			it.name as name,
+			it.ean as ean,
+			 COALESCE(sp2.name, sp.name) AS supplier_name,
+    		COALESCE(spi2.supplier_sku, spi.supplier_sku) AS supplier_code,
+   	 		COALESCE(spi2.price, spi.price) AS supplier_price
+		FROM father_orders fo
+		LEFT JOIN orders  as o on o.father_order_id = fo.id
+		INNER JOIN order_lines as orl ON orl.order_id = o.id 
+		LEFT JOIN items as it ON it.id = orl.item_id
+		LEFT JOIN item_parents ip on ip.child_item_id = it.id
+		LEFT JOIN supplier_items as spi ON spi.item_id = IF(it.item_type = 'son',ip.parent_item_id , it.id) AND spi.order = 1
+		LEFT JOIN suppliers as sp ON sp.id = spi.supplier_id
+		LEFT JOIN supplier_orders as so ON so.father_order_id = fo.id
+		LEFT JOIN suppliers as sp2 ON sp2.id = so.supplier_id
+		LEFT JOIN supplier_items as spi2 ON spi2.item_id = IF(it.item_type = 'son',ip.parent_item_id , it.id) AND spi2.supplier_id = sp2.id
+		WHERE fo.order_type_id = 1
+		AND fo.id = ` + strconv.Itoa(fatherOrderId) + `
+		
+	 ORDER BY o.id`
 
 	// Ejecutamos la consulta con Raw y mapeamos los resultados al slice de `orders`
 	if err := repo.DB.Raw(query).Scan(&orders).Error; err != nil {

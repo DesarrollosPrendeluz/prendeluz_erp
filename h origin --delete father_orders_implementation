@@ -1,0 +1,16 @@
+  CalcStockDeficitCheck[m
+  StockMovements[m
+  assignOrderLines[m
+  busqueda_de_pedidos_por_fecha[m
+  comentarios[m
+  develop[m
+  export_supplier_order[m
+  father_orders_implementation[m
+  labelsutils[m
+  main[m
+  newEndpoints[m
+  newOrderMiddlewares[m
+* [32mrelease[m
+  release-1.1.0[m
+  stocks_checks[m
+  store_stocks_by_location[m
