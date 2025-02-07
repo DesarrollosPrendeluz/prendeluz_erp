@@ -62,7 +62,7 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	query = query.Group("fo.id")
 	if offset >= 0 && pageSize > 0 {
 		query = query.Order("fo.id DESC").Offset(offset).Limit(pageSize)
-	}
+
 	results = query.Find(&data)
 
 	query2 := repo.DB.Model(&models.FatherOrder{})
