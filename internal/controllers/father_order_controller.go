@@ -127,7 +127,7 @@ func UpdateFatherOrders(c *gin.Context) {
 
 func DownLoadExcelForAmazon(c *gin.Context) {
 	fatherOrderID, _ := strconv.Atoi(c.DefaultQuery("fatherOrderId", "1"))
-	data := service.NewFatherOrderService().DownloadOrdersExcelToAmazon(uint64(fatherOrderID))
+	data := service.NewFatherOrderService().DownloadExcelAmazon(uint64(fatherOrderID))
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{
 		"file":     data,
 		"filename": "amazon_orders.xlsx",

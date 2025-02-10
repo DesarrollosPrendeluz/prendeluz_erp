@@ -63,15 +63,14 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	if offset >= 0 && pageSize > 0 {
 		query = query.Order("fo.id DESC").Offset(offset).Limit(pageSize)
 
-	results = query.Find(&data)
+		results = query.Find(&data)
 
-	query2 := repo.DB.Model(&models.FatherOrder{})
-	query2 = applyFilters(query2, "")
-	query2.Count(&totalRecords)
-
+		query2 := repo.DB.Model(&models.FatherOrder{})
+		query2 = applyFilters(query2, "")
+		query2.Count(&totalRecords)
+	}
 	return data, totalRecords, results.Error
 }
-
 func (repo *FatherOrderImpl) FindParentAndOrders(code string) (dtos.FatherOrder, []uint64, error) {
 	var data models.FatherOrder
 	var total uint64
