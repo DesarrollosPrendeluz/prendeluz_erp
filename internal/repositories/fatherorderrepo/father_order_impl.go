@@ -71,7 +71,6 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 	}
 	return data, totalRecords, results.Error
 }
-
 func (repo *FatherOrderImpl) FindParentAndOrders(code string) (dtos.FatherOrder, []uint64, error) {
 	var data models.FatherOrder
 	var total uint64
