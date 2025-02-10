@@ -14,7 +14,12 @@ type OrderLineBoxImpl struct {
 func NewOrderLineBoxRepository(db *gorm.DB) *OrderLineBoxImpl {
 	return &OrderLineBoxImpl{repositories.NewGORMRepository(db, models.OrderLineBox{})}
 }
+func (repo *OrderLineBoxImpl) GetByLineId(boxId int) ([]models.OrderLineBox, error) {
+	var result []models.OrderLineBox
+	err := repo.DB.Where("order_line_id = ?", boxId).Find(&result).Error
 
+	return result, err
+}
 func (repo *OrderLineBoxImpl) GetOrCreateByOrderLineAndBoxId(orderLineId int, boxId int, quantity int) (models.OrderLineBox, bool, error) {
 	var model models.OrderLineBox
 	flag := false

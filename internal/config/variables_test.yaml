@@ -3,8 +3,8 @@ server:
 
 database:
   host: "127.0.0.1"
-  port: 3306
+  port: 30306
   username: "root"
-  password: "root"
-  dbname: "items_prendeluz_db"
+  password: "1234"
+  dbname: "prend_items_luz"
 

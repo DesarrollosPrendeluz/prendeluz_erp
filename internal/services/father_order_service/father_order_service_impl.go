@@ -8,14 +8,17 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/asinrepo"
+	"prendeluz/erp/internal/repositories/boxrepo"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemlocationrepo"
 	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
+	"prendeluz/erp/internal/repositories/orderlineboxrepo"
 	"prendeluz/erp/internal/repositories/orderlinelocationviewrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
+	"prendeluz/erp/internal/repositories/palletrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
 	"prendeluz/erp/internal/repositories/supplieritemrepo"
@@ -51,6 +54,9 @@ type FatherOrderImpl struct {
 	stockdeficitrepo          stockdeficitrepo.StockDeficitImpl
 	asinrepo                  asinrepo.AsinRepoImpl
 	itemsparentsrepo          itemsparentsrepo.ItemsParentsRepoImpl
+	palletsrepo               palletrepo.PalletImpl
+	boxesrepo                 boxrepo.BoxImpl
+	orderlineboxrepo          orderlineboxrepo.OrderLineBoxImpl
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
@@ -64,8 +70,11 @@ func NewFatherOrderService() *FatherOrderImpl {
 	asinrepo := *asinrepo.NewAsinRepository(db.DB)
 	supplierorderrepo := *supplierorderrepo.NewSupplierOrderRepository(db.DB)
 	itemsparentsrepo := *itemsparentsrepo.NewItemParentRepository(db.DB)
-
+	palletsrepo := *palletrepo.NewPalletRepository(db.DB)
+	boxesrepo := *boxrepo.NewBoxRepository(db.DB)
+	orderlineboxrepo := *orderlineboxrepo.NewOrderLineBoxRepository(db.DB)
 	orderlinelocationviewrepo := *orderlinelocationviewrepo.NewOrderLineLocationViewRepository(db.DB)
+
 	return &FatherOrderImpl{
 		fatherorderrepo:           fatherorderrepo,
 		itemsRepo:                 itemsRepo,
@@ -77,7 +86,11 @@ func NewFatherOrderService() *FatherOrderImpl {
 		asinrepo:                  asinrepo,
 		supplierorderrepo:         supplierorderrepo,
 		orderlinelocationviewrepo: orderlinelocationviewrepo,
-		itemsparentsrepo:          itemsparentsrepo}
+		itemsparentsrepo:          itemsparentsrepo,
+		palletsrepo:               palletsrepo,
+		boxesrepo:                 boxesrepo,
+		orderlineboxrepo:          orderlineboxrepo,
+	}
 
 }
 
@@ -399,7 +412,37 @@ func returnSupplierData(item models.OrderItem, supplier *models.SupplierOrder) (
 
 	return supplierName, supplierRef
 }
+func (s *FatherOrderImpl) DownloadExcelAmazon(fatherID uint64) string {
+	father, _ := s.fatherorderrepo.FindByID(fatherID)
+	_, childOrders, _ := s.fatherorderrepo.FindParentAndOrders(father.Code)
+	var results []ExcelExportation
+	for _, orderId := range childOrders {
+		order, _ := s.orderrepo.FindByID(orderId)
 
+		lines, _ := s.orderitemrepo.FindByOrder(order.ID)
+		for _, item := range lines {
+			asin, _ := s.asinrepo.FindByItemId(uint64(item.ItemID))
+			boxlines, _ := s.orderlineboxrepo.GetByLineId(int(item.ID)) //POr linea es en realidad
+			for _, boxline := range boxlines {
+				boxNumber, _ := s.boxesrepo.FindByID(uint64(boxline.ID))
+				palletNUmber, _ := s.palletsrepo.FindByID(boxNumber.PalletID)
+				tmp := ExcelExportation{
+					OC_code: order.Code,
+					Asin:    asin.Code,
+					Box:     strconv.Itoa(boxNumber.Number),
+					Pallet:  strconv.Itoa(palletNUmber.Number),
+					Per_box: float64(boxNumber.Quantity),
+					Total:   int(item.RecivedAmount),
+				}
+				results = append(results, tmp)
+			}
+		}
+	}
+	return generateExcelBase64(results)
+
+}
+
+// DEPRECATED
 func (s *FatherOrderImpl) DownloadOrdersExcelToAmazon(fatherID uint64) string {
 	var exportData []ExcelExportation
 	var boxSubStrings []string
