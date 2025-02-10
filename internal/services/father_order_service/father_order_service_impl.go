@@ -616,7 +616,7 @@ func generateExcelBase64(exportData []ExcelExportation) string {
 	sheetName := "Amazon_Data"
 
 	f.NewSheet(sheetName)
-	f.SetCellValue(sheetName, "A1", "Order Code")
+	f.SetCellValue(sheetName, "A1", "PO")
 	f.SetCellValue(sheetName, "B1", "Asin")
 	f.SetCellValue(sheetName, "C1", "Total")
 	f.SetCellValue(sheetName, "D1", "Per box")
