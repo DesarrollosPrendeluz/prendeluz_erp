@@ -55,9 +55,23 @@ func (repo *StoreStockRepoImpl) FindByStore(idStore uint64, pageSize int, offset
 
 }
 
-func (repo *StoreStockRepoImpl) FindByStoreWithLocations(idStore uint64) ([]models.StoreStock, error) {
+type ItemsLocations struct {
+	ItemSku string
+	Ean     string
+	Stock   int
+	Code    string
+	//ItemLocations []models.ItemLocation
+}
+
+type StoreAndlocations struct {
+	StoreStocks   []models.StoreStock
+	ItemsLocation []ItemsLocations
+}
+
+func (repo *StoreStockRepoImpl) FindByStoreWithLocations(idStore uint64) (StoreAndlocations, error) {
 	var storeStocks []models.StoreStock
 	var storeStock []models.StoreStock
+	var stocks StoreAndlocations
 	batchSize := 1000
 	data := repo.DB.
 		Preload("Item").
@@ -67,8 +81,27 @@ func (repo *StoreStockRepoImpl) FindByStoreWithLocations(idStore uint64) ([]mode
 			storeStocks = append(storeStocks, storeStock...)
 			return nil // Continuar con el siguiente lote
 		})
+	stocks.StoreStocks = storeStocks
+	for _, stock := range stocks.StoreStocks {
+		var newLoc ItemsLocations
+		newLoc.ItemSku = stock.SKU_Parent
+		newLoc.Ean = stock.Item.EAN
+		if len(*stock.Locations) > 0 {
+			for _, loc := range *stock.Locations {
+				if loc.StoreLocations.StoreID == idStore {
+					newLoc.Code = loc.StoreLocations.Code
+					newLoc.Stock = loc.Stock
+					stocks.ItemsLocation = append(stocks.ItemsLocation, newLoc)
 
-	return storeStocks, data.Error
+				}
+
+			}
+
+		}
+
+	}
+
+	return stocks, data.Error
 
 }
 
