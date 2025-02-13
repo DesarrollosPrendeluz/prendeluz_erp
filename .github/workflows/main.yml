@@ -61,9 +61,8 @@ jobs:
               echo "Deteniendo y reiniciando contenedor en ambiente de desarrollo..."
 
               docker run -d --name ${{ env.CONTAINER_NAME }} \
-                -e DB_PASSWORD=${{ env.DB_PSWD }} \
-                -e DB_NAME=${{ env.DB_NAME }} \
-                -p 80:80 ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
+                ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+
             else
               echo "No se ejecuta el reinicio del contenedor en main."
             fi
