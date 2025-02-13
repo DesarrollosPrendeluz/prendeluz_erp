@@ -56,7 +56,7 @@ jobs:
           script: |
             echo "Conectando al servidor remoto..."
             docker login
-            docker pull ${{ secrets.DOCKER_USERNAME }}/test_backend_erp:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
             if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
               echo "Deteniendo y reiniciando contenedor en ambiente de desarrollo..."
               docker stop ${{ env.CONTAINER_NAME }} || true
