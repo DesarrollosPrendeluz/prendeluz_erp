@@ -67,8 +67,6 @@ jobs:
             else
               echo "No se ejecuta el reinicio del contenedor en main."
             fi
-  # docker stop my-container || true
-  # docker rm my-container || true
-  # docker run -d --name my-container ${{ secrets.DOCKER_USERNAME }}/my-image:latest
+
 
 
