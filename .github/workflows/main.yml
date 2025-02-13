@@ -59,7 +59,8 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/test_backend_erp:latest
             if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
               echo "Deteniendo y reiniciando contenedor en ambiente de desarrollo..."
-
+              docker stop ${{ env.CONTAINER_NAME }} || true
+              docker rm ${{ env.CONTAINER_NAME }} || true
               docker run -d --name ${{ env.CONTAINER_NAME }} \
                 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
@@ -70,5 +71,4 @@ jobs:
   # docker rm my-container || true
   # docker run -d --name my-container ${{ secrets.DOCKER_USERNAME }}/my-image:latest
 
-              # docker stop ${{ env.CONTAINER_NAME }} || true
-              # docker rm ${{ env.CONTAINER_NAME }} || true
+
