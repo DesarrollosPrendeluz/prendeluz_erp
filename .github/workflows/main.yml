@@ -62,6 +62,7 @@ jobs:
               docker stop ${{ env.CONTAINER_NAME }} || true
               docker rm ${{ env.CONTAINER_NAME }} || true
               docker run -d --name ${{ env.CONTAINER_NAME }} \
+              -p 8885:8880 \
                 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
             else
