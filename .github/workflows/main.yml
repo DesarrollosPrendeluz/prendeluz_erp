@@ -39,7 +39,7 @@ jobs:
         run: |
           docker build \
             --build-arg DB_PSWD=${{ secrets.DB_PASSWORD }} \
-            --build-arg DB_NAME=${{ env.DB_NAME }} \
+            --build-arg DB_NAME=${{env.DATABASE_NAME }} \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest .
 
       #4. Push Docker image to DockerHub
