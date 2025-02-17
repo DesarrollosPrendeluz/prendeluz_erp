@@ -420,11 +420,20 @@ func (s *FatherOrderImpl) DownloadExcelAmazon(fatherID uint64) string {
 		order, _ := s.orderrepo.FindByID(orderId)
 
 		lines, _ := s.orderitemrepo.FindByOrder(order.ID)
-		for _, item := range lines {
-			asin, _ := s.asinrepo.FindByItemId(uint64(item.ItemID))
-			boxlines, _ := s.orderlineboxrepo.GetByLineId(int(item.ID)) //POr linea es en realidad
+		for _, itemline := range lines {
+			asin, _ := s.asinrepo.FindByItemId(uint64(itemline.ItemID))
+
+			boxlines, _ := s.orderlineboxrepo.GetByLineId(int(itemline.ID)) //POr linea es en realidad
+			if len(boxlines) != 0 {
+				fmt.Println(boxlines)
+			}
 			for _, boxline := range boxlines {
-				boxNumber, _ := s.boxesrepo.FindByID(uint64(boxline.ID))
+				boxNumber, _ := s.boxesrepo.FindByID(uint64(boxline.BoxID))
+
+				if len(boxlines) != 0 {
+					fmt.Println(boxNumber)
+
+				}
 				palletNUmber, _ := s.palletsrepo.FindByID(boxNumber.PalletID)
 				tmp := ExcelExportation{
 					OC_code: order.Code,
@@ -432,7 +441,7 @@ func (s *FatherOrderImpl) DownloadExcelAmazon(fatherID uint64) string {
 					Box:     strconv.Itoa(boxNumber.Number),
 					Pallet:  strconv.Itoa(palletNUmber.Number),
 					Per_box: float64(boxNumber.Quantity),
-					Total:   int(item.RecivedAmount),
+					Total:   int(itemline.Amount),
 				}
 				results = append(results, tmp)
 			}
