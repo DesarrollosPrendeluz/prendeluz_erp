@@ -66,6 +66,7 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 	f.SetCellValue(sheetName, "E1", "Código Proveedor")
 	f.SetCellValue(sheetName, "F1", "Precio Proveedor")
 	f.SetCellValue(sheetName, "G1", "Cantidad")
+	f.SetCellValue(sheetName, "H1", "Main SKU")
 	//f.SetCellValue(sheetName, "H1", "Cantidad")
 
 	// Escribir los datos en las filas siguientes
@@ -79,7 +80,7 @@ func DownloadSupplierOrderExcel(c *gin.Context) {
 		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), datum.SupplierCode)
 		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), strconv.FormatFloat(datum.SupplierPrice, 'f', 2, 64))
 		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), datum.StockToBuy)
-		//f.SetCellValue(sheetName, "H"+strconv.Itoa(row), datum.ItemSKU)
+		f.SetCellValue(sheetName, "H"+strconv.Itoa(row), datum.ItemSKU)
 	}
 
 	// Escribir el archivo Excel en un buffer
