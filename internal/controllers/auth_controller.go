@@ -6,6 +6,7 @@ import (
 
 	"net/http"
 	"prendeluz/erp/internal/db"
+	"prendeluz/erp/internal/middlewares"
 	"prendeluz/erp/internal/repositories/userrepo"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,7 @@ func Login(c *gin.Context) {
 
 	// Verificar las credenciales del usuario
 	token, id, err := repo.CheckCredentials(loginReq.Email, loginReq.Password)
+	role, _ := middlewares.ObtainRole("Bearer " + token)
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -39,5 +41,5 @@ func Login(c *gin.Context) {
 	}
 
 	// Responder con el token si las credenciales son correctas
-	c.JSON(http.StatusOK, gin.H{"token": token, "id": id})
+	c.JSON(http.StatusOK, gin.H{"token": token, "id": id, "role": role.RoleID})
 }
