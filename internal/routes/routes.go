@@ -132,6 +132,12 @@ func RegisterRoutes(router *gin.Engine) {
 		boxes.PATCH("", controllers.PatchBox)
 
 	}
+	boxAdmin := router.Group("/box").Use(middlewares.Auth, middlewares.AdminStoreUsers)
+	{
+
+		boxAdmin.DELETE("", controllers.DeleteBox)
+
+	}
 	order_lines_boxes := router.Group("/order_line_boxes").Use(middlewares.Auth)
 	{
 		order_lines_boxes.GET("", controllers.GetOrderLineBox)

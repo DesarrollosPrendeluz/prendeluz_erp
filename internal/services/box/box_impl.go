@@ -1,21 +1,27 @@
 package services
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/boxrepo"
+	"prendeluz/erp/internal/repositories/orderlineboxrepo"
 )
 
 type BoxImpl struct {
-	boxRepo boxrepo.BoxImpl
+	boxRepo          boxrepo.BoxImpl
+	orderLineBoxRepo orderlineboxrepo.OrderLineBoxImpl
 }
 
 func NewBoxService() *BoxImpl {
 	boxRepo := *boxrepo.NewBoxRepository(db.DB)
+	orderLineBoxRepo := *orderlineboxrepo.NewOrderLineBoxRepository(db.DB)
 
 	return &BoxImpl{
-		boxRepo: boxRepo}
+		boxRepo:          boxRepo,
+		orderLineBoxRepo: orderLineBoxRepo,
+	}
 }
 
 func (s *BoxImpl) GetBox(box int, page int, pageSize int) ([]models.Box, int64, error) {
@@ -98,4 +104,30 @@ func (s *BoxImpl) UpdateBox(data dtos.BoxUpdateReq) []error {
 		}
 	}
 	return errorList
+}
+
+func (s *BoxImpl) DeleteBox(data dtos.BoxDeleteReq) []error {
+	var errorList []error
+	for _, dataItem := range data.Data {
+		flag := true
+		lines, _ := s.orderLineBoxRepo.GetByBox(int(dataItem.Id))
+		for _, line := range lines {
+			if line.Quantity > 0 {
+				flag = false
+			}
+		}
+
+		if flag {
+			for _, line := range lines {
+				s.orderLineBoxRepo.Delete(uint64(line.ID))
+
+			}
+			s.boxRepo.Delete(uint64(dataItem.Id))
+		} else {
+			newError := fmt.Errorf("la caja %d no se puede eliminar porque tiene lineas de pedido asociadas", dataItem.Id)
+			errorList = append(errorList, newError)
+		}
+	}
+	return errorList
+
 }

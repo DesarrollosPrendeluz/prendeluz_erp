@@ -7,6 +7,7 @@ import (
 
 type OrderLineBoxRepo interface {
 	repositories.Repository[models.OrderLineBox]
-	GetByLineId(boxId int) ([]models.OrderLineBox, error)
+	GetByLineId(lineId int) ([]models.OrderLineBox, error)
+	GetByBox(boxId int) ([]models.OrderLineBox, error)
 	GetOrCreateByOrderLineAndBoxId(orderLineId int, boxId int, quantity int) (models.OrderLineBox, bool, error)
 }

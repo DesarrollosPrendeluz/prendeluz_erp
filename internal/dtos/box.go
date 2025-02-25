@@ -21,3 +21,10 @@ type BoxToUpdate struct {
 type BoxUpdateReq struct {
 	Data []BoxToUpdate `json:"data"`
 }
+
+type BoxToDelete struct {
+	Id uint64 `json:"id"`
+}
+type BoxDeleteReq struct {
+	Data []BoxToDelete `json:"data"`
+}
