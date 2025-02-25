@@ -62,6 +62,26 @@ func PatchBox(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": errList}})
 		return
 	}
-	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Store locations are updated", "Errors": errorList}})
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Box updated", "Errors": errorList}})
+
+}
+
+func DeleteBox(c *gin.Context) {
+	var requestBody dtos.BoxDeleteReq
+	var errorList []error
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	errList := service.NewBoxService().DeleteBox(requestBody)
+	if len(errList) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": errList}})
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Boxes are deleted", "Errors": errorList}})
 
 }
