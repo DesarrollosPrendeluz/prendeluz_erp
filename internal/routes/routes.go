@@ -130,7 +130,12 @@ func RegisterRoutes(router *gin.Engine) {
 		boxes.GET("", controllers.GetBox)
 		boxes.POST("", controllers.PostBox)
 		boxes.PATCH("", controllers.PatchBox)
-		boxes.DELETE("", controllers.DeleteBox)
+
+	}
+	boxAdmin := router.Group("/box").Use(middlewares.Auth, middlewares.AdminStoreUsers)
+	{
+
+		boxAdmin.DELETE("", controllers.DeleteBox)
 
 	}
 	order_lines_boxes := router.Group("/order_line_boxes").Use(middlewares.Auth)
