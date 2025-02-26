@@ -23,6 +23,7 @@ import (
 	"prendeluz/erp/internal/repositories/storestockrepo"
 	"prendeluz/erp/internal/repositories/supplieritemrepo"
 	"prendeluz/erp/internal/repositories/supplierorderrepo"
+	"prendeluz/erp/internal/repositories/suppliersoldorderrelationrepo"
 	stockservices "prendeluz/erp/internal/services/stock_deficit"
 	"sort"
 	"strconv"
@@ -43,20 +44,21 @@ type ExcelExportation struct {
 }
 
 type FatherOrderImpl struct {
-	orderlinelocationviewrepo orderlinelocationviewrepo.OrderLineLocationViewImpl
-	supplierorderrepo         supplierorderrepo.SupplierOrderImpl
-	fatherorderrepo           fatherorderrepo.FatherOrderImpl
-	orderrepo                 orderrepo.OrderRepoImpl
-	itemsRepo                 itemsrepo.ItemRepoImpl
-	orderitemrepo             orderitemrepo.OrderItemRepoImpl
-	storestockrepo            storestockrepo.StoreStockRepoImpl
-	itemlocationrepo          itemlocationrepo.ItemLocationImpl
-	stockdeficitrepo          stockdeficitrepo.StockDeficitImpl
-	asinrepo                  asinrepo.AsinRepoImpl
-	itemsparentsrepo          itemsparentsrepo.ItemsParentsRepoImpl
-	palletsrepo               palletrepo.PalletImpl
-	boxesrepo                 boxrepo.BoxImpl
-	orderlineboxrepo          orderlineboxrepo.OrderLineBoxImpl
+	orderlinelocationviewrepo     orderlinelocationviewrepo.OrderLineLocationViewImpl
+	supplierorderrepo             supplierorderrepo.SupplierOrderImpl
+	fatherorderrepo               fatherorderrepo.FatherOrderImpl
+	orderrepo                     orderrepo.OrderRepoImpl
+	itemsRepo                     itemsrepo.ItemRepoImpl
+	orderitemrepo                 orderitemrepo.OrderItemRepoImpl
+	storestockrepo                storestockrepo.StoreStockRepoImpl
+	itemlocationrepo              itemlocationrepo.ItemLocationImpl
+	stockdeficitrepo              stockdeficitrepo.StockDeficitImpl
+	asinrepo                      asinrepo.AsinRepoImpl
+	itemsparentsrepo              itemsparentsrepo.ItemsParentsRepoImpl
+	palletsrepo                   palletrepo.PalletImpl
+	boxesrepo                     boxrepo.BoxImpl
+	orderlineboxrepo              orderlineboxrepo.OrderLineBoxImpl
+	suppliersoldorderrelationrepo suppliersoldorderrelationrepo.SupplierSoldOrderRelationImpl
 }
 
 func NewFatherOrderService() *FatherOrderImpl {
@@ -74,22 +76,24 @@ func NewFatherOrderService() *FatherOrderImpl {
 	boxesrepo := *boxrepo.NewBoxRepository(db.DB)
 	orderlineboxrepo := *orderlineboxrepo.NewOrderLineBoxRepository(db.DB)
 	orderlinelocationviewrepo := *orderlinelocationviewrepo.NewOrderLineLocationViewRepository(db.DB)
+	suppliersoldorderrelationrepo := *suppliersoldorderrelationrepo.NewSupplierSoldOrderRelationRepository(db.DB)
 
 	return &FatherOrderImpl{
-		fatherorderrepo:           fatherorderrepo,
-		itemsRepo:                 itemsRepo,
-		orderitemrepo:             orderitemrepo,
-		orderrepo:                 orderrepo,
-		storestockrepo:            storestockrepo,
-		itemlocationrepo:          itemlocationrepo,
-		stockdeficitrepo:          stockdeficitrepo,
-		asinrepo:                  asinrepo,
-		supplierorderrepo:         supplierorderrepo,
-		orderlinelocationviewrepo: orderlinelocationviewrepo,
-		itemsparentsrepo:          itemsparentsrepo,
-		palletsrepo:               palletsrepo,
-		boxesrepo:                 boxesrepo,
-		orderlineboxrepo:          orderlineboxrepo,
+		fatherorderrepo:               fatherorderrepo,
+		itemsRepo:                     itemsRepo,
+		orderitemrepo:                 orderitemrepo,
+		orderrepo:                     orderrepo,
+		storestockrepo:                storestockrepo,
+		itemlocationrepo:              itemlocationrepo,
+		stockdeficitrepo:              stockdeficitrepo,
+		asinrepo:                      asinrepo,
+		supplierorderrepo:             supplierorderrepo,
+		orderlinelocationviewrepo:     orderlinelocationviewrepo,
+		itemsparentsrepo:              itemsparentsrepo,
+		palletsrepo:                   palletsrepo,
+		boxesrepo:                     boxesrepo,
+		orderlineboxrepo:              orderlineboxrepo,
+		suppliersoldorderrelationrepo: suppliersoldorderrelationrepo,
 	}
 
 }
@@ -551,6 +555,14 @@ func (s *FatherOrderImpl) CreateOrder(requestBody dtos.OrderWithLinesRequest) bo
 					FatherOrderID: fatherObject.ID,
 				}
 				s.supplierorderrepo.Create(&supplierOrderObject)
+			}
+			if fatherObject.OrderTypeID == uint64(1) {
+				fatherRelItem, _ := s.fatherorderrepo.FindLatestByType(2)
+				s.suppliersoldorderrelationrepo.Create(&models.SupplierSoldOrderRelation{
+					SupplierID:  uint(fatherObject.ID),
+					SoldOrderID: uint(fatherRelItem.ID),
+				})
+
 			}
 
 		}
