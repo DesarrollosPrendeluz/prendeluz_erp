@@ -444,7 +444,7 @@ func (s *FatherOrderImpl) DownloadExcelAmazon(fatherID uint64) string {
 					Asin:    asin.Code,
 					Box:     strconv.Itoa(boxNumber.Number),
 					Pallet:  strconv.Itoa(palletNUmber.Number),
-					Per_box: float64(boxNumber.Quantity),
+					Per_box: float64(boxline.Quantity),
 					Total:   int(itemline.Amount),
 				}
 				results = append(results, tmp)
