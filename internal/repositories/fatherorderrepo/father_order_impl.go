@@ -24,6 +24,13 @@ func (repo *FatherOrderImpl) FindByCode(code string) (models.FatherOrder, error)
 	return fatherOrder, results.Error
 }
 
+func (repo *FatherOrderImpl) FindLatestByType(orderType int) (models.FatherOrder, error) {
+	var fatherOrder models.FatherOrder
+	results := repo.DB.Where("order_type_id = ?", orderType).Order("id DESC").First(&fatherOrder)
+
+	return fatherOrder, results.Error
+}
+
 func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fatherOrderCode string, typeId int, statusId int) ([]dtos.FatherOrderWithRecount, int64, error) {
 	var data []dtos.FatherOrderWithRecount
 	var results *gorm.DB

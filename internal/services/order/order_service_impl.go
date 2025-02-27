@@ -17,11 +17,14 @@ import (
 	"prendeluz/erp/internal/repositories/outorderrelationrepo"
 	"prendeluz/erp/internal/repositories/stockdeficitrepo"
 	stockrepo "prendeluz/erp/internal/repositories/storestockrepo"
+	"prendeluz/erp/internal/repositories/suppliersoldorderrelationrepo"
 	"prendeluz/erp/internal/repositories/tokenrepo"
 	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type ParentItemResult struct {
@@ -258,6 +261,9 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 						repo := tokenrepo.NewTokenRepository(db.DB)
 						user, _ := repo.ReturnDataByToken(token)
 						s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(ol, orderLine, user.UserId, line.Type, code)
+						if fatherOrder.OrderTypeID == 1 {
+							updateRelatedOrderProcess(fatherOrder.ID, items.EAN, orderLine.Amount, ol.Amount, user.UserId, line.Type, code)
+						}
 						s.orderItemsRepo.Update(&orderLine)
 					}
 					//proveedor
@@ -443,4 +449,94 @@ func returnParentItemById(id uint64) (parent ParentItemResult) {
 
 	return result
 
+}
+
+func updateRelatedOrderProcess(fatherOrderId uint64, productEan string, newProductQuantity int64, oldProductQauntity int64, userId uint64, updateType uint64, code string) bool {
+
+	diffProdQuantity := oldProductQauntity - newProductQuantity
+	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
+	historicRepo := erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
+	relationFather, errRelation := suppliersoldorderrelationrepo.NewSupplierSoldOrderRelationRepository(db.DB).FindBySupplierOrder(fatherOrderId)
+	//fmt.Println("entra aqui para actualizar")
+	if errRelation == gorm.ErrRecordNotFound {
+		return false // No se encontró el registro
+	}
+	// fmt.Println("entra aqui para actualizar 2")
+	// fmt.Println("actual quantity: ", oldProductQauntity)
+	// fmt.Println("new quantity: ", newProductQuantity)
+	// fmt.Println("Diff quantity: ", diffProdQuantity)
+	returnedData := returnOrderLinesQuantytiesDataToUpdate(uint64(relationFather.SoldOrderID), productEan)
+	// fmt.Println("entra aqui para actualizar 3")
+	// fmt.Printf("Datos retornados: %+v\n", returnedData)
+	for _, lineData := range returnedData {
+		orderItem, _ := orderItemRepo.FindByID(lineData.LineId)
+		oldOrderItem := *orderItem
+		if lineData.PrepQuantity > 0 {
+			if diffProdQuantity <= 0 {
+				break
+			}
+
+			if lineData.MaxRestQuantity >= int(diffProdQuantity) {
+				orderItem.Amount = orderItem.Amount - diffProdQuantity
+				diffProdQuantity = 0
+			} else {
+				orderItem.Amount = orderItem.Amount - int64(lineData.MaxRestQuantity)
+				diffProdQuantity = diffProdQuantity - int64(lineData.MaxRestQuantity)
+			}
+			historicRepo.GenerateOrderLineHistory(oldOrderItem, *orderItem, userId, updateType, code)
+			orderItemRepo.Update(orderItem)
+
+		}
+
+	}
+
+	return true
+}
+
+type CompareOrderLineQuantyties struct {
+	LineId          uint64
+	PrepQuantity    int
+	PickingQuantity int
+	MaxRestQuantity int
+}
+
+func returnOrderLinesQuantytiesDataToUpdate(soldFatherId uint64, ean string) []CompareOrderLineQuantyties {
+
+	itemRepo := itemsrepo.NewItemRepository(db.DB)
+	orderRepo := orderrepo.NewOrderRepository(db.DB)
+	orderItemRepo := orderitemrepo.NewOrderItemRepository(db.DB)
+
+	items, _ := itemRepo.FindByEan(ean)
+	orders, _ := orderRepo.FindByFatherId(uint64(soldFatherId))
+	itemIds := make([]uint64, 0, len(items))
+	orderIds := make([]uint64, 0, len(orders))
+
+	for _, item := range items {
+		itemIds = append(itemIds, item.ID)
+	}
+
+	for _, order := range orders {
+		orderIds = append(orderIds, order.ID)
+	}
+
+	pickingMap := make(map[uint64]int) // Suponiendo que ItemID es de tipo uint
+	pickingOrders, _ := orderItemRepo.FindByOrderAndItem(orderIds, 1, itemIds, -1, -1)
+
+	for _, pickingOrder := range pickingOrders {
+		pickingMap[pickingOrder.ItemID] = int(pickingOrder.Amount)
+	}
+
+	preparingOrders, _ := orderItemRepo.FindByOrderAndItem(orderIds, 2, itemIds, -1, -1)
+	compareArr := make([]CompareOrderLineQuantyties, 0, len(preparingOrders))
+
+	for _, prepOrder := range preparingOrders {
+		compareArr = append(compareArr, CompareOrderLineQuantyties{
+			LineId:          prepOrder.ID,
+			PrepQuantity:    int(prepOrder.Amount),
+			PickingQuantity: pickingMap[prepOrder.ItemID],
+			MaxRestQuantity: int(prepOrder.Amount) - pickingMap[prepOrder.ItemID], // Asigna directamente desde el mapa
+		})
+	}
+
+	return compareArr
 }
