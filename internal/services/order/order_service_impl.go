@@ -255,19 +255,18 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 					items, _ := s.itemsRepo.FindByMainSku(sku)
 					orderLine, orderLineError := s.orderItemsRepo.FindByItemAndOrders(orderIdArr, items.ID, 2)
 					order, _ := s.orderRepo.FindByOrderCode(line.OrderCode)
-					fmt.Println("AGAUCATE", order)
+					fmt.Println("AGAUCATE", line.Quantity)
 					if orderLineError != nil {
-						s.orderItemsRepo.Create(&models.OrderItem{
-							OrderID:       order.ID,
-							ItemID:        items.ID,
-							Amount:        line.Quantity,
-							RecivedAmount: 0,
-							StoreID:       orderLine.StoreID,
-						})
-						fmt.Println(items.ID, orderLine.StoreID)
+						var newLine models.OrderItem
+						newLine.OrderID = order.ID
+						newLine.ItemID = items.ID
+						newLine.Amount = line.Quantity
+						newLine.RecivedAmount = 0
+						newLine.StoreID = 1
+						s.orderItemsRepo.Create(&newLine)
 
 						stockDeficit.NewStockDeficitService().
-							CalcStockDeficitByItem(items.ID, 2)
+							CalcStockDeficitByItem(items.ID, 1)
 					}
 					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
 						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
