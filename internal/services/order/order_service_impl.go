@@ -254,6 +254,21 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 					sku = strings.ReplaceAll(strings.ReplaceAll(sku, " ", ""), "\n", "") // Quitar espacios y saltos de línea
 					items, _ := s.itemsRepo.FindByMainSku(sku)
 					orderLine, orderLineError := s.orderItemsRepo.FindByItemAndOrders(orderIdArr, items.ID, 2)
+					order, _ := s.orderRepo.FindByOrderCode(line.OrderCode)
+					fmt.Println("AGAUCATE", order)
+					if orderLineError != nil {
+						s.orderItemsRepo.Create(&models.OrderItem{
+							OrderID:       order.ID,
+							ItemID:        items.ID,
+							Amount:        line.Quantity,
+							RecivedAmount: 0,
+							StoreID:       orderLine.StoreID,
+						})
+						fmt.Println(items.ID, orderLine.StoreID)
+
+						stockDeficit.NewStockDeficitService().
+							CalcStockDeficitByItem(items.ID, 2)
+					}
 					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
 						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
 						ol := orderLine
