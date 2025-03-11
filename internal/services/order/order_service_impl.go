@@ -264,9 +264,8 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 						newLine.RecivedAmount = 0
 						newLine.StoreID = 1
 						s.orderItemsRepo.Create(&newLine)
-
-						stockDeficit.NewStockDeficitService().
-							CalcStockDeficitByItem(items.ID, 1)
+						lineId, _ := s.orderItemsRepo.FindByItemAndOrder(items.ID, order.ID)
+						updatesDeficitsByLine(lineId.ID, fatherOrder.OrderTypeID, newLine.ID, newLine.RecivedAmount, newLine.Amount)
 					}
 					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
 						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
