@@ -295,6 +295,7 @@ func updatesDeficitsByLine(itemId uint64, fatherOrderType uint64, orderId uint64
 	deficit, _ := deficitRepo.FindOrCreateByFatherAndStore(parent.MainSKU, 2)
 	//proveedor
 	if fatherOrderType == 1 {
+		deficit.Amount = updateLineQuantity
 		deficit.PendingAmount = (deficit.PendingAmount - orderLineQuantity) + updateLineQuantity
 
 	} else if fatherOrderType == 2 {
