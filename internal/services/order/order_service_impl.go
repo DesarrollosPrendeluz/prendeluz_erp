@@ -255,7 +255,6 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 					items, _ := s.itemsRepo.FindByMainSku(sku)
 					orderLine, orderLineError := s.orderItemsRepo.FindByItemAndOrders(orderIdArr, items.ID, 2)
 					order, _ := s.orderRepo.FindByOrderCode(line.OrderCode)
-					fmt.Println("AGAUCATE", line.Quantity)
 					if orderLineError != nil {
 						var newLine models.OrderItem
 						newLine.OrderID = order.ID
@@ -264,8 +263,10 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 						newLine.RecivedAmount = 0
 						newLine.StoreID = 1
 						s.orderItemsRepo.Create(&newLine)
-						lineId, _ := s.orderItemsRepo.FindByItemAndOrder(items.ID, order.ID)
-						updatesDeficitsByLine(lineId.ID, fatherOrder.OrderTypeID, newLine.ID, newLine.RecivedAmount, newLine.Amount)
+						fmt.Println("SKU", sku)
+						fmt.Println("PATATA", items.ID)
+						// lineId, _ := s.orderItemsRepo.FindByItemAndOrder(items.ID, order.ID)
+						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, order.ID, newLine.Amount, newLine.Amount)
 					}
 					if addError(orderLineError, &addErrData, sku, "No se ha encontrado la linea del articulo") {
 						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
@@ -320,8 +321,9 @@ func updatesDeficitsByLine(itemId uint64, fatherOrderType uint64, orderId uint64
 
 		actualDiff := out - in
 		futureDiff := int(updateLineQuantity) - in
-
+		fmt.Println(updateLineQuantity, "another", in, "otra mas", out)
 		deficit.Amount = (deficit.Amount - int64(actualDiff)) + int64(futureDiff)
+		fmt.Println(deficit.Amount)
 
 	}
 	deficitRepo.Update(&deficit)
