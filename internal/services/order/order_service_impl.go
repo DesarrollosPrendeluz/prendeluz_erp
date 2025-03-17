@@ -218,8 +218,7 @@ func (s *OrderServiceImpl) OrderComplete(orderCode string) error {
 	return nil
 }
 
-// Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
-func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string, token string) (string, string) {
+func (s *OrderServiceImpl) UploadSupplierOrdersByExcel(file io.Reader, requestFatherOrderCode string, token string) (string, string) {
 	var orderIdArr []uint64
 	var addErrData []utils.UpdateOrderError
 	addError := func(errorData error, errArr *[]utils.UpdateOrderError, sku string, err string) bool {
@@ -289,6 +288,89 @@ func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrde
 
 }
 
+// Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
+func (s *OrderServiceImpl) UploadOrdersByExcel(file io.Reader, requestFatherOrderCode string, token string) (string, string) {
+	var orderIdArr []uint64
+	var addErrData []utils.UpdateOrderError
+	addError := func(errorData error, errArr *[]utils.UpdateOrderError, sku string, err string) bool {
+		if errorData != nil {
+			errReturn := utils.UpdateOrderError{
+				FatherSku: sku,
+				Error:     err,
+			}
+			*errArr = append(*errArr, errReturn)
+			return false
+
+		}
+		return true
+
+	}
+	//asiganmos el padre de la orden si lo hay y el order id
+	if requestFatherOrderCode != "" {
+		fatherOrder, fatherError := s.fatherOrderRepo.FindByCode(requestFatherOrderCode)
+		if addError(fatherError, &addErrData, "", "No se ha encontrado la order padre") {
+			orders, orderError := s.orderRepo.FindByFatherId(fatherOrder.ID)
+			excelOrderList, _ := utils.ExcelToJSONWithOrderCode(file)
+			if addError(orderError, &addErrData, "", "No se han  encontrado las ordenes hijas") {
+
+				for _, order := range orders {
+					orderIdArr = append(orderIdArr, order.ID)
+				}
+				currentDate := time.Now().Format("20060102")
+				code := utils.GenerateRandomString(10) + "-" + currentDate
+
+				for _, line := range excelOrderList {
+					sku := line.Sku
+					sku = strings.ReplaceAll(strings.ReplaceAll(sku, " ", ""), "\n", "") // Quitar espacios y saltos de línea
+					items, _ := s.itemsRepo.FindByMainSku(sku)
+					orderLine, orderLineError := s.orderItemsRepo.FindByItemAndOrders(orderIdArr, items.ID, 2)
+					order, _ := s.orderRepo.FindByOrderCode(line.OrderCode)
+					var errorCreate error
+					if orderLineError != nil {
+						var newLine models.OrderItem
+						newLine.OrderID = order.ID
+						newLine.ItemID = items.ID
+						newLine.Amount = line.Quantity
+						newLine.RecivedAmount = 0
+						newLine.StoreID = 1
+						errorCreate = s.orderItemsRepo.Create(&newLine)
+						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, order.ID, newLine.Amount, newLine.Amount)
+					}
+					if addError(errorCreate, &addErrData, sku, "No se ha encontrado la linea del articulo") {
+						updatesDeficitsByLine(items.ID, fatherOrder.OrderTypeID, orderLine.OrderID, line.Quantity, orderLine.Amount)
+						ol := orderLine
+						orderLine.Amount = line.Quantity
+						repo := tokenrepo.NewTokenRepository(db.DB)
+						user, _ := repo.ReturnDataByToken(token)
+						s.erpupdateorderlinehistoryrepo.GenerateOrderLineHistory(ol, orderLine, user.UserId, line.Type, code)
+						if fatherOrder.OrderTypeID == 1 {
+							updateRelatedOrderProcess(fatherOrder.ID, items.EAN, orderLine.Amount, ol.Amount, user.UserId, line.Type, code)
+						}
+						s.orderItemsRepo.Update(&orderLine)
+					}
+					//proveedor
+
+				}
+				//update order status
+				for _, order := range orders {
+					order.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+					s.orderRepo.Update(&order)
+				}
+
+				//update father order status
+				fatherOrder.OrderStatusID = uint64(orderrepo.Order_Status["en_espera"])
+				s.fatherOrderRepo.Update(&fatherOrder)
+			}
+		}
+
+	} else {
+		addError(fmt.Errorf("no se ha enviado orden padre"), &addErrData, "", "No se ha pasado la orden padre por parámetro")
+
+	}
+	return utils.ReturnUpdateOrdersErrorsExcel(addErrData), "update_errors.xlsx"
+
+}
+
 func updatesDeficitsByLine(itemId uint64, fatherOrderType uint64, orderId uint64, updateLineQuantity int64, orderLineQuantity int64) {
 	parent := returnParentItemById(itemId)
 	deficitRepo := stockdeficitrepo.NewStockDeficitRepository(db.DB)
@@ -308,8 +390,9 @@ func updatesDeficitsByLine(itemId uint64, fatherOrderType uint64, orderId uint64
 
 		actualDiff := out - in
 		futureDiff := int(updateLineQuantity) - in
-
+		fmt.Println(updateLineQuantity, "another", in, "otra mas", out)
 		deficit.Amount = (deficit.Amount - int64(actualDiff)) + int64(futureDiff)
+		fmt.Println(deficit.Amount)
 
 	}
 	deficitRepo.Update(&deficit)

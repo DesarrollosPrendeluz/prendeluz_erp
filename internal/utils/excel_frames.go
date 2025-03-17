@@ -21,10 +21,17 @@ var UploadStock = map[string]string{
 	"C1": "Quantity",
 }
 var ModifyOrderSheetName = "Modify Order"
+var ModifySuppOrder = map[string]string{
+	"A1": "Sku",
+	"B1": "Quantity",
+	"C1": "Update_Reason_Id",
+}
+
 var ModifyOrder = map[string]string{
 	"A1": "Sku",
 	"B1": "Quantity",
 	"C1": "Update_Reason_Id",
+	"D1": "Order Code",
 }
 
 func FrameGenerator(sheet string, fields map[string]string, name string) (string, string) {
