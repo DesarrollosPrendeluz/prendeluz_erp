@@ -82,7 +82,7 @@ func ExceltoJSON(file io.Reader) ([]ExcelOrder, error) {
 
 }
 
-func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
+func ExcelToJSONWithOrderCode(file io.Reader) ([]ExcelModifyOrder, error) {
 	var result []ExcelModifyOrder
 
 	f, err := excelize.OpenReader(file)
@@ -107,6 +107,39 @@ func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
 			Quantity:  amount,
 			Type:      updateType,
 			OrderCode: orderCode,
+		}
+
+		result = append(result, item)
+
+	}
+
+	return result, nil
+
+}
+
+func ExcelToJSONOrder(file io.Reader) ([]ExcelModifyOrder, error) {
+	var result []ExcelModifyOrder
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+	rows, err := f.GetRows(ModifyOrderSheetName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows[1:] {
+
+		amount, _ := strconv.ParseInt(row[1], 10, 64)
+		updateType, _ := strconv.ParseUint(row[2], 10, 64)
+		item := ExcelModifyOrder{
+			Sku:      strings.Trim(row[0], " "),
+			Quantity: amount,
+			Type:     updateType,
 		}
 
 		result = append(result, item)
