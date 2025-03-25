@@ -146,7 +146,6 @@ func (s *ItemStockLocationServiceImpl) StockChanges(requestBody dtos.ItemStockLo
 		stock.Amount = ((stock.Amount - int64(model.Stock)) + int64(requestObject.Stock))
 		model.Stock = requestObject.Stock
 
-		fmt.Println("QUE PASO", stock.Item.ID)
 		if stock.ReservedAmount > stock.Amount {
 			stock.ReservedAmount = stock.Amount
 			//Update Picking
