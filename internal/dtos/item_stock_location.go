@@ -19,7 +19,7 @@ type ItemStockLocationToUpdate struct {
 }
 type ItemStockLocationUpdateReq struct {
 	Data []ItemStockLocationToUpdate `json:"data"`
-}
+} //Esto no tiene sentido
 
 type ItemStockLocationStockChange struct {
 	Id    uint64 `json:"id"`

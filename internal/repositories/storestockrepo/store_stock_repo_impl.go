@@ -28,7 +28,7 @@ func (repo *StoreStockRepoImpl) FindByItem(sku_parent string) (models.StoreStock
 func (repo *StoreStockRepoImpl) FindByItemAndStore(sku_parent string, store_id string) (models.StoreStock, error) {
 	var storeStocks models.StoreStock
 
-	results := repo.DB.Where("parent_main_sku LIKE ? AND store_id = ? ", "%"+sku_parent+"%", store_id).First(&storeStocks)
+	results := repo.DB.Preload("Item").Where("parent_main_sku LIKE ? AND store_id = ? ", "%"+sku_parent+"%", store_id).First(&storeStocks)
 	storeId, _ := strconv.ParseUint(store_id, 10, 64)
 	if results.Error == gorm.ErrRecordNotFound {
 		storeStock := models.StoreStock{
