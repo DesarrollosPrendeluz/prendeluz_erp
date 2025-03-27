@@ -163,7 +163,15 @@ func (repo *OrderRepoImpl) GetSupplierOrders(order_type *int) ([]dtos.SupplierOr
 
 	return orders, nil
 }
+func (repo *OrderRepoImpl) FilterOpenOrders(ordersIds []uint64) uint64 {
+	var results uint64
+	const FINISHED = 3
+	const DELETED = 5
+	repo.DB.Where("id in ? AND order_status_id not in ? ", ordersIds, []int{FINISHED, DELETED}).Order("created_at DESC").First(results)
 
+	return results
+
+}
 func (repo *OrderRepoImpl) GetSupplierOrdersByFatherSku(fatherOrderId int) ([]dtos.SupplierOrders, error) {
 	var orders []dtos.SupplierOrders
 

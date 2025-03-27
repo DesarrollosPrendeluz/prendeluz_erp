@@ -6,6 +6,9 @@ import (
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories/itemlocationrepo"
+	"prendeluz/erp/internal/repositories/itemsrepo"
+	"prendeluz/erp/internal/repositories/orderitemrepo"
+	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/storelocationrepo"
 	"prendeluz/erp/internal/repositories/storestockrepo"
 	"strconv"
@@ -15,6 +18,9 @@ type ItemStockLocationServiceImpl struct {
 	itemlocationrepo  itemlocationrepo.ItemLocationImpl
 	storelocationrepo storelocationrepo.StoreLocationImpl
 	storestockrepo    storestockrepo.StoreStockRepoImpl
+	orderitemrepo     orderitemrepo.OrderItemRepoImpl
+	orderrepo         orderrepo.OrderRepoImpl
+	itemrepo          itemsrepo.ItemRepoImpl
 }
 
 func NewItemStockLocationService() *ItemStockLocationServiceImpl {
@@ -22,11 +28,17 @@ func NewItemStockLocationService() *ItemStockLocationServiceImpl {
 	itemlocationrepo := *itemlocationrepo.NewInItemLocationRepository(db.DB)
 	storelocationrepo := *storelocationrepo.NewStoreLocationRepository(db.DB)
 	storestockrepo := *storestockrepo.NewStoreStockRepository(db.DB)
+	orderitemrepo := *orderitemrepo.NewOrderItemRepository(db.DB)
+	orderrepo := *orderrepo.NewOrderRepository(db.DB)
+	itemrepo := *itemsrepo.NewItemRepository(db.DB)
 
 	return &ItemStockLocationServiceImpl{
 		itemlocationrepo:  itemlocationrepo,
 		storelocationrepo: storelocationrepo,
 		storestockrepo:    storestockrepo,
+		orderitemrepo:     orderitemrepo,
+		orderrepo:         orderrepo,
+		itemrepo:          itemrepo,
 	}
 }
 
@@ -132,6 +144,19 @@ func (s *ItemStockLocationServiceImpl) StockChanges(requestBody dtos.ItemStockLo
 
 		stock.Amount = ((stock.Amount - int64(model.Stock)) + int64(requestObject.Stock))
 		model.Stock = requestObject.Stock
+
+		if stock.ReservedAmount > stock.Amount {
+			stock.ReservedAmount = stock.Amount
+			//Update Picking
+			items, _ := s.itemrepo.FindByEan(stock.Item.EAN)
+			var itemsIds []uint64
+			for _, item := range items {
+				itemsIds = append(itemsIds, item.ID)
+			}
+			ordersPicking := s.orderitemrepo.FindOrderByIteminPicking(itemsIds)
+			s.orderitemrepo.UpdatePickingByItemIdAndOrder(ordersPicking.ItemID, ordersPicking.OrderID, int(stock.Amount))
+
+		}
 		if requestObject.Stock >= 0 {
 			error := s.itemlocationrepo.Update(model)
 			error2 := s.storestockrepo.Update(&stock)
