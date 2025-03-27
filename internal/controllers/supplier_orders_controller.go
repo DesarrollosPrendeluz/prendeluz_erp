@@ -119,9 +119,33 @@ func UpdateOrderByExcel(c *gin.Context) {
 
 }
 
+func UpdateSupplierOrderByExcel(c *gin.Context) {
+	file, _, err := c.Request.FormFile("file")
+	fatherOrder := c.DefaultPostForm("father_order", "")
+	token := c.GetHeader("Authorization")
+
+	serviceOrder := services.NewOrderService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		log.Fatal(err)
+		return
+
+	}
+
+	fileContent, filename := serviceOrder.UploadSupplierOrdersByExcel(file, fatherOrder, token)
+	c.JSON(http.StatusCreated, gin.H{"Results": gin.H{"File": fileContent, "FileName": filename}})
+
+}
 func DownloadUpdateOrderByExcelFrame(c *gin.Context) {
 	types := erpUpdateTypesService.NewErpUpdateTypeService().GetAll()
 	data, name := utils.ReturnOrderLineUploadSheet(utils.ModifyOrderSheetName, utils.ModifyOrder, "modifyOrderFrame", types)
+
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
+
+}
+func DownloadUpdateSupplierOrderByExcelFrame(c *gin.Context) {
+	types := erpUpdateTypesService.NewErpUpdateTypeService().GetAll()
+	data, name := utils.ReturnOrderLineUploadSheet(utils.ModifyOrderSheetName, utils.ModifySuppOrder, "modifySuppOrderFrame", types)
 
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 

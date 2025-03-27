@@ -37,7 +37,9 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderRoutes.PATCH("/closeOrders", controllers.CloseOrderLines)
 		allUsersOrderRoutes.PATCH("/openOrders", controllers.OpenOrderLines)
 		allUsersOrderRoutes.POST("/editOrders", controllers.UpdateOrderByExcel)
+		allUsersOrderRoutes.POST("/editSupplierOrders", controllers.UpdateSupplierOrderByExcel)
 		allUsersOrderRoutes.GET("/editOrders/frame", controllers.DownloadUpdateOrderByExcelFrame)
+		allUsersOrderRoutes.GET("/editSupplierOrders/frame", controllers.DownloadUpdateSupplierOrderByExcelFrame)
 
 		allUsersOrderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
 
