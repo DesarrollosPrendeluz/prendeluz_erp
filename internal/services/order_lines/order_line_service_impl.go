@@ -3,15 +3,18 @@ package services
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 	"prendeluz/erp/internal/repositories/erpupdateorderlinehistoryrepo"
+	"prendeluz/erp/internal/repositories/itemsparentsrepo"
 	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/tokenrepo"
+	stock "prendeluz/erp/internal/services/stock"
 	stockDeficit "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
 	"time"
@@ -174,6 +177,7 @@ func (s *OrderLineServiceImpl) UpdateOrderLineHandler(
 
 }
 
+// Shoulndt use service inside others, try with repos if not in the controller
 func updateOrderLine(
 	c *gin.Context,
 	dataItem dtos.LineToUpdate,
@@ -181,9 +185,11 @@ func updateOrderLine(
 	callback func(*gin.Context, dtos.LineToUpdate, *models.OrderItem, error, *[]error),
 	user models.AccesTokens,
 	code string) {
+	//If we need repos for this fun, shouldBe a service function, catn be private f we donta wan to be exported
 	repoHistory := erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 	orderLines := orderitemrepo.NewOrderItemRepository(db.DB)
-	stockService := stockDeficit.NewStockDeficitService()
+	stockDeficitService := stockDeficit.NewStockDeficitService()
+	stockService := stock.NewStockService()
 	model, err := orderLines.FindByID(dataItem.Id)
 	firstModel := *model
 
@@ -197,7 +203,11 @@ func updateOrderLine(
 	repoHistory.GenerateOrderLineHistory(firstModel, *model, user.UserId, updateId, code)
 	error := orderLines.Update(model)
 	if model.StoreID == 1 {
-		stockService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+		stockDeficitService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+		item, _ := itemsrepo.NewItemRepository(db.DB).FindByID(model.ItemID)
+		parent, _ := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(item.ID)
+		parentSku := parent.Parent.MainSKU
+		stockService.FreeReservedStock(int(model.RecivedAmount)-int(firstModel.RecivedAmount), parentSku)
 
 	}
 	if error != nil {

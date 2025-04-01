@@ -154,6 +154,7 @@ func (s *ItemStockLocationServiceImpl) StockChanges(requestBody dtos.ItemStockLo
 				itemsIds = append(itemsIds, item.ID)
 			}
 			ordersPicking := s.orderitemrepo.FindOrderByIteminPicking(itemsIds)
+			//Only will update the picking if its not complete
 			if ordersPicking.RecivedAmount > 0 && ordersPicking.RecivedAmount == ordersPicking.Amount {
 				s.orderitemrepo.UpdatePickingByItemIdAndOrder(ordersPicking.ItemID, ordersPicking.OrderID, int(stock.Amount))
 			}
