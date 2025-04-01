@@ -156,9 +156,6 @@ func (s *StoreServiceImpl) UploadStocks(file io.Reader, filename string) (string
 			}
 		}
 	}
-	// if err := s.storeRepo.DB.Exec("CALL ProcesarProductosAgrupados();").Error; err != nil {
-	// 	log.Printf("Error ejecutando ProcesarProductosAgrupados: %v", err)
-	// }
 	return utils.ReturnUpdateErrorsExcel(stockErr), "ErrorsOnUpdate.xlsx", nil
 }
 
