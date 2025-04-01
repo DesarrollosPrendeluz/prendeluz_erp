@@ -175,7 +175,7 @@ func (repo *OrderItemRepoImpl) FindOrderByIteminPicking(itemId []uint64) models.
 }
 
 func (repo *OrderItemRepoImpl) UpdatePickingByItemIdAndOrder(itemId uint64, orderId uint64, quantity int) error {
-	results := repo.DB.Model(&models.OrderItem{}).Where("item_id = ? AND order_id = ?", itemId, orderId).Update("quantity", quantity)
+	results := repo.DB.Model(&models.OrderItem{}).Where("item_id = ? AND order_id = ? AND store_id = 1", itemId, orderId).Update("quantity", quantity)
 
 	return results.Error
 }

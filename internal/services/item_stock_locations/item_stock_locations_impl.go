@@ -145,7 +145,7 @@ func (s *ItemStockLocationServiceImpl) StockChanges(requestBody dtos.ItemStockLo
 		stock.Amount = ((stock.Amount - int64(model.Stock)) + int64(requestObject.Stock))
 		model.Stock = requestObject.Stock
 
-		if stock.ReservedAmount > stock.Amount {
+		if stock.ReservedAmount != 0 && stock.ReservedAmount > stock.Amount {
 			stock.ReservedAmount = stock.Amount
 			//Update Picking
 			items, _ := s.itemrepo.FindByEan(stock.Item.EAN)
@@ -154,8 +154,9 @@ func (s *ItemStockLocationServiceImpl) StockChanges(requestBody dtos.ItemStockLo
 				itemsIds = append(itemsIds, item.ID)
 			}
 			ordersPicking := s.orderitemrepo.FindOrderByIteminPicking(itemsIds)
-			s.orderitemrepo.UpdatePickingByItemIdAndOrder(ordersPicking.ItemID, ordersPicking.OrderID, int(stock.Amount))
-
+			if ordersPicking.RecivedAmount > 0 && ordersPicking.RecivedAmount == ordersPicking.Amount {
+				s.orderitemrepo.UpdatePickingByItemIdAndOrder(ordersPicking.ItemID, ordersPicking.OrderID, int(stock.Amount))
+			}
 		}
 		if requestObject.Stock >= 0 {
 			error := s.itemlocationrepo.Update(model)
