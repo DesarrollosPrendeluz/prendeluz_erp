@@ -22,7 +22,7 @@ type ParentItemResult struct {
 }
 type StockDeficitResult struct {
 	Deficit float64 `gorm:"column:deficit"`
-}
+} //Sholdnt be a float also it shouldnt be a struct
 
 type StockDeficitServiceImpl struct {
 	stockDeficitRepo stockdeficitrepo.StockDeficitImpl
