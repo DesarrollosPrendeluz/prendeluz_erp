@@ -265,6 +265,7 @@ func AddQuantityToOrdersLines(c *gin.Context) {
 		}
 
 	}
+
 	orderLineService.NewOrderLineServiceImpl().UpdateOrderLineHandler(c, requestBody, token, &failedIds, &errorList, updateCallback, true)
 
 	if len(errorList) != 0 {

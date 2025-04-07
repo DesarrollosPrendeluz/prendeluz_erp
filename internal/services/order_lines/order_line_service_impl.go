@@ -3,7 +3,6 @@ package services
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
@@ -177,7 +176,7 @@ func (s *OrderLineServiceImpl) UpdateOrderLineHandler(
 
 }
 
-// Shoulndt use service inside others, try with repos if not in the controller
+// Shoulndt use service inside others, try with repos
 func updateOrderLine(
 	c *gin.Context,
 	dataItem dtos.LineToUpdate,
@@ -203,11 +202,15 @@ func updateOrderLine(
 	repoHistory.GenerateOrderLineHistory(firstModel, *model, user.UserId, updateId, code)
 	error := orderLines.Update(model)
 	if model.StoreID == 1 {
+		quantityToFree := (model.RecivedAmount - firstModel.RecivedAmount)
 		stockDeficitService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+		stockDeficitService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
+		//Search parent_sku and free the reserved stock
 		item, _ := itemsrepo.NewItemRepository(db.DB).FindByID(model.ItemID)
 		parent, _ := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(item.ID)
 		parentSku := parent.Parent.MainSKU
-		stockService.FreeReservedStock(int(model.RecivedAmount)-int(firstModel.RecivedAmount), parentSku)
+
+		stockService.FreeReservedStock(quantityToFree, parentSku)
 
 	}
 	if error != nil {

@@ -3,7 +3,6 @@ package services
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
@@ -28,10 +27,10 @@ func NewStockService() *StockServiceImpl {
 		orderErrorRepo: errorOrderRepo}
 }
 
-func (s *StockServiceImpl) FreeReservedStock(quantity int, parent_sku string) error {
+func (s *StockServiceImpl) FreeReservedStock(quantity int64, parent_sku string) error {
 	itemStock, _ := s.stockRepo.FindByItemAndStore(parent_sku, "1")
 
-	itemStock.ReservedAmount = itemStock.ReservedAmount - int64(quantity)
+	itemStock.ReservedAmount = itemStock.ReservedAmount - quantity
 
 	err := s.stockRepo.Update(&itemStock)
 	return err
