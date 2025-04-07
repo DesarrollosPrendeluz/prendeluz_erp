@@ -204,7 +204,6 @@ func updateOrderLine(
 	if model.StoreID == 1 {
 		quantityToFree := (model.RecivedAmount - firstModel.RecivedAmount)
 		stockDeficitService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
-		stockDeficitService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
 		//Search parent_sku and free the reserved stock
 		item, _ := itemsrepo.NewItemRepository(db.DB).FindByID(model.ItemID)
 		parent, _ := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(item.ID)
