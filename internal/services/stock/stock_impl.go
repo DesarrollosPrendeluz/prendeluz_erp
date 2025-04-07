@@ -27,6 +27,15 @@ func NewStockService() *StockServiceImpl {
 		orderErrorRepo: errorOrderRepo}
 }
 
+func (s *StockServiceImpl) FreeReservedStock(quantity int64, parent_sku string) error {
+	itemStock, _ := s.stockRepo.FindByItemAndStore(parent_sku, "1")
+
+	itemStock.ReservedAmount = itemStock.ReservedAmount - quantity
+
+	err := s.stockRepo.Update(&itemStock)
+	return err
+}
+
 func (s *StockServiceImpl) ReturnDownloadStockExcel(store_id int) string {
 	//s.stockRepo.FindByStore(store_id);
 	stocks, _ := s.stockRepo.FindByStoreWithLocations(uint64(store_id))
