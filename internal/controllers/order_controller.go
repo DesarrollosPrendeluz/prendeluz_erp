@@ -35,7 +35,10 @@ func AddOrder(c *gin.Context) {
 		return
 
 	}
-
+	//Consolida el stock antes de inicar el pedido, en el futuro hay que evitar hacer esta llamada
+	if err := db.DB.Exec("CALL ProcesarProductosAgrupados();").Error; err != nil {
+		log.Printf("Error Ejecutando ProcesarProductosAgrupados: %v", err)
+	}
 	serviceOrder.UploadOrderExcel(file, header.Filename)
 	// if err := db.DB.Exec("CALL UpdateStockDeficitByStore();").Error; err != nil {
 	// 	log.Printf("Error ejecutando UpdateStockDeficitByStore: %v", err)
