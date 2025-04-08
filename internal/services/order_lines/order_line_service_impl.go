@@ -206,9 +206,13 @@ func updateOrderLine(
 		stockDeficitService.CalcStockDeficitByItem(model.ItemID, model.StoreID)
 		//Search parent_sku and free the reserved stock
 		item, _ := itemsrepo.NewItemRepository(db.DB).FindByID(model.ItemID)
-		parent, _ := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(item.ID)
-		parentSku := parent.Parent.MainSKU
-
+		var parentSku string
+		if item.ItemType == "son" {
+			parent, _ := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(item.ID)
+			parentSku = parent.Parent.MainSKU
+		} else {
+			parentSku = item.MainSKU
+		}
 		stockService.FreeReservedStock(quantityToFree, parentSku)
 
 	}
