@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/models"
@@ -148,19 +147,19 @@ func (s *ItemStockLocationServiceImpl) StockChanges(requestBody dtos.ItemStockLo
 
 		if stock.ReservedAmount != 0 && stock.ReservedAmount >= stock.Amount {
 			stock.ReservedAmount = stock.Amount
-			//Update Picking
-			items, _ := s.itemrepo.FindByEan(stock.Item.EAN)
-			var itemsIds []uint64
-			for _, item := range items {
-				itemsIds = append(itemsIds, item.ID)
-			}
-			ordersPicking := s.orderitemrepo.FindOrderByIteminPicking(itemsIds)
-			//Only will update the picking if its not complete
-			if ordersPicking.RecivedAmount == ordersPicking.Amount {
-				fmt.Println("No picking to update")
-			} else if ordersPicking.RecivedAmount == 0 && ordersPicking.Amount >= stock.ReservedAmount {
-				s.orderitemrepo.UpdatePickingByItemIdAndOrder(ordersPicking.ItemID, ordersPicking.OrderID, int(stock.Amount))
-			}
+			// //Update Picking (NOT GONNA BE USED)
+			// items, _ := s.itemrepo.FindByEan(stock.Item.EAN)
+			// var itemsIds []uint64
+			// for _, item := range items {
+			// 	itemsIds = append(itemsIds, item.ID)
+			// }
+			// ordersPicking := s.orderitemrepo.FindOrderByIteminPicking(itemsIds)
+			// //Only will update the picking if its not complete
+			// if ordersPicking.RecivedAmount == ordersPicking.Amount {
+			// 	fmt.Println("No picking to update")
+			// } else if ordersPicking.RecivedAmount == 0 && ordersPicking.Amount >= stock.ReservedAmount {
+			// 	s.orderitemrepo.UpdatePickingByItemIdAndOrder(ordersPicking.ItemID, ordersPicking.OrderID, int(stock.Amount))
+			// }
 		}
 		if requestObject.Stock >= 0 {
 			error := s.itemlocationrepo.Update(model)
