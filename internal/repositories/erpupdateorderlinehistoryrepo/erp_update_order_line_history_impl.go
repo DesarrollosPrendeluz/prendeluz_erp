@@ -14,7 +14,11 @@ type ErpUpdateOrderLineHistoryImpl struct {
 func NewErpUpdateOrderLineHistoryRepository(db *gorm.DB) *ErpUpdateOrderLineHistoryImpl {
 	return &ErpUpdateOrderLineHistoryImpl{repositories.NewGORMRepository(db, models.ErpUpdateOrderLineHistory{})}
 }
-
+func (repo *ErpUpdateOrderLineHistoryImpl) FindAllByOrderId(orderIds []uint64) []models.ErpUpdateOrderLineHistory {
+	var results []models.ErpUpdateOrderLineHistory
+	repo.DB.Where("order_id in ?", orderIds).Find(&results)
+	return results
+}
 func (repo *ErpUpdateOrderLineHistoryImpl) GenerateOrderLineHistory(orderLine models.OrderItem, ModOrderLine models.OrderItem, userId uint64, updateType uint64, code string) (models.ErpUpdateOrderLineHistory, error) {
 
 	model := models.ErpUpdateOrderLineHistory{
