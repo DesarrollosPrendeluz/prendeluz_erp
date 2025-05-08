@@ -1,10 +1,12 @@
 package services
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
 	"prendeluz/erp/internal/repositories/erpupdateorderlinehistoryrepo"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
+	"prendeluz/erp/internal/repositories/itemsrepo"
 	"prendeluz/erp/internal/repositories/orderitemrepo"
 	"prendeluz/erp/internal/repositories/orderrepo"
 	"prendeluz/erp/internal/repositories/userrepo"
@@ -16,6 +18,7 @@ type StadisitcsImpl struct {
 	orderrepo                     orderrepo.OrderRepoImpl
 	erpupdateorderlinehistoryrepo erpupdateorderlinehistoryrepo.ErpUpdateOrderLineHistoryImpl
 	orderitemrepo                 orderitemrepo.OrderItemRepoImpl
+	itemsrepo                     itemsrepo.ItemRepoImpl
 }
 type OriginalOrderLine struct {
 	OrderLineID uint64
@@ -28,6 +31,7 @@ func NewStadisitcService() *StadisitcsImpl {
 	erpupdateorderlinehistoryrepo := *erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
 	orderitemrepo := *orderitemrepo.NewOrderItemRepository(db.DB)
 	orderrepo := *orderrepo.NewOrderRepository(db.DB)
+	itemsrepo := *itemsrepo.NewItemRepository(db.DB)
 
 	return &StadisitcsImpl{
 		fatherorderrepo:               fatherorderrepo,
@@ -35,6 +39,7 @@ func NewStadisitcService() *StadisitcsImpl {
 		orderitemrepo:                 orderitemrepo,
 		orderrepo:                     orderrepo,
 		userrepo:                      userrepo,
+		itemsrepo:                     itemsrepo,
 	}
 }
 
@@ -98,6 +103,29 @@ func (s *StadisitcsImpl) GetRecivedStadistics(fatherCode string) dtos.RecivedHis
 
 }
 
+func (s *StadisitcsImpl) GetOrderLineStadistics(fatherCode string) []dtos.LinePickingStats {
+	var results []dtos.LinePickingStats
+
+	fatherOrder, _ := s.fatherorderrepo.FindByCode(fatherCode)
+
+	var ordersIDs []uint64
+	fmt.Println(fatherOrder)
+	for _, order := range *fatherOrder.ChildOrders {
+		ordersIDs = append(ordersIDs, order.ID)
+	}
+
+	rawData := s.erpupdateorderlinehistoryrepo.FindAllByOrderId(ordersIDs)
+
+	for _, itemData := range rawData {
+		user, _ := s.userrepo.FindByID(uint64(itemData.UserID))
+		item, _ := s.itemsrepo.FindByID(uint64(itemData.ItemID))
+		dtoItem := dtos.LinePickingStats{Worker: user.Name, Item: *item.Name, Ean: item.EAN, Quantity: itemData.Quantity, CurrentTime: itemData.UpdatedAt}
+		results = append(results, dtoItem)
+	}
+
+	return results
+
+}
 func returnRecivedWithUser(data []erpupdateorderlinehistoryrepo.Result) []dtos.UserProcessed {
 	var returnData []dtos.UserProcessed
 	for _, datum := range data {

@@ -7,4 +7,5 @@ import (
 type StadisitcsService interface {
 	GetChangeStadistics(fatherId uint64) dtos.HistoricStats
 	GetRecivedStadistics(fatherId uint64) dtos.RecivedHistory
+	GetOrderLineStadistics(fahterId uint64) []dtos.LinePickingStats
 }

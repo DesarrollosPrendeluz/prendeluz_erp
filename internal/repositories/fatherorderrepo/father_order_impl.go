@@ -19,7 +19,7 @@ func NewFatherOrderRepository(db *gorm.DB) *FatherOrderImpl {
 
 func (repo *FatherOrderImpl) FindByCode(code string) (models.FatherOrder, error) {
 	var fatherOrder models.FatherOrder
-	results := repo.DB.Where("code = ?", code).First(&fatherOrder)
+	results := repo.DB.Preload("ChildOrders").Where("code = ?", code).First(&fatherOrder)
 
 	return fatherOrder, results.Error
 }
