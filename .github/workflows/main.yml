@@ -62,9 +62,14 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
             if [[ "${{ github.ref }}" == "refs/heads/testGitACtions" ]]; then
 
-              echo "Borrando el contenedor de backup antiguo"
-              docker stop ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
-              docker rm ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
+
+              if docker ps -a --format '{{.Names}}' | grep -q "^${{ env.CONTAINER_NAME_TEST_BACKUP }}$"; then
+                echo "Borrando el contenedor de backup antiguo"
+                docker stop ${{ env.CONTAINER_NAME_TEST_BACKUP }}
+                docker rm ${{ env.CONTAINER_NAME_TEST_BACKUP }}
+              else
+                echo "No existe el contenedor '${{ env.CONTAINER_NAME_TEST_BACKUP }}', no se borra."
+              fi
 
               echo "Cambiando el nombre del conetendor a backup..."
               docker stop ${{ env.CONTAINER_NAME_TEST }} || true
