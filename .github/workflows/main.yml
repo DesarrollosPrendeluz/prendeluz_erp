@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - main
-      - develop
-      
+      - develop      
 
 jobs:
   build-and-push:
@@ -21,10 +20,14 @@ jobs:
             echo "IMAGE_NAME=backend_erp" >> $GITHUB_ENV
             echo "DATABASE_NAME=prend_items_luz" >> $GITHUB_ENV
             echo "CONTAINER_NAME=back_erp" >> $GITHUB_ENV
+            echo "CONTAINER_NAME_BACKUP=back_erp_backup" >> $GITHUB_ENV
+
           else
             echo "IMAGE_NAME=test_backend_erp" >> $GITHUB_ENV
             echo "DATABASE_NAME=test_prend_items_luz" >> $GITHUB_ENV
             echo "CONTAINER_NAME=test_back_erp" >> $GITHUB_ENV
+            echo "CONTAINER_NAME_BACKUP=test_back_erp_backuo" >> $GITHUB_ENV
+
           fi
 
       # 2. Log in to DockerHub
@@ -58,16 +61,32 @@ jobs:
             docker login
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
             if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-              echo "Deteniendo y reiniciando contenedor en ambiente de desarrollo..."
+
+              if docker ps -a --format '{{.Names}}' | grep -q "^${{ env.CONTAINER_NAME_BACKUP }}$"; then
+                echo "Borrando el contenedor de backup antiguo"
+                docker stop ${{ env.CONTAINER_NAME_BACKUP }}
+                docker rm ${{ env.CONTAINER_NAME_BACKUP }}
+              else
+                echo "No existe el contenedor '${{ env.CONTAINER_NAME_BACKUP }}', no se borra."
+              fi
+
+              echo "Cambiando el nombre del conetendor a backup..."
               docker stop ${{ env.CONTAINER_NAME }} || true
-              docker rm ${{ env.CONTAINER_NAME }} || true
+              docker rename ${{ env.CONTAINER_NAME }} ${{ env.CONTAINER_NAME_BACKUP }} || true
+
+              echo "Generamos el nuevo contenedor..."
               docker run -d --name ${{ env.CONTAINER_NAME }} \
-              -p 8885:8880 \
+              -p 8875:8880 \
                 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+
+              echo "Borramos imagenes no asociadas"
+
+              docker image prune -a
 
             else
               echo "No se ejecuta el reinicio del contenedor en main."
             fi
+
 
 
 
