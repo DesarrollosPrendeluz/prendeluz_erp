@@ -73,7 +73,7 @@ jobs:
               docker run -d --name ${{ env.CONTAINER_NAME_TEST }} \
               -p 8875:8880 \
                 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-              docker prune
+
 
             else
               echo "No se ejecuta el reinicio del contenedor en main."
