@@ -77,7 +77,7 @@ jobs:
 
               echo "Borramos imagenes no asociadas"
 
-              docker image prune
+              docker image prune -a
 
             else
               echo "No se ejecuta el reinicio del contenedor en main."
