@@ -25,6 +25,8 @@ jobs:
             echo "IMAGE_NAME=test_backend_erp" >> $GITHUB_ENV
             echo "DATABASE_NAME=test_prend_items_luz" >> $GITHUB_ENV
             echo "CONTAINER_NAME=test_back_erp" >> $GITHUB_ENV
+            echo "CONTAINER_NAME=upload_test" >> $GITHUB_ENV
+            echo "CONTAINER_NAME_TEST_BACKUP=upload_test_backup" >> $GITHUB_ENV
           fi
 
       # 2. Log in to DockerHub
@@ -57,13 +59,15 @@ jobs:
             echo "Conectando al servidor remoto..."
             docker login
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-            if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-              echo "Deteniendo y reiniciando contenedor en ambiente de desarrollo..."
-              docker stop ${{ env.CONTAINER_NAME }} || true
-              docker rm ${{ env.CONTAINER_NAME }} || true
-              docker run -d --name ${{ env.CONTAINER_NAME }} \
-              -p 8885:8880 \
+            if [[ "${{ github.ref }}" == "refs/heads/testGitACtions" ]]; then
+
+
+
+              echo "Generamos el nuevo contenedor..."
+              docker run -d --name ${{ env.CONTAINER_NAME_TEST }} \
+              -p 9985:8880 \
                 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+              docker prune
 
             else
               echo "No se ejecuta el reinicio del contenedor en main."
