@@ -76,7 +76,7 @@ jobs:
 
               echo "Generamos el nuevo contenedor..."
               docker run -d --name ${{ env.CONTAINER_NAME }} \
-              -p 8875:8880 \
+              -p 8885:8880 \
                 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
               echo "Borramos imagenes no asociadas"
