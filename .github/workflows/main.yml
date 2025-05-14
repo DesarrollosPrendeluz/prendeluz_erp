@@ -26,7 +26,7 @@ jobs:
             echo "IMAGE_NAME=test_backend_erp" >> $GITHUB_ENV
             echo "DATABASE_NAME=test_prend_items_luz" >> $GITHUB_ENV
             echo "CONTAINER_NAME=test_back_erp" >> $GITHUB_ENV
-            echo "CONTAINER_NAME=upload_test" >> $GITHUB_ENV
+            echo "CONTAINER_NAME_TEST=upload_test" >> $GITHUB_ENV
             echo "CONTAINER_NAME_TEST_BACKUP=upload_test_backup" >> $GITHUB_ENV
           fi
 
