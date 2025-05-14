@@ -66,8 +66,8 @@ jobs:
               # docker stop ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
               # docker rm ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
 
-              # echo "Cambiando el nombre del conetendor a backup..."
-              # docker rename ${{ env.CONTAINER_NAME_TEST }} ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
+              echo "Cambiando el nombre del conetendor a backup..."
+              docker rename ${{ env.CONTAINER_NAME_TEST }} ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
 
               echo "Generamos el nuevo contenedor..."
               docker run -d --name ${{ env.CONTAINER_NAME_TEST }} \
