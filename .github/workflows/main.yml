@@ -62,9 +62,9 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
             if [[ "${{ github.ref }}" == "refs/heads/testGitACtions" ]]; then
 
-              # echo "Borrando el contenedor de backup antiguo"
-              # docker stop ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
-              # docker rm ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
+              echo "Borrando el contenedor de backup antiguo"
+              docker stop ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
+              docker rm ${{ env.CONTAINER_NAME_TEST_BACKUP }} || true
 
               echo "Cambiando el nombre del conetendor a backup..."
               docker stop ${{ env.CONTAINER_NAME_TEST }} || true
@@ -75,11 +75,15 @@ jobs:
               -p 8875:8880 \
                 ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
+              echo "Borramos imagenes no asociadas"
+
+              docker image prune
+
 
             else
               echo "No se ejecuta el reinicio del contenedor en main."
             fi
-            
+
 
 
 
