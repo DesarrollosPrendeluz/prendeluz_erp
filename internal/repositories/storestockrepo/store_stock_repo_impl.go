@@ -1,6 +1,7 @@
 package storestockrepo
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
@@ -136,4 +137,14 @@ func (repo *StoreStockRepoImpl) FindByStoreAndSearchParams(idStore uint64, searc
 
 	return storeStocks, resultsQuery.Error
 
+}
+
+func (repo *StoreStockRepoImpl) FindItemsOrderByQuantity(pageSize int, offset int) ([]string, int64, error) {
+	var results []string
+	var count int64
+	repo.DB.Table("store_stocks").Count(&count)
+	data := repo.DB.Table("store_stocks").Order("quantity desc").Limit(pageSize).Offset(offset).Select("parent_main_sku").Where("store_id = 1").Find(&results)
+	fmt.Println("PAPA", results, data.Error)
+
+	return results, count, data.Error
 }

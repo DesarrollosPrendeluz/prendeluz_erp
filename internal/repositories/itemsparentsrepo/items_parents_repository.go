@@ -9,4 +9,5 @@ type ItemsParentsRepo interface {
 	repositories.Repository[models.Item]
 	FindByChild(child_id uint64) (models.ItemsParents, error)
 	FindByParent(parent_id uint64, pageSize int, offset int) ([]models.ItemsParents, error)
+	FindMultipleParents(childs []uint64) ([]models.ItemsParents, error)
 }

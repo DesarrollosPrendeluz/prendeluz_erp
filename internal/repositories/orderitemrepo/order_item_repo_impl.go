@@ -1,6 +1,7 @@
 package orderitemrepo
 
 import (
+	"fmt"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
 
@@ -178,6 +179,23 @@ func (repo *OrderItemRepoImpl) UpdatePickingByItemIdAndOrder(itemId uint64, orde
 	results := repo.DB.Model(&models.OrderItem{}).Where("item_id = ? AND order_id = ? AND store_id = 1", itemId, orderId).Update("quantity", quantity)
 
 	return results.Error
+}
+func (repo *OrderItemRepoImpl) FindByLessOrdered(offset int, pageSize int) ([]uint64, int64, error) {
+	type ItemCount struct {
+		ItemID uint
+		Num    int
+	}
+	var results []ItemCount
+	var count int64
+	query := repo.DB.Model(models.OrderItem{}).Distinct("item_id")
+	query.Count(&count)
+	data := repo.DB.Model(models.OrderItem{}).Select("item_id,count(item_id) as num").Order("num desc").Group("item_id").Offset(offset).Limit(pageSize).Find(&results)
+	fmt.Println("falla", data.Error)
+	var ids []uint64
+	for _, r := range results {
+		ids = append(ids, uint64(r.ItemID))
+	}
+	return ids, count, data.Error
 }
 func addPreloadToShowOrderLineData(query *gorm.DB) *gorm.DB {
 	return query.
