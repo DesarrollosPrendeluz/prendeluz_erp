@@ -148,3 +148,14 @@ func (repo *ItemRepoImpl) FindByEanAndSupplierSku(ean string, supplier_sku strin
 	return itemIds, nil
 
 }
+
+func (repo *ItemRepoImpl) FindByPrice(pageSize int, offset int) ([]models.Item, int64, error) {
+	var items []models.Item
+	var count int64
+	repo.DB.Count(&count)
+
+	results := repo.DB.Order("price desc").Offset(offset).Limit(pageSize).Find(&items)
+
+	return items, count, results.Error
+
+}

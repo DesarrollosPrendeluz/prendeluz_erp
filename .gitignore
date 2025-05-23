@@ -26,3 +26,4 @@ go.work.sum
 *.xlsx
 .air.toml*
 internal/config/test.yaml
+./internal/config/variables_test.yaml
