@@ -16,4 +16,5 @@ type OrderItemRepo interface {
 	FindByOrderAndStore(idOrder uint64, store_id int) ([]models.OrderItem, error)
 	FindByLineIDWithOrder(lineId []uint64, order string, offset int, pageSize int) ([]models.OrderItem, int64)
 	FindByLineID(lineId []uint64, offset int, pageSize int) ([]models.OrderItem, int64)
+	FindByLessOrdered(offset int, pageSize int) ([]models.OrderItem, int64, error)
 }

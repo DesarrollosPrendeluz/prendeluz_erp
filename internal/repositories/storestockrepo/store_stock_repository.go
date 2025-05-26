@@ -11,4 +11,5 @@ type StoreStockRepo interface {
 	FindByStore(idStore uint64, pageSize int, offset int) ([]models.StoreStock, error)
 	FindByStoreAndSearchParams(idStore uint64, searchParam string, pageSize int, offset int) ([]models.StoreStock, error)
 	FindByStoreWithLocations(idStore uint64) (StoreAndlocations, error)
+	FindItemsOrderByQuantity(pageSize int, offset int) ([]models.StoreStock, int64, error)
 }
