@@ -144,7 +144,6 @@ func (repo *StoreStockRepoImpl) FindItemsOrderByQuantity(pageSize int, offset in
 	var count int64
 	repo.DB.Table("store_stocks").Count(&count)
 	data := repo.DB.Table("store_stocks").Order("quantity desc").Limit(pageSize).Offset(offset).Select("parent_main_sku").Where("store_id = 1").Find(&results)
-	fmt.Println("PAPA", results, data.Error)
 
 	return results, count, data.Error
 }

@@ -190,7 +190,6 @@ func (repo *OrderItemRepoImpl) FindByLessOrdered(offset int, pageSize int) ([]ui
 	query := repo.DB.Model(models.OrderItem{}).Distinct("item_id")
 	query.Count(&count)
 	data := repo.DB.Model(models.OrderItem{}).Select("item_id,count(item_id) as num").Order("num desc").Group("item_id").Offset(offset).Limit(pageSize).Find(&results)
-	fmt.Println("falla", data.Error)
 	var ids []uint64
 	for _, r := range results {
 		ids = append(ids, uint64(r.ItemID))

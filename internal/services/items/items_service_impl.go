@@ -42,7 +42,6 @@ func (s *ItemsServiceImpl) GetItemsForDashboard(flag string, page int, pageSize 
 
 			if item.ItemType != "father" {
 				parent, _ := s.itemParentsRepo.FindByChild(item.ID)
-				fmt.Println("MELON", parent)
 				sku = parent.Parent.MainSKU
 			} else {
 				sku = item.MainSKU
