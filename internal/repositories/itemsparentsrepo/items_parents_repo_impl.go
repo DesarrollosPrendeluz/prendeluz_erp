@@ -28,3 +28,9 @@ func (repo *ItemsParentsRepoImpl) FindByParent(parent_id uint64, pageSize int, o
 	result := repo.DB.Limit(pageSize).Offset(offset).Preload("Child.AsinRel").Where("parent_item_id = ?", parent_id).Find(&item)
 	return item, result.Error
 }
+
+func (repo *ItemsParentsRepoImpl) FindMultipleParents(childs []uint64) ([]uint64, error) {
+	var parents []uint64
+	result := repo.DB.Preload("items").Select("parent_item_id").Where("child_item_id in ?", childs).Find(&parents)
+	return parents, result.Error
+}

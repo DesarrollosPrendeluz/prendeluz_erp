@@ -170,6 +170,7 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		stadistics.GET("olHisotricByFatherOrder", controllers.GetOrderHisotric)
 		stadistics.GET("lines", controllers.GetLines)
+		stadistics.GET("items", controllers.GetItems)
 	}
 
 }
