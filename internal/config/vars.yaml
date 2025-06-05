@@ -2,7 +2,7 @@ server:
   port: 8080
 
 database:
-  host: "70.35.197.24"
+  host: "82.223.13.79"
   port: 32991
   username: "root"
   password: "dQaJN1448/#@"
