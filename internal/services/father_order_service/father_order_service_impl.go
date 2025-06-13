@@ -587,9 +587,9 @@ func (s *FatherOrderImpl) CreateOrder(requestBody dtos.OrderWithLinesRequest) bo
 
 }
 
-func (s *FatherOrderImpl) FindAllWithAssocData(fatherOrderCode string, typeId int, statusId int, pageSize int, offset int) ([]dtos.FatherOrderWithRecount, int64, error) {
+func (s *FatherOrderImpl) FindAllWithAssocData(fatherOrderCode string, typeId int, statusId int, fromDate string, toDate string, pageSize int, offset int) ([]dtos.FatherOrderWithRecount, int64, error) {
 	calcPage := pageSize * offset
-	return s.fatherorderrepo.FindAllWithAssocData(pageSize, calcPage, fatherOrderCode, typeId, statusId)
+	return s.fatherorderrepo.FindAllWithAssocData(pageSize, calcPage, fatherOrderCode, typeId, fromDate, toDate, statusId)
 
 }
 
