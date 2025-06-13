@@ -82,7 +82,7 @@ func (s *StadisitcsImpl) GetRecivedStadistics(fatherCode string) dtos.RecivedHis
 		for _, order := range orders {
 			orderIdList = append(orderIdList, order.ID)
 		}
-		fatherDataComplete, _, _ := s.fatherorderrepo.FindAllWithAssocData(1, 0, fatherCode, 0, 0)
+		fatherDataComplete, _, _ := s.fatherorderrepo.FindAllWithAssocData(1, 0, fatherCode, 0, "", "", 0)
 		returnData.PickingProcess = dtos.ProcessTotalsAndPartials{
 			TotalToProcess: int(fatherDataComplete[0].TotalPickingStock),
 			NotProcessed:   int(fatherDataComplete[0].TotalPickingStock) - int(fatherDataComplete[0].TotalRecivedPickingQuantity),

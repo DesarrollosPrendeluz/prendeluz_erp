@@ -18,9 +18,11 @@ func GetFatherOrdersData(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 	orderStatus, _ := strconv.Atoi(c.DefaultQuery("status_id", "0"))
 	orderType, _ := strconv.Atoi(c.DefaultQuery("type_id", "0"))
+	fromDate := c.DefaultQuery("from", "")
+	toDate := c.DefaultQuery("to", "")
 	fatherCode := c.Query("father_order_code")
 
-	results, recount, err := service.NewFatherOrderService().FindAllWithAssocData(fatherCode, orderType, orderStatus, pageSize, page)
+	results, recount, err := service.NewFatherOrderService().FindAllWithAssocData(fatherCode, orderType, orderStatus, fromDate, toDate, pageSize, page)
 
 	if err != nil {
 		// Manejo del error si las credenciales no son correctas

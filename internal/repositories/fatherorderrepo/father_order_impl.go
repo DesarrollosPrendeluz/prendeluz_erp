@@ -31,7 +31,7 @@ func (repo *FatherOrderImpl) FindLatestByType(orderType int) (models.FatherOrder
 	return fatherOrder, results.Error
 }
 
-func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fatherOrderCode string, typeId int, statusId int) ([]dtos.FatherOrderWithRecount, int64, error) {
+func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fatherOrderCode string, typeId int, fromDate string, toDate string, statusId int) ([]dtos.FatherOrderWithRecount, int64, error) {
 	var data []dtos.FatherOrderWithRecount
 	var results *gorm.DB
 	var totalRecords int64
@@ -49,6 +49,12 @@ func (repo *FatherOrderImpl) FindAllWithAssocData(pageSize int, offset int, fath
 		// Filtro de código de orden
 		if fatherOrderCode != "" {
 			query = query.Where(prefix+"code = ?", fatherOrderCode)
+		}
+		//filtros de fecha
+		if fromDate != "" && toDate != "" {
+			fmt.Println(fromDate)
+			query = query.Where(prefix+"created_at BETWEEN CAST(? AS DATE) AND CAST(? AS DATE)", fromDate, toDate)
+
 		}
 
 		return query
