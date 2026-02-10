@@ -103,6 +103,7 @@ func RegisterRoutes(router *gin.Engine) {
 		stockDeficit.GET("", controllers.GetStockDeficit)
 		stockDeficit.GET("calc", controllers.CalcStockDeficitByOrder)
 		stockDeficit.GET("/download", controllers.DownloadStockDeficitExcel)
+		stockDeficit.PATCH("/clean", controllers.CleanStockDeficit)
 	}
 	//stock
 	stock := router.Group("/stock").Use(middlewares.Auth)
