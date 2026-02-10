@@ -12,6 +12,7 @@ type StockDeficitRepo interface {
 	GetByRegsitersByFatherSkuIn(filter []string, store int, page int, pageSize int) ([]models.StockDeficit, error)
 	GetByFatherAndStore(fatherSku string, store int64) (models.StockDeficit, error)
 	StockDeficitByFatherOrder(father_id uint64) (*[]StockDeficitResult, error)
+	CleanStockDeficit()
 	CallStockDefProc()
 	CallPendingStockProc()
 }

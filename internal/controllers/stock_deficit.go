@@ -48,3 +48,13 @@ func DownloadStockDeficitExcel(c *gin.Context) {
 func CalcStockDeficitByOrder(c *gin.Context) {
 	services.NewStockDeficitService().CalcStockDeficitByFatherOrder(7)
 }
+
+func CleanStockDeficit(c *gin.Context) {
+	err := services.NewStockDeficitService().CleanStockDeficit()
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"Error": err.Error()})
+	} else {
+		c.IndentedJSON(http.StatusOK, gin.H{"ok": "ok"})
+
+	}
+}
