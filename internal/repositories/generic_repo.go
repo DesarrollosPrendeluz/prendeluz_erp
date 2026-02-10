@@ -54,6 +54,11 @@ func (r *GORMRepository[T]) FindAll(pageSize int, offset int) ([]T, error) {
 	result := r.DB.Limit(pageSize).Offset(offset).Find(&items)
 	return items, result.Error
 }
+func (r *GORMRepository[T]) FindAllWithOrder(pageSize int, offset int, orderBy string) ([]T, error) {
+	var items []T
+	result := r.DB.Limit(pageSize).Offset(offset).Order(orderBy).Find(&items)
+	return items, result.Error
+}
 
 // Actualiza un registro en base de datos del modelo correspondiente
 func (r *GORMRepository[T]) Update(item *T) error {
