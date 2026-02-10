@@ -30,7 +30,7 @@ func GetStoreLocation(c *gin.Context) {
 		}
 		recount = 1
 	} else {
-		data, err = repo.FindAll(pageSize, page)
+		data, err = repo.FindAllWithOrder(pageSize, page, "code asc")
 		recount, _ = repo.CountAll()
 
 	}
