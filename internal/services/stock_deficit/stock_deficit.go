@@ -9,4 +9,5 @@ type StockDeficitService interface {
 	CalcStockDeficitByItem(child_item_id uint64, store_id int64)
 	ReturnDownloadStockDeficitExcel(store_id int) string
 	CalcStockDeficitByFatherOrder(father_order_id uint64)
+	CleanStockDeficit() error
 }

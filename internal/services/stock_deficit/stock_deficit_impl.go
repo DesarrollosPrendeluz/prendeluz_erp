@@ -252,3 +252,6 @@ func (s *StockDeficitServiceImpl) ReturnDownloadStockDeficitExcel(store_id int) 
 	return base64String
 
 }
+func (s *StockDeficitServiceImpl) CleanStockDeficit() error {
+	return s.stockDeficitRepo.CleanStockDeficit()
+}

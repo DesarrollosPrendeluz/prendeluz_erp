@@ -60,7 +60,7 @@ jobs:
             echo "Conectando al servidor remoto..."
             docker login
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-            if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
 
               if docker ps -a --format '{{.Names}}' | grep -q "^${{ env.CONTAINER_NAME_BACKUP }}$"; then
                 echo "Borrando el contenedor de backup antiguo"

@@ -152,3 +152,17 @@ func (repo *StockDeficitImpl) CallPendingStockProc() {
 	}
 
 }
+func (repo *StockDeficitImpl) CleanStockDeficit() error {
+	err := repo.DB.
+		Table("stock_deficits").
+		Where("1 = 1").
+		Updates(map[string]interface{}{
+			"quantity":      0,
+			"pending_stock": 0,
+		}).Error
+
+	if err != nil {
+		log.Printf("Error limpiando StockDeficit: %v", err)
+	}
+	return err
+}
