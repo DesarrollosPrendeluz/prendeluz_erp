@@ -103,7 +103,10 @@ func RegisterRoutes(router *gin.Engine) {
 		stockDeficit.GET("", controllers.GetStockDeficit)
 		stockDeficit.GET("calc", controllers.CalcStockDeficitByOrder)
 		stockDeficit.GET("/download", controllers.DownloadStockDeficitExcel)
-		stockDeficit.PATCH("/clean", controllers.CleanStockDeficit)
+	}
+	stockDeficitAdmin := router.Group("/stock_deficit").Use(middlewares.Auth, middlewares.AdminStoreUsers)
+	{
+		stockDeficitAdmin.PATCH("/clean", controllers.CleanStockDeficit)
 	}
 	//stock
 	stock := router.Group("/stock").Use(middlewares.Auth)
@@ -159,6 +162,11 @@ func RegisterRoutes(router *gin.Engine) {
 		itemStockLocations.PATCH("/stockChanges", controllers.StockChanges)
 		itemStockLocations.PATCH("/stockMovement", controllers.StockMovements)
 
+	}
+
+	itemStockLocationsAdmin := router.Group("/item_stock_location").Use(middlewares.Auth, middlewares.AdminStoreUsers)
+	{
+		itemStockLocationsAdmin.DELETE("/cleanZeroStock", controllers.DeleteZeroStock)
 	}
 
 	//supplier
