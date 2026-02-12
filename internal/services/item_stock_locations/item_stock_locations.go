@@ -12,4 +12,5 @@ type ItemStockLocationService interface {
 	PatchItemStockLocation(requestBody dtos.ItemStockLocationUpdateReq) []error
 	StockChanges(requestBody dtos.ItemStockLocationStockChangeRequest) []error
 	StockMovements(requestBody dtos.ItemStockLocationStockMovementRequest) []error
+	DeleteZeroStock() error
 }

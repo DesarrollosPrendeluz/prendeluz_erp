@@ -125,3 +125,12 @@ func StockMovements(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Stock locations are updated", "Errors": errorList}})
 
 }
+
+func DeleteZeroStock(c *gin.Context) {
+	err := ItemStockLocationService.NewItemStockLocationService().DeleteZeroStock()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": err.Error()}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"Results": gin.H{"message": "Registros con stock 0 eliminados"}})
+}
