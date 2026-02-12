@@ -227,3 +227,7 @@ func (s *ItemStockLocationServiceImpl) StockMovements(requestBody dtos.ItemStock
 	return errorList
 
 }
+
+func (s *ItemStockLocationServiceImpl) DeleteZeroStock() error {
+	return s.itemlocationrepo.DeleteZeroStock()
+}

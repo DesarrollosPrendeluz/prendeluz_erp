@@ -82,3 +82,8 @@ func (repo *ItemLocationImpl) FindByItemAndLocation(mainSku string, locationId u
 	}
 	return item, err
 }
+
+func (repo *ItemLocationImpl) DeleteZeroStock() error {
+	result := repo.DB.Where("stock = ?", 0).Delete(&models.ItemLocation{})
+	return result.Error
+}
