@@ -43,6 +43,7 @@ type OrderServiceImpl struct {
 	stockdeficitrepo              stockdeficitrepo.StockDeficitImpl
 	erpupdateorderlinehistoryrepo erpupdateorderlinehistoryrepo.ErpUpdateOrderLineHistoryImpl
 	asinRepo                      asinrepo.AsinRepoImpl
+	stockRepo                     stockrepo.StoreStockRepoImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
@@ -671,12 +672,54 @@ func (s *OrderServiceImpl) CreateOrderItems(order models.Order, lines apiDtos.Ap
 		orderLinesList = append(orderLinesList, models.OrderItem{
 			Amount:        int64(itemToAsin[asin.Code]),
 			RecivedAmount: 0,
-			StoreID:       1,
+			StoreID:       2,
 			ItemID:        asin.ItemID,
 			OrderID:       order.ID,
 		})
-	}
-	_, err2 := s.orderItemsRepo.CreateAll(&orderLinesList)
 
-	return orderLinesList, err2
+	}
+	s.CreateOrderItemsPicking(&orderLinesList)
+	_, err2 := s.orderItemsRepo.CreateAll(&orderLinesList)
+	if err2 != nil {
+		return nil, err2
+	}
+	return orderLinesList, nil
+}
+
+func (s *OrderServiceImpl) CreateOrderItemsPicking(orderLinesList *[]models.OrderItem) {
+	oldOrderLinesList := *orderLinesList
+
+	for _, line := range oldOrderLinesList {
+		// Buscamos el item padre por registro
+		item, _ := s.itemsRepo.FindByID(line.ItemID)
+		parentSku := item.MainSKU
+		if item.ItemType != "father" {
+			parent, _ := itemsparentsrepo.NewItemParentRepository(db.DB).FindByChild(item.ID)
+			parentSku = parent.Parent.MainSKU
+		}
+		//Buscamos su stock en el almacen 1 Prendeluz
+		stockrepo := stockrepo.NewStoreStockRepository(db.DB)
+		parentStock, err := stockrepo.FindByItemAndStore(parentSku, "1")
+		if err == nil {
+			actualStock := parentStock.Amount - parentStock.ReservedAmount
+			if parentStock.Amount > 0 && actualStock > 0 {
+				amount := line.Amount
+				if actualStock < amount {
+					amount = actualStock
+				}
+				*orderLinesList = append(*orderLinesList, models.OrderItem{
+					Amount:        amount,
+					RecivedAmount: 0,
+					StoreID:       1,
+					ItemID:        line.ItemID,
+					OrderID:       line.OrderID,
+				})
+
+				//Añadimos el stock reservado
+				parentStock.ReservedAmount += amount
+				stockrepo.Update(&parentStock)
+			}
+		}
+	}
+
 }
