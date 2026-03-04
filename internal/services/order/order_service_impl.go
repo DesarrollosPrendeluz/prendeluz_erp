@@ -651,6 +651,7 @@ func (s *OrderServiceImpl) CreateOrderViaAPI(order apiDtos.ApiOrderCreate) error
 		s.CreateOrderItems(orderData, son_order)
 
 	}
+	stockDeficit.NewStockDeficitService().CalcStockDeficitByFatherOrder(fatherObject.ID)
 
 	return nil
 }
@@ -683,6 +684,7 @@ func (s *OrderServiceImpl) CreateOrderItems(order models.Order, lines apiDtos.Ap
 	if err2 != nil {
 		return nil, err2
 	}
+
 	return orderLinesList, nil
 }
 
