@@ -5,8 +5,10 @@ import (
 	"io"
 	"prendeluz/erp/internal/db"
 	"prendeluz/erp/internal/dtos"
+	apiDtos "prendeluz/erp/internal/dtos/api"
 	"prendeluz/erp/internal/models"
 	"prendeluz/erp/internal/repositories"
+	"prendeluz/erp/internal/repositories/asinrepo"
 	"prendeluz/erp/internal/repositories/erpupdateorderlinehistoryrepo"
 	"prendeluz/erp/internal/repositories/fatherorderrepo"
 	"prendeluz/erp/internal/repositories/itemsparentsrepo"
@@ -40,6 +42,7 @@ type OrderServiceImpl struct {
 	itemsRepo                     itemsrepo.ItemRepoImpl
 	stockdeficitrepo              stockdeficitrepo.StockDeficitImpl
 	erpupdateorderlinehistoryrepo erpupdateorderlinehistoryrepo.ErpUpdateOrderLineHistoryImpl
+	asinRepo                      asinrepo.AsinRepoImpl
 }
 
 func NewOrderService() *OrderServiceImpl {
@@ -623,4 +626,57 @@ func returnOrderLinesQuantytiesDataToUpdate(soldFatherId uint64, ean string) []C
 	}
 
 	return compareArr
+}
+
+func (s *OrderServiceImpl) CreateOrderViaAPI(order apiDtos.ApiOrderCreate) error {
+	fatherObject := models.FatherOrder{
+		OrderStatusID: uint64(orderrepo.Order_Status["pediente"]),
+		OrderTypeID:   uint64(orderrepo.Order_Types["venta"]),
+		Code:          order.FatherOrderName,
+		Filename:      "Api-" + order.FatherOrderName,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+	s.fatherOrderRepo.Create(&fatherObject)
+	for _, son_order := range order.Orders {
+		orderData := models.Order{
+			OrderStatusID: uint64(orderrepo.Order_Status["iniciada"]),
+			Code:          son_order.OrderName,
+			FatherOrderID: fatherObject.ID,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+		s.orderRepo.Create(&orderData)
+		s.CreateOrderItems(orderData, son_order)
+
+	}
+
+	return nil
+}
+
+func (s *OrderServiceImpl) CreateOrderItems(order models.Order, lines apiDtos.ApiOrderItemCreate) ([]models.OrderItem, error) {
+	var orderLinesList []models.OrderItem
+
+	var asins []string
+	itemToAsin := make(map[string]int)
+	for _, line := range lines.OrderLines {
+		asins = append(asins, line.Asin)
+		itemToAsin[line.Asin] = line.Quantity
+	}
+	data, err := s.asinRepo.FindByAsins(asins)
+	if err != nil {
+		return nil, err
+	}
+	for _, asin := range data {
+		orderLinesList = append(orderLinesList, models.OrderItem{
+			Amount:        int64(itemToAsin[asin.Code]),
+			RecivedAmount: 0,
+			StoreID:       1,
+			ItemID:        asin.ItemID,
+			OrderID:       order.ID,
+		})
+	}
+	_, err2 := s.orderItemsRepo.CreateAll(&orderLinesList)
+
+	return orderLinesList, err2
 }

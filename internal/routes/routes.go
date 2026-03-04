@@ -50,6 +50,7 @@ func RegisterRoutes(router *gin.Engine) {
 		adminUsersOrderRoutes.GET("/add/frame", controllers.DownloadAddOrderFrame)
 		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
 		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
+		adminUsersOrderRoutes.POST("/add/api", controllers.CreateOrderViaAPI)
 	}
 
 	//Order lines
