@@ -112,6 +112,7 @@ func RegisterRoutes(router *gin.Engine) {
 	stock := router.Group("/stock").Use(middlewares.Auth)
 	{
 		stock.GET("getExcel", controllers.GetStockExcelData)
+		stock.POST("/byAsins", controllers.GetStockByAsins)
 	}
 
 	//stock deficit
