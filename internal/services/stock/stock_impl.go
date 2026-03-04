@@ -25,10 +25,14 @@ type StockServiceImpl struct {
 
 func NewStockService() *StockServiceImpl {
 	stockRepo := *storestockrepo.NewStoreStockRepository(db.DB)
+	asinRepo := *asinrepo.NewAsinRepository(db.DB)
+	itemsRepo := *itemsrepo.NewItemRepository(db.DB)
 	errorOrderRepo := *repositories.NewGORMRepository(db.DB, models.ErrorOrder{})
 
 	return &StockServiceImpl{
 		stockRepo:      stockRepo,
+		asinRepo:       asinRepo,
+		itemsRepo:      itemsRepo,
 		orderErrorRepo: errorOrderRepo}
 }
 

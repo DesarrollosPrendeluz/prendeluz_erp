@@ -27,7 +27,7 @@ func (repo *AsinRepoImpl) FindByItemId(id uint64) (models.Asin, error) {
 func (repo *AsinRepoImpl) FindByAsins(asin []string) ([]models.Asin, error) {
 	var asins []models.Asin
 
-	result := repo.DB.Where("asin IN ?", asin).Find(&asins)
+	result := repo.DB.Where("code IN ?", asin).Find(&asins)
 
 	return asins, result.Error
 }
