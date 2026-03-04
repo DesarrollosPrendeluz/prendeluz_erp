@@ -41,3 +41,18 @@ func DownloadUpdateStockByExcelFrame(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"file": data, "fileName": name}})
 
 }
+
+func GetStockByAsins(c *gin.Context) {
+	var request struct {
+		Asins []string `json:"asins"`
+	}
+
+	if err := c.BindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	stockItems := stockService.NewStockService().ReturnStockByAsins(request.Asins)
+
+	c.JSON(http.StatusOK, gin.H{"Results": stockItems})
+}
