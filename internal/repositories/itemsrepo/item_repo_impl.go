@@ -159,3 +159,12 @@ func (repo *ItemRepoImpl) FindByPrice(pageSize int, offset int) ([]models.Item, 
 	return items, count, results.Error
 
 }
+
+func (repo *ItemRepoImpl) FindByIds(ids []uint64) ([]models.Item, error) {
+	var items []models.Item
+
+	result := repo.DB.Where("id IN ?", ids).Order("item_type desc").Find(&items)
+
+	return items, result.Error
+
+}

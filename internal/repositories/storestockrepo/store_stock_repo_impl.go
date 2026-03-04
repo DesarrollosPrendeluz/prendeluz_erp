@@ -148,3 +148,11 @@ func (repo *StoreStockRepoImpl) FindItemsOrderByQuantity(pageSize int, offset in
 
 	return results, count, data.Error
 }
+
+func (repo *StoreStockRepoImpl) FindByParentSkusAndStore(parentSkus []string, storeId uint64) ([]models.StoreStock, error) {
+	var storeStocks []models.StoreStock
+
+	results := repo.DB.Where("parent_main_sku IN ? AND store_id = ? ", parentSkus, storeId).Find(&storeStocks)
+
+	return storeStocks, results.Error
+}
