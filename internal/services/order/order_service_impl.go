@@ -54,6 +54,8 @@ func NewOrderService() *OrderServiceImpl {
 	fatherOrderRepo := *fatherorderrepo.NewFatherOrderRepository(db.DB)
 	stockdeficitrepo := *stockdeficitrepo.NewStockDeficitRepository(db.DB)
 	erpupdateorderlinehistoryrepo := *erpupdateorderlinehistoryrepo.NewErpUpdateOrderLineHistoryRepository(db.DB)
+	asinRepo := *asinrepo.NewAsinRepository(db.DB)
+	stockRepo := *stockrepo.NewStoreStockRepository(db.DB)
 
 	return &OrderServiceImpl{
 		orderRepo:                     orderRepo,
@@ -62,7 +64,9 @@ func NewOrderService() *OrderServiceImpl {
 		itemsRepo:                     itemsRepo,
 		fatherOrderRepo:               fatherOrderRepo,
 		stockdeficitrepo:              stockdeficitrepo,
-		erpupdateorderlinehistoryrepo: erpupdateorderlinehistoryrepo}
+		erpupdateorderlinehistoryrepo: erpupdateorderlinehistoryrepo,
+		asinRepo:                      asinRepo,
+		stockRepo:                     stockRepo}
 }
 
 // Carga el excel y crea las nuevas ordenes en este caso solo de ventas por el momento
