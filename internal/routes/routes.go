@@ -40,7 +40,6 @@ func RegisterRoutes(router *gin.Engine) {
 		allUsersOrderRoutes.POST("/editSupplierOrders", controllers.UpdateSupplierOrderByExcel)
 		allUsersOrderRoutes.GET("/editOrders/frame", controllers.DownloadUpdateOrderByExcelFrame)
 		allUsersOrderRoutes.GET("/editSupplierOrders/frame", controllers.DownloadUpdateSupplierOrderByExcelFrame)
-
 		allUsersOrderRoutes.GET("/supplierOrders/download", controllers.DownloadSupplierOrderExcel)
 
 	}
@@ -50,6 +49,7 @@ func RegisterRoutes(router *gin.Engine) {
 		adminUsersOrderRoutes.GET("/add/frame", controllers.DownloadAddOrderFrame)
 		adminUsersOrderRoutes.POST("/addByRequest", controllers.CreateOrder)
 		adminUsersOrderRoutes.PATCH("", controllers.EditOrders)
+		adminUsersOrderRoutes.POST("/add/api", controllers.CreateOrderViaAPI)
 	}
 
 	//Order lines

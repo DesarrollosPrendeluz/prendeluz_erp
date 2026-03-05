@@ -19,6 +19,7 @@ import (
 	stockservices "prendeluz/erp/internal/services/stock_deficit"
 	"prendeluz/erp/internal/utils"
 
+	apiDtos "prendeluz/erp/internal/dtos/api"
 	"strconv"
 	"time"
 
@@ -348,4 +349,22 @@ func OpenOrderLines(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"err": "err"})
 	}
 	c.JSON(http.StatusAccepted, gin.H{"ok": "Actualizado"})
+}
+
+func CreateOrderViaAPI(c *gin.Context) {
+	var requestBody apiDtos.ApiOrderCreate
+
+	// Intentar bindear los datos del cuerpo de la request al struct
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Results": gin.H{"error": err.Error()}})
+		return
+	}
+	service := services.NewOrderService()
+	err := service.CreateOrderViaAPI(requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Results": gin.H{"error": err.Error()}})
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"Results": gin.H{"Ok": "Orders are created"}})
+
 }
